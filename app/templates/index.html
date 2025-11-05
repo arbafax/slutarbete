@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <title>AI-slutarbete</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>body{font-family:system-ui, -apple-system, sans-serif; max-width:750px; margin:2rem auto; padding:0 1rem}</style>
+</head>
+<body>
+  <h1>AI-slutarbete – demo</h1>
+  <form hx-post="/ask" hx-target="#result" hx-swap="innerHTML">
+    <label>Prompt</label><br/>
+    <textarea name="prompt" rows="4" style="width:100%">{{ last_prompt or '' }}</textarea>
+    <div style="margin:.5rem 0">
+      <label><input type="radio" name="provider" value="ollama" checked> Ollama (lokalt)</label>
+      <label style="margin-left:1rem"><input type="radio" name="provider" value="openai"> OpenAI</label>
+    </div>
+    <button type="submit">Kör</button>
+  </form>
+
+  <h2>Resultat</h2>
+  <div id="result">
+    {% if answer %}
+      <pre style="white-space:pre-wrap">{{ answer }}</pre>
+    {% else %}
+      <em>Inget än – skriv en prompt ovan.</em>
+    {% endif %}
+  </div>
+</body>
+</html>

@@ -208,3 +208,4 @@ __marimo__/
 
 
 ############## BELOW ARE ADDED AFTER THE ABOVE SUGGESTED .gitignore BY GITHUB. ###############
+.DS_Store
