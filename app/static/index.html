@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF → JSON Extractor</title>
+    <style>
+      :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+      body { margin: 0; background: #0b1220; color: #e6ecff; }
+      .wrap { max-width: 840px; margin: 48px auto; padding: 0 20px; }
+      h1 { font-size: 28px; margin: 0 0 8px; }
+      p { color: #b7c1e1; }
+      .zone {
+        margin-top: 24px; border: 2px dashed #3d4b72; border-radius: 16px;
+        padding: 32px; text-align: center; transition: 150ms ease;
+        background: rgba(23,34,64,0.55);
+      }
+      .zone.dragover { border-color: #8fb3ff; background: rgba(39,64,122,0.55); }
+      .btn { display: inline-block; padding: 10px 14px; border-radius: 10px; border: 1px solid #4a5c8a; cursor: pointer; }
+      .btn:hover { background: #1a2748; }
+      .hidden { display: none; }
+      .result { margin-top: 24px; background: #121a33; border: 1px solid #2a3862; padding: 16px; border-radius: 12px; }
+      code { color: #9fd3ff; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>PDF → JSON Extractor</h1>
+      <p>Dra & släpp en <strong>PDF</strong> eller välj fil. Texten extraheras till stycken med metadata och sparas som JSON på servern.</p>
+
+      <div id="dropzone" class="zone" tabindex="0">
+        <p><strong>Släpp PDF här</strong></p>
+        <p>eller</p>
+        <label class="btn" for="file">Välj PDF…</label>
+        <input class="hidden" id="file" type="file" accept="application/pdf" />
+      </div>
+
+      <div id="result" class="result hidden"></div>
+    </div>
+
+    <script>
+      const drop = document.getElementById('dropzone');
+      const fileInput = document.getElementById('file');
+      const result = document.getElementById('result');
+
+      function show(msgHtml) {
+        result.classList.remove('hidden');
+        result.innerHTML = msgHtml;
+      }
+
+      function uploadingUI(file) {
+        show(`<p>Laddar upp: <code>${file.name}</code> …</p>`);
+      }
+
+      async function handleFile(file) {
+        if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+          show('<p>Välj en giltig PDF-fil.</p>');
+          return;
+        }
+        uploadingUI(file);
+        try {
+          const form = new FormData();
+          form.append('file', file, file.name);
+          const res = await fetch('/api/upload_pdf', { method: 'POST', body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.detail || 'Okänt fel');
+
+          const base = (file.name || 'pdf').replace(/\.[Pp][Dd][Ff]$/, '');
+          const downloadUrl = `/api/download/${encodeURIComponent(base)}`;
+
+          show(`
+            <p><strong>Klart!</strong></p>
+            <ul>
+              <li>Källa: <code>${data.source_pdf}</code></li>
+              <li>Sidor: <code>${data.total_pages}</code></li>
+              <li>Antal stycken: <code>${data.paragraph_count}</code></li>
+              <li>JSON sparad som: <code>${data.saved_json}</code></li>
+            </ul>
+            <p><a class="btn" href="${downloadUrl}">Ladda ner JSON</a></p>
+          `);
+        } catch (err) {
+          console.error(err);
+          show(`<p style="color:#ffb3b3">Fel: ${err.message}</p>`);
+        }
+      }
+
+      // Drag & Drop events
+      ;['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => {
+        e.preventDefault(); e.stopPropagation(); drop.classList.add('dragover');
+      }));
+      ;['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => {
+        e.preventDefault(); e.stopPropagation(); drop.classList.remove('dragover');
+      }));
+      drop.addEventListener('drop', e => {
+        const file = e.dataTransfer.files?.[0];
+        handleFile(file);
+      });
+
+      // Fallback file picker
+      fileInput.addEventListener('change', e => handleFile(e.target.files?.[0]));
+    </script>
+  </body>
+</html>
