@@ -59,9 +59,12 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=STATIC_DIR, html=False), name="static")
 app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
 
+
 # -----------------------------
 # Helpers
 # -----------------------------
+def utc_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _normalize_text(s: str) -> str:
@@ -98,8 +101,9 @@ def _split_paragraphs(block_text: str) -> list[str]:
     return paras
 
 
-def extract_paragraphs_pymupdf(pdf_bytes: bytes) -> list[dict]:
+def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    page_count = doc.page_count
     out = []
     pid = 1
     for page_index, page in enumerate(doc, start=1):
@@ -121,7 +125,7 @@ def extract_paragraphs_pymupdf(pdf_bytes: bytes) -> list[dict]:
                 )
                 pid += 1
     doc.close()
-    return out
+    return out, page_count
 
 
 # -----------------------------
@@ -141,23 +145,25 @@ async def upload_pdf(file: UploadFile = File(...)):
     pdf_bytes = await file.read()
 
     # 2) Spara originalet från upload
-    safe_name = sanitize_basename(file.filename) + ".pdf"
+    safe_name_pdf = sanitize_basename(file.filename) + ".pdf"
 
-    upload_path = os.path.join(UPLOAD_DIR, safe_name)
+    upload_path = os.path.join(UPLOAD_DIR, safe_name_pdf)
     with open(upload_path, "wb") as out:
         out.write(pdf_bytes)
 
     # 3) extrahera
     try:
-        paragraphs = extract_paragraphs_pymupdf(pdf_bytes)
+        paragraphs, page_count = extract_paragraphs_pymupdf_with_pages(pdf_bytes)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extraction failed: {e}")
 
     # 4) resultatstruktur
     result = {
-        "source_pdf": f"/uploads/{safe_name}",  # (montera om du vill exponera uploads)
-        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "count": len(paragraphs),
+        "created_at": utc_timestamp(),
+        "source_file": f"{safe_name_pdf}",  # (montera om du vill exponera uploads)
+        # "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "page_count": page_count,
+        "chunk_count": len(paragraphs),
         "paragraphs": paragraphs,
     }
 
@@ -171,12 +177,9 @@ async def upload_pdf(file: UploadFile = File(...)):
     #    (filen är åtkomlig via /outputs/<json_filename> tack vare StaticFiles-mounten)
     return JSONResponse(
         content={
-            "message": "OK",
+            **result,
             "json_url": f"/outputs/{json_filename}",
-            "count": result["count"],
-            "paragraphs": result[
-                "paragraphs"
-            ],  # webbläsaren ser hela resultatet direkt
+            "json_filename": json_filename,
         },
         status_code=200,
     )
@@ -185,7 +188,8 @@ async def upload_pdf(file: UploadFile = File(...)):
 @app.get("/api/download/{basename}")
 def download_json(basename: str):
     safe = sanitize_basename(basename)
-    path = os.path.join(DATA_DIR, f"{safe}.json")
+    path = os.path.join(OUTPUT_DIR, f"{safe}.json")
+    hlog(path)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(path, media_type="application/json", filename=f"{safe}.json")

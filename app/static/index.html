@@ -71,10 +71,10 @@
           show(`
             <p><strong>Klart!</strong></p>
             <ul>
-              <li>Källa: <code>${data.source_pdf}</code></li>
-              <li>Sidor: <code>${data.total_pages}</code></li>
-              <li>Antal stycken: <code>${data.paragraph_count}</code></li>
-              <li>JSON sparad som: <code>${data.saved_json}</code></li>
+              <li>Källdokument: <code>${data.source_file}</code></li>
+              <li>Sidor: <code>${data.page_count}</code></li>
+              <li>Antal chunks: <code>${data.chunk_count}</code></li>
+              <li>JSON sparad som: <code>${data.json_filename}</code></li>
             </ul>
             <p><a class="btn" href="${downloadUrl}">Ladda ner JSON</a></p>
           `);

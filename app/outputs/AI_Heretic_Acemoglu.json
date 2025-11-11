@@ -1,0 +1,3008 @@
+{
+  "created_at": "2025-11-11T15:28:56.333794Z",
+  "source_file": "AI_Heretic_Acemoglu.pdf",
+  "page_count": 23,
+  "chunk_count": 600,
+  "paragraphs": [
+    {
+      "paragraph_id": 1,
+      "page_num": 1,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 2,
+      "page_num": 1,
+      "paragraph_text": "DISCOURSE ECONOMY The AI heretic"
+    },
+    {
+      "paragraph_id": 3,
+      "page_num": 1,
+      "paragraph_text": "How a leading economist learned to start worrying and fear artificial intelligence"
+    },
+    {
+      "paragraph_id": 4,
+      "page_num": 1,
+      "paragraph_text": "Simon Simard for Insider"
+    },
+    {
+      "paragraph_id": 5,
+      "page_num": 1,
+      "paragraph_text": "Aki Ito"
+    },
+    {
+      "paragraph_id": 6,
+      "page_num": 1,
+      "paragraph_text": "Updated Oct 14, 2024, 5:29 PM GMT+2"
+    },
+    {
+      "paragraph_id": 7,
+      "page_num": 1,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 1/23"
+    },
+    {
+      "paragraph_id": 8,
+      "page_num": 2,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 9,
+      "page_num": 2,
+      "paragraph_text": "Editor's note: Daron Acemoglu, one of the leading experts on"
+    },
+    {
+      "paragraph_id": 10,
+      "page_num": 2,
+      "paragraph_text": "the effects of technology, was awarded the Nobel prize in"
+    },
+    {
+      "paragraph_id": 11,
+      "page_num": 2,
+      "paragraph_text": "economics today. This story was first published on September"
+    },
+    {
+      "paragraph_id": 12,
+      "page_num": 2,
+      "paragraph_text": "18, 2023."
+    },
+    {
+      "paragraph_id": 13,
+      "page_num": 2,
+      "paragraph_text": "ure, there have been a few nutjobs out there who"
+    },
+    {
+      "paragraph_id": 14,
+      "page_num": 2,
+      "paragraph_text": "S"
+    },
+    {
+      "paragraph_id": 15,
+      "page_num": 2,
+      "paragraph_text": "think AI will wipe out the human race. But ever"
+    },
+    {
+      "paragraph_id": 16,
+      "page_num": 2,
+      "paragraph_text": "since ChatGPT's explosive emergence last winter,"
+    },
+    {
+      "paragraph_id": 17,
+      "page_num": 2,
+      "paragraph_text": "the bigger concern for most of us has been whether these"
+    },
+    {
+      "paragraph_id": 18,
+      "page_num": 2,
+      "paragraph_text": "tools will soon write, code, analyze, brainstorm, compose,"
+    },
+    {
+      "paragraph_id": 19,
+      "page_num": 2,
+      "paragraph_text": "design, and illustrate us out of our jobs. To that, Silicon"
+    },
+    {
+      "paragraph_id": 20,
+      "page_num": 2,
+      "paragraph_text": "Valley and corporate America have been curiously united in"
+    },
+    {
+      "paragraph_id": 21,
+      "page_num": 2,
+      "paragraph_text": "their optimism. Yes, a few people might lose out, they say."
+    },
+    {
+      "paragraph_id": 22,
+      "page_num": 2,
+      "paragraph_text": "But there's no need to panic. AI is going to make us more"
+    },
+    {
+      "paragraph_id": 23,
+      "page_num": 2,
+      "paragraph_text": "productive, and that will be great for society. Ultimately,"
+    },
+    {
+      "paragraph_id": 24,
+      "page_num": 2,
+      "paragraph_text": "technology always is."
+    },
+    {
+      "paragraph_id": 25,
+      "page_num": 2,
+      "paragraph_text": "As a reporter who's written about technology and the"
+    },
+    {
+      "paragraph_id": 26,
+      "page_num": 2,
+      "paragraph_text": "economy for years, I too subscribed to the prevailing"
+    },
+    {
+      "paragraph_id": 27,
+      "page_num": 2,
+      "paragraph_text": "optimism. After all, it was backed by a surprising consensus"
+    },
+    {
+      "paragraph_id": 28,
+      "page_num": 2,
+      "paragraph_text": "among economists, who normally can't agree on something"
+    },
+    {
+      "paragraph_id": 29,
+      "page_num": 2,
+      "paragraph_text": "as fundamental as what money is. For half a century,"
+    },
+    {
+      "paragraph_id": 30,
+      "page_num": 2,
+      "paragraph_text": "economists have worshiped technology as an unambiguous"
+    },
+    {
+      "paragraph_id": 31,
+      "page_num": 2,
+      "paragraph_text": "force for good. Normally, the \"dismal science\" argues, giving"
+    },
+    {
+      "paragraph_id": 32,
+      "page_num": 2,
+      "paragraph_text": "one person a bigger slice of the economic pie requires giving"
+    },
+    {
+      "paragraph_id": 33,
+      "page_num": 2,
+      "paragraph_text": "a smaller slice to the sucker next door. But technology,"
+    },
+    {
+      "paragraph_id": 34,
+      "page_num": 2,
+      "paragraph_text": "economists believed, was different. Invent the steam engine"
+    },
+    {
+      "paragraph_id": 35,
+      "page_num": 2,
+      "paragraph_text": "or the automobile or TikTok, and poof! Like magic, the pie"
+    },
+    {
+      "paragraph_id": 36,
+      "page_num": 2,
+      "paragraph_text": "gets bigger, allowing everyone to enjoy a bigger slice."
+    },
+    {
+      "paragraph_id": 37,
+      "page_num": 2,
+      "paragraph_text": "\"Economists viewed technological change as this amazing"
+    },
+    {
+      "paragraph_id": 38,
+      "page_num": 2,
+      "paragraph_text": "thing,\" says Katya Klinova, the head of AI, labor, and the"
+    },
+    {
+      "paragraph_id": 39,
+      "page_num": 2,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 2/23"
+    },
+    {
+      "paragraph_id": 40,
+      "page_num": 3,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 41,
+      "page_num": 3,
+      "paragraph_text": "economy at the nonprofit Partnership on AI. \"How much of"
+    },
+    {
+      "paragraph_id": 42,
+      "page_num": 3,
+      "paragraph_text": "it do we need? As much as possible. When? Yesterday."
+    },
+    {
+      "paragraph_id": 43,
+      "page_num": 3,
+      "paragraph_text": "Where? Everywhere.\" To resist technology was to invite"
+    },
+    {
+      "paragraph_id": 44,
+      "page_num": 3,
+      "paragraph_text": "stagnation, poverty, darkness. Countless economic models,"
+    },
+    {
+      "paragraph_id": 45,
+      "page_num": 3,
+      "paragraph_text": "as well as all of modern history, seemed to prove a simple"
+    },
+    {
+      "paragraph_id": 46,
+      "page_num": 3,
+      "paragraph_text": "and irrefutable equation: technology = prosperity for"
+    },
+    {
+      "paragraph_id": 47,
+      "page_num": 3,
+      "paragraph_text": "everyone."
+    },
+    {
+      "paragraph_id": 48,
+      "page_num": 3,
+      "paragraph_text": "There's just one problem with that formulation: It's turning"
+    },
+    {
+      "paragraph_id": 49,
+      "page_num": 3,
+      "paragraph_text": "out to be wrong. And the economist who's doing the most to"
+    },
+    {
+      "paragraph_id": 50,
+      "page_num": 3,
+      "paragraph_text": "sound the alarm — the heretic who argues that the current"
+    },
+    {
+      "paragraph_id": 51,
+      "page_num": 3,
+      "paragraph_text": "trajectory of AI is far more likely to hurt us rather than help"
+    },
+    {
+      "paragraph_id": 52,
+      "page_num": 3,
+      "paragraph_text": "us — is perhaps the world's leading expert on technology's"
+    },
+    {
+      "paragraph_id": 53,
+      "page_num": 3,
+      "paragraph_text": "effects on the economy."
+    },
+    {
+      "paragraph_id": 54,
+      "page_num": 3,
+      "paragraph_text": "OX-DRAWN CARTS — Farming became more productive in medieval times, but the gains from new technology rarely benefited peasants. Universal History Archive/Universal Images Group via Getty Images"
+    },
+    {
+      "paragraph_id": 55,
+      "page_num": 3,
+      "paragraph_text": "Daron Acemoglu, an economist at MIT, is so prolific and"
+    },
+    {
+      "paragraph_id": 56,
+      "page_num": 3,
+      "paragraph_text": "respected that he's long been viewed as a leading candidate"
+    },
+    {
+      "paragraph_id": 57,
+      "page_num": 3,
+      "paragraph_text": "for the Nobel prize in economics. He used to believe in the"
+    },
+    {
+      "paragraph_id": 58,
+      "page_num": 3,
+      "paragraph_text": "conventional wisdom, that technology is always a force for"
+    },
+    {
+      "paragraph_id": 59,
+      "page_num": 3,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 3/23"
+    },
+    {
+      "paragraph_id": 60,
+      "page_num": 4,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 61,
+      "page_num": 4,
+      "paragraph_text": "economic good. But now, with his longtime collaborator"
+    },
+    {
+      "paragraph_id": 62,
+      "page_num": 4,
+      "paragraph_text": "Simon Johnson, Acemoglu has written a 546-page treatise"
+    },
+    {
+      "paragraph_id": 63,
+      "page_num": 4,
+      "paragraph_text": "that demolishes the Church of Technology, demonstrating"
+    },
+    {
+      "paragraph_id": 64,
+      "page_num": 4,
+      "paragraph_text": "how innovation often winds up being harmful to society. In"
+    },
+    {
+      "paragraph_id": 65,
+      "page_num": 4,
+      "paragraph_text": "their book \"Power and Progress,\" Acemoglu and Johnson"
+    },
+    {
+      "paragraph_id": 66,
+      "page_num": 4,
+      "paragraph_text": "showcase a series of major inventions over the course of the"
+    },
+    {
+      "paragraph_id": 67,
+      "page_num": 4,
+      "paragraph_text": "past 1,000 years that, contrary to what we've been told, did"
+    },
+    {
+      "paragraph_id": 68,
+      "page_num": 4,
+      "paragraph_text": "nothing to improve, and sometimes even worsened, the lives"
+    },
+    {
+      "paragraph_id": 69,
+      "page_num": 4,
+      "paragraph_text": "of most people. And in the periods when big technological"
+    },
+    {
+      "paragraph_id": 70,
+      "page_num": 4,
+      "paragraph_text": "breakthroughs did lead to widespread good — the examples"
+    },
+    {
+      "paragraph_id": 71,
+      "page_num": 4,
+      "paragraph_text": "that today's AI optimists cite — it was only because ruling"
+    },
+    {
+      "paragraph_id": 72,
+      "page_num": 4,
+      "paragraph_text": "elites were forced to share the gains of innovation widely,"
+    },
+    {
+      "paragraph_id": 73,
+      "page_num": 4,
+      "paragraph_text": "rather than keeping the profits and power for themselves. It"
+    },
+    {
+      "paragraph_id": 74,
+      "page_num": 4,
+      "paragraph_text": "was the fight over technology, not just technology on its"
+    },
+    {
+      "paragraph_id": 75,
+      "page_num": 4,
+      "paragraph_text": "own, that wound up benefiting society."
+    },
+    {
+      "paragraph_id": 76,
+      "page_num": 4,
+      "paragraph_text": "\"The broad-based prosperity of the past was not the result of"
+    },
+    {
+      "paragraph_id": 77,
+      "page_num": 4,
+      "paragraph_text": "any automatic, guaranteed gains of technological progress,\""
+    },
+    {
+      "paragraph_id": 78,
+      "page_num": 4,
+      "paragraph_text": "Acemoglu and Johnson write. \"We are beneficiaries of"
+    },
+    {
+      "paragraph_id": 79,
+      "page_num": 4,
+      "paragraph_text": "progress, mainly because our predecessors made the"
+    },
+    {
+      "paragraph_id": 80,
+      "page_num": 4,
+      "paragraph_text": "progress work for more people.\""
+    },
+    {
+      "paragraph_id": 81,
+      "page_num": 4,
+      "paragraph_text": "Today, in this moment of peak AI, which path are we on? The"
+    },
+    {
+      "paragraph_id": 82,
+      "page_num": 4,
+      "paragraph_text": "terrific one, where we all benefit from these new tools? Or"
+    },
+    {
+      "paragraph_id": 83,
+      "page_num": 4,
+      "paragraph_text": "the terrible one, where most of us lose out? Over the course"
+    },
+    {
+      "paragraph_id": 84,
+      "page_num": 4,
+      "paragraph_text": "of three conversations this summer, Acemoglu told me he's"
+    },
+    {
+      "paragraph_id": 85,
+      "page_num": 4,
+      "paragraph_text": "worried we're currently hurtling down a road that will end in"
+    },
+    {
+      "paragraph_id": 86,
+      "page_num": 4,
+      "paragraph_text": "catastrophe. All around him, he sees a torrent of warning"
+    },
+    {
+      "paragraph_id": 87,
+      "page_num": 4,
+      "paragraph_text": "signs — the kind that, in the past, wound up favoring the few"
+    },
+    {
+      "paragraph_id": 88,
+      "page_num": 4,
+      "paragraph_text": "over the many. Power concentrated in the hands of a"
+    },
+    {
+      "paragraph_id": 89,
+      "page_num": 4,
+      "paragraph_text": "handful of tech behemoths. Technologists, bosses, and"
+    },
+    {
+      "paragraph_id": 90,
+      "page_num": 4,
+      "paragraph_text": "researchers focused on replacing human workers instead of"
+    },
+    {
+      "paragraph_id": 91,
+      "page_num": 4,
+      "paragraph_text": "empowering them. An obsession with worker surveillance."
+    },
+    {
+      "paragraph_id": 92,
+      "page_num": 4,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 4/23"
+    },
+    {
+      "paragraph_id": 93,
+      "page_num": 5,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 94,
+      "page_num": 5,
+      "paragraph_text": "Record-low unionization. Weakened democracies. What"
+    },
+    {
+      "paragraph_id": 95,
+      "page_num": 5,
+      "paragraph_text": "Acemoglu's research shows — what history tells us — is that"
+    },
+    {
+      "paragraph_id": 96,
+      "page_num": 5,
+      "paragraph_text": "tech-driven dystopias aren't some sci-fi rarity. They're"
+    },
+    {
+      "paragraph_id": 97,
+      "page_num": 5,
+      "paragraph_text": "actually far more common than anyone has realized."
+    },
+    {
+      "paragraph_id": 98,
+      "page_num": 5,
+      "paragraph_text": "\"There's a fair likelihood that if we don't do a course"
+    },
+    {
+      "paragraph_id": 99,
+      "page_num": 5,
+      "paragraph_text": "correction, we're going to have a truly two-tier system,\""
+    },
+    {
+      "paragraph_id": 100,
+      "page_num": 5,
+      "paragraph_text": "Acemoglu told me. \"A small number of people are going to"
+    },
+    {
+      "paragraph_id": 101,
+      "page_num": 5,
+      "paragraph_text": "be on top — they're going to design and use those"
+    },
+    {
+      "paragraph_id": 102,
+      "page_num": 5,
+      "paragraph_text": "technologies — and a very large number of people will only"
+    },
+    {
+      "paragraph_id": 103,
+      "page_num": 5,
+      "paragraph_text": "have marginal jobs, or not very meaningful jobs.\" The result,"
+    },
+    {
+      "paragraph_id": 104,
+      "page_num": 5,
+      "paragraph_text": "he fears, is a future of lower wages for most of us."
+    },
+    {
+      "paragraph_id": 105,
+      "page_num": 5,
+      "paragraph_text": "Acemoglu shares these dire warnings not to urge workers to"
+    },
+    {
+      "paragraph_id": 106,
+      "page_num": 5,
+      "paragraph_text": "resist AI altogether, nor to resign us to counting down the"
+    },
+    {
+      "paragraph_id": 107,
+      "page_num": 5,
+      "paragraph_text": "years to our economic doom. He sees the possibility of a"
+    },
+    {
+      "paragraph_id": 108,
+      "page_num": 5,
+      "paragraph_text": "beneficial outcome for AI — \"the technology we have in our"
+    },
+    {
+      "paragraph_id": 109,
+      "page_num": 5,
+      "paragraph_text": "hands has all the capabilities to bring lots of good\" — but"
+    },
+    {
+      "paragraph_id": 110,
+      "page_num": 5,
+      "paragraph_text": "only if workers, policymakers, researchers, and maybe even"
+    },
+    {
+      "paragraph_id": 111,
+      "page_num": 5,
+      "paragraph_text": "a few high-minded tech moguls make it so. Given how"
+    },
+    {
+      "paragraph_id": 112,
+      "page_num": 5,
+      "paragraph_text": "rapidly ChatGPT has spread throughout the workplace —"
+    },
+    {
+      "paragraph_id": 113,
+      "page_num": 5,
+      "paragraph_text": "81% of large companies in one survey said they're already"
+    },
+    {
+      "paragraph_id": 114,
+      "page_num": 5,
+      "paragraph_text": "using AI to replace repetitive work — Acemoglu is urging"
+    },
+    {
+      "paragraph_id": 115,
+      "page_num": 5,
+      "paragraph_text": "society to act quickly. And his first task is a steep one:"
+    },
+    {
+      "paragraph_id": 116,
+      "page_num": 5,
+      "paragraph_text": "deprogramming all of us from what he calls the \"blind"
+    },
+    {
+      "paragraph_id": 117,
+      "page_num": 5,
+      "paragraph_text": "techno-optimism\" espoused by the \"modern oligarchy.\""
+    },
+    {
+      "paragraph_id": 118,
+      "page_num": 5,
+      "paragraph_text": "\"This,\" he told me, \"is the last opportunity for us to wake"
+    },
+    {
+      "paragraph_id": 119,
+      "page_num": 5,
+      "paragraph_text": "up.\""
+    },
+    {
+      "paragraph_id": 120,
+      "page_num": 5,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 5/23"
+    },
+    {
+      "paragraph_id": 121,
+      "page_num": 6,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 122,
+      "page_num": 6,
+      "paragraph_text": "THE SPINNING JENNY — New textile machines in the 18th and 19th centuries drove many skilled workers into lower-wage jobs. Hulton Archive/Getty Images/Getty Images A"
+    },
+    {
+      "paragraph_id": 123,
+      "page_num": 6,
+      "paragraph_text": "cemoglu, 56, lives with his wife and two sons in a"
+    },
+    {
+      "paragraph_id": 124,
+      "page_num": 6,
+      "paragraph_text": "quiet, affluent suburb of Boston. But he was born"
+    },
+    {
+      "paragraph_id": 125,
+      "page_num": 6,
+      "paragraph_text": "5,000 miles away in Istanbul, to a country mired in"
+    },
+    {
+      "paragraph_id": 126,
+      "page_num": 6,
+      "paragraph_text": "chaos. When he was 3, the military seized control of the"
+    },
+    {
+      "paragraph_id": 127,
+      "page_num": 6,
+      "paragraph_text": "government and his father, a left-leaning professor who"
+    },
+    {
+      "paragraph_id": 128,
+      "page_num": 6,
+      "paragraph_text": "feared the family's home would be raided, burned his books."
+    },
+    {
+      "paragraph_id": 129,
+      "page_num": 6,
+      "paragraph_text": "The economy crumbled under the weight of triple-digit"
+    },
+    {
+      "paragraph_id": 130,
+      "page_num": 6,
+      "paragraph_text": "inflation, crushing debt, and high unemployment. When"
+    },
+    {
+      "paragraph_id": 131,
+      "page_num": 6,
+      "paragraph_text": "Acemoglu was 13, the military detained and tried hundreds"
+    },
+    {
+      "paragraph_id": 132,
+      "page_num": 6,
+      "paragraph_text": "of thousands of people, torturing and executing many."
+    },
+    {
+      "paragraph_id": 133,
+      "page_num": 6,
+      "paragraph_text": "Watching the violence and poverty all around him,"
+    },
+    {
+      "paragraph_id": 134,
+      "page_num": 6,
+      "paragraph_text": "Acemoglu started to wonder about the relationship between"
+    },
+    {
+      "paragraph_id": 135,
+      "page_num": 6,
+      "paragraph_text": "dictatorships and economic growth — a question he"
+    },
+    {
+      "paragraph_id": 136,
+      "page_num": 6,
+      "paragraph_text": "wouldn't be able to study freely if he stayed in Turkey. At 19,"
+    },
+    {
+      "paragraph_id": 137,
+      "page_num": 6,
+      "paragraph_text": "he left to attend college in the UK. By the freakishly young"
+    },
+    {
+      "paragraph_id": 138,
+      "page_num": 6,
+      "paragraph_text": "age of 25, he completed his doctorate in economics at the"
+    },
+    {
+      "paragraph_id": 139,
+      "page_num": 6,
+      "paragraph_text": "London School of Economics."
+    },
+    {
+      "paragraph_id": 140,
+      "page_num": 6,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 6/23"
+    },
+    {
+      "paragraph_id": 141,
+      "page_num": 7,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 142,
+      "page_num": 7,
+      "paragraph_text": "Moving to Boston to teach at MIT, Acemoglu was quick to"
+    },
+    {
+      "paragraph_id": 143,
+      "page_num": 7,
+      "paragraph_text": "make waves in his chosen field. To this day his most cited"
+    },
+    {
+      "paragraph_id": 144,
+      "page_num": 7,
+      "paragraph_text": "paper, written with Johnson and another longtime"
+    },
+    {
+      "paragraph_id": 145,
+      "page_num": 7,
+      "paragraph_text": "collaborator, James Robinson, tackles the question he"
+    },
+    {
+      "paragraph_id": 146,
+      "page_num": 7,
+      "paragraph_text": "pondered as a teenager: Do democratic countries develop"
+    },
+    {
+      "paragraph_id": 147,
+      "page_num": 7,
+      "paragraph_text": "better economies than dictatorships? It's a huge question —"
+    },
+    {
+      "paragraph_id": 148,
+      "page_num": 7,
+      "paragraph_text": "one that's hard to answer, because it could be that poverty"
+    },
+    {
+      "paragraph_id": 149,
+      "page_num": 7,
+      "paragraph_text": "leads to dictatorship, not the other way around. So"
+    },
+    {
+      "paragraph_id": 150,
+      "page_num": 7,
+      "paragraph_text": "Acemoglu and his coauthors employed a clever workaround."
+    },
+    {
+      "paragraph_id": 151,
+      "page_num": 7,
+      "paragraph_text": "They looked at European colonies with high mortality rates,"
+    },
+    {
+      "paragraph_id": 152,
+      "page_num": 7,
+      "paragraph_text": "where history showed that power remained concentrated in"
+    },
+    {
+      "paragraph_id": 153,
+      "page_num": 7,
+      "paragraph_text": "the hands of the few settlers willing to brave death and"
+    },
+    {
+      "paragraph_id": 154,
+      "page_num": 7,
+      "paragraph_text": "disease, versus colonies with low mortality rates, where a"
+    },
+    {
+      "paragraph_id": 155,
+      "page_num": 7,
+      "paragraph_text": "larger influx of settlers pushed for property rights and"
+    },
+    {
+      "paragraph_id": 156,
+      "page_num": 7,
+      "paragraph_text": "political rights that checked the power of the state. The"
+    },
+    {
+      "paragraph_id": 157,
+      "page_num": 7,
+      "paragraph_text": "conclusion: Colonies that developed what they came to call"
+    },
+    {
+      "paragraph_id": 158,
+      "page_num": 7,
+      "paragraph_text": "\"inclusive\" institutions — ones that encouraged investment"
+    },
+    {
+      "paragraph_id": 159,
+      "page_num": 7,
+      "paragraph_text": "and enforced the rule of law — ended up richer than their"
+    },
+    {
+      "paragraph_id": 160,
+      "page_num": 7,
+      "paragraph_text": "authoritarian neighbors. In their ambitious and sprawling"
+    },
+    {
+      "paragraph_id": 161,
+      "page_num": 7,
+      "paragraph_text": "book, \"Why Nations Fail,\" Acemoglu and Robinson rejected"
+    },
+    {
+      "paragraph_id": 162,
+      "page_num": 7,
+      "paragraph_text": "factors like culture, weather, and geography as things that"
+    },
+    {
+      "paragraph_id": 163,
+      "page_num": 7,
+      "paragraph_text": "made some countries rich and others poor. The only factor"
+    },
+    {
+      "paragraph_id": 164,
+      "page_num": 7,
+      "paragraph_text": "that really mattered was democracy."
+    },
+    {
+      "paragraph_id": 165,
+      "page_num": 7,
+      "paragraph_text": "The book was an unexpected bestseller, and economists"
+    },
+    {
+      "paragraph_id": 166,
+      "page_num": 7,
+      "paragraph_text": "hailed it as paradigm-shifting. But Acemoglu was also"
+    },
+    {
+      "paragraph_id": 167,
+      "page_num": 7,
+      "paragraph_text": "pursuing a different line of research that had long fascinated"
+    },
+    {
+      "paragraph_id": 168,
+      "page_num": 7,
+      "paragraph_text": "him: technological progress. Like almost all of his"
+    },
+    {
+      "paragraph_id": 169,
+      "page_num": 7,
+      "paragraph_text": "colleagues, he started off as an unabashed techno-optimist."
+    },
+    {
+      "paragraph_id": 170,
+      "page_num": 7,
+      "paragraph_text": "In 2008, he published a textbook for graduate students that"
+    },
+    {
+      "paragraph_id": 171,
+      "page_num": 7,
+      "paragraph_text": "endorsed the technology-is-always-good orthodoxy. \"I was"
+    },
+    {
+      "paragraph_id": 172,
+      "page_num": 7,
+      "paragraph_text": "following the canon of economic models, and in all of these"
+    },
+    {
+      "paragraph_id": 173,
+      "page_num": 7,
+      "paragraph_text": "models, technological change is the main mover of GDP per"
+    },
+    {
+      "paragraph_id": 174,
+      "page_num": 7,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 7/23"
+    },
+    {
+      "paragraph_id": 175,
+      "page_num": 8,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 176,
+      "page_num": 8,
+      "paragraph_text": "capita and wages,\" Acemoglu told me. \"I did not question"
+    },
+    {
+      "paragraph_id": 177,
+      "page_num": 8,
+      "paragraph_text": "them.\""
+    },
+    {
+      "paragraph_id": 178,
+      "page_num": 8,
+      "paragraph_text": "But as he thought about it more, he started to wonder"
+    },
+    {
+      "paragraph_id": 179,
+      "page_num": 8,
+      "paragraph_text": "whether there might be more to the story. The first turning"
+    },
+    {
+      "paragraph_id": 180,
+      "page_num": 8,
+      "paragraph_text": "point came in a paper he worked on with the economist"
+    },
+    {
+      "paragraph_id": 181,
+      "page_num": 8,
+      "paragraph_text": "David Autor. In it was a striking chart that plotted the"
+    },
+    {
+      "paragraph_id": 182,
+      "page_num": 8,
+      "paragraph_text": "earnings of American men over five decades, adjusted for"
+    },
+    {
+      "paragraph_id": 183,
+      "page_num": 8,
+      "paragraph_text": "inflation. During the 1960s and early 1970s, everyone's"
+    },
+    {
+      "paragraph_id": 184,
+      "page_num": 8,
+      "paragraph_text": "wages rose in tandem, regardless of education. But then,"
+    },
+    {
+      "paragraph_id": 185,
+      "page_num": 8,
+      "paragraph_text": "around 1980, the wages of those with advanced degrees"
+    },
+    {
+      "paragraph_id": 186,
+      "page_num": 8,
+      "paragraph_text": "began to soar, while the wages of high-school graduates and"
+    },
+    {
+      "paragraph_id": 187,
+      "page_num": 8,
+      "paragraph_text": "dropouts plunged. Something was making the lives of less-"
+    },
+    {
+      "paragraph_id": 188,
+      "page_num": 8,
+      "paragraph_text": "educated Americans demonstrably worse. Was that"
+    },
+    {
+      "paragraph_id": 189,
+      "page_num": 8,
+      "paragraph_text": "something technology?"
+    },
+    {
+      "paragraph_id": 190,
+      "page_num": 8,
+      "paragraph_text": "LOCOMOTIVES AND LIGHT BULBS — Stagecoach drivers and lamplighters were thrown out of work — but in the latter stages of the Industrial Revolution, these new technologies created vast numbers of high-paying jobs. Universal History Archive/Getty Images"
+    },
+    {
+      "paragraph_id": 191,
+      "page_num": 8,
+      "paragraph_text": "Acemoglu had a hunch that it was. With Pascual Restrepo,"
+    },
+    {
+      "paragraph_id": 192,
+      "page_num": 8,
+      "paragraph_text": "one of his students at the time, he started thinking of"
+    },
+    {
+      "paragraph_id": 193,
+      "page_num": 8,
+      "paragraph_text": "automation as something that does two opposite things"
+    },
+    {
+      "paragraph_id": 194,
+      "page_num": 8,
+      "paragraph_text": "simultaneously: It steals tasks from humans, while also"
+    },
+    {
+      "paragraph_id": 195,
+      "page_num": 8,
+      "paragraph_text": "creating new tasks for humans. How workers ultimately fare,"
+    },
+    {
+      "paragraph_id": 196,
+      "page_num": 8,
+      "paragraph_text": "he and Restrepo theorized, depends in large part on the"
+    },
+    {
+      "paragraph_id": 197,
+      "page_num": 8,
+      "paragraph_text": "balance of those two actions. When the newly created tasks"
+    },
+    {
+      "paragraph_id": 198,
+      "page_num": 8,
+      "paragraph_text": "offset the stolen tasks, workers do fine: They can shuffle into"
+    },
+    {
+      "paragraph_id": 199,
+      "page_num": 8,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 8/23"
+    },
+    {
+      "paragraph_id": 200,
+      "page_num": 9,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 201,
+      "page_num": 9,
+      "paragraph_text": "new jobs that often pay better than their old ones. But when"
+    },
+    {
+      "paragraph_id": 202,
+      "page_num": 9,
+      "paragraph_text": "the stolen tasks outpace the new ones, displaced workers"
+    },
+    {
+      "paragraph_id": 203,
+      "page_num": 9,
+      "paragraph_text": "have nowhere to go. In later empirical work, Acemoglu and"
+    },
+    {
+      "paragraph_id": 204,
+      "page_num": 9,
+      "paragraph_text": "Restrepo showed that that was exactly what had happened."
+    },
+    {
+      "paragraph_id": 205,
+      "page_num": 9,
+      "paragraph_text": "Over the four decades following World War II, the two kinds"
+    },
+    {
+      "paragraph_id": 206,
+      "page_num": 9,
+      "paragraph_text": "of tasks balanced each other out. But over the next three"
+    },
+    {
+      "paragraph_id": 207,
+      "page_num": 9,
+      "paragraph_text": "decades, stolen tasks outpaced the new tasks by a wide"
+    },
+    {
+      "paragraph_id": 208,
+      "page_num": 9,
+      "paragraph_text": "margin. In short, automation went both ways. Sometimes it"
+    },
+    {
+      "paragraph_id": 209,
+      "page_num": 9,
+      "paragraph_text": "was good, and sometimes it was bad."
+    },
+    {
+      "paragraph_id": 210,
+      "page_num": 9,
+      "paragraph_text": "It was the bad part that economists were still unconvinced"
+    },
+    {
+      "paragraph_id": 211,
+      "page_num": 9,
+      "paragraph_text": "about. So Acemoglu and Restrepo, casting around for more"
+    },
+    {
+      "paragraph_id": 212,
+      "page_num": 9,
+      "paragraph_text": "empirical evidence, zeroed in on robots. What they found"
+    },
+    {
+      "paragraph_id": 213,
+      "page_num": 9,
+      "paragraph_text": "was stunning: Since 1990, the introduction of every"
+    },
+    {
+      "paragraph_id": 214,
+      "page_num": 9,
+      "paragraph_text": "additional robot reduced employment by approximately six"
+    },
+    {
+      "paragraph_id": 215,
+      "page_num": 9,
+      "paragraph_text": "humans, while measurably lowering wages. \"That was an"
+    },
+    {
+      "paragraph_id": 216,
+      "page_num": 9,
+      "paragraph_text": "eye-opener,\" Acemoglu told me. \"People thought it would"
+    },
+    {
+      "paragraph_id": 217,
+      "page_num": 9,
+      "paragraph_text": "not be possible to have such negative effects from robots.\""
+    },
+    {
+      "paragraph_id": 218,
+      "page_num": 9,
+      "paragraph_text": "Many economists, clinging to the technological orthodoxy,"
+    },
+    {
+      "paragraph_id": 219,
+      "page_num": 9,
+      "paragraph_text": "dismissed the effects of robots on human workers as a"
+    },
+    {
+      "paragraph_id": 220,
+      "page_num": 9,
+      "paragraph_text": "\"transitory phenomenon.\" In the end, they insisted,"
+    },
+    {
+      "paragraph_id": 221,
+      "page_num": 9,
+      "paragraph_text": "technology would prove to be good for everyone. But"
+    },
+    {
+      "paragraph_id": 222,
+      "page_num": 9,
+      "paragraph_text": "Acemoglu found that viewpoint unsatisfying. Could you"
+    },
+    {
+      "paragraph_id": 223,
+      "page_num": 9,
+      "paragraph_text": "really call something that had been going on for three or four"
+    },
+    {
+      "paragraph_id": 224,
+      "page_num": 9,
+      "paragraph_text": "decades \"transitory\"? By his calculations, robots had thrown"
+    },
+    {
+      "paragraph_id": 225,
+      "page_num": 9,
+      "paragraph_text": "more than half a million Americans out of work. Perhaps, in"
+    },
+    {
+      "paragraph_id": 226,
+      "page_num": 9,
+      "paragraph_text": "the long run, the benefits of technology would eventually"
+    },
+    {
+      "paragraph_id": 227,
+      "page_num": 9,
+      "paragraph_text": "reach most people. But as the economist John Maynard"
+    },
+    {
+      "paragraph_id": 228,
+      "page_num": 9,
+      "paragraph_text": "Keynes once quipped, in the long run, we're all dead."
+    },
+    {
+      "paragraph_id": 229,
+      "page_num": 9,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 9/23"
+    },
+    {
+      "paragraph_id": 230,
+      "page_num": 10,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 231,
+      "page_num": 10,
+      "paragraph_text": "Robots, Acemoglu found, destroyed jobs and lowered wages. \"That was an eye- opener,\" he says. \"People thought it would not be possible to have such negative effects from robots.\" Simon Simard for Insider"
+    },
+    {
+      "paragraph_id": 232,
+      "page_num": 10,
+      "paragraph_text": "o Acemoglu set out to study the long run. First, he"
+    },
+    {
+      "paragraph_id": 233,
+      "page_num": 10,
+      "paragraph_text": "S"
+    },
+    {
+      "paragraph_id": 234,
+      "page_num": 10,
+      "paragraph_text": "and Johnson scoured the course of Western history"
+    },
+    {
+      "paragraph_id": 235,
+      "page_num": 10,
+      "paragraph_text": "to see whether there were other times when"
+    },
+    {
+      "paragraph_id": 236,
+      "page_num": 10,
+      "paragraph_text": "technology failed to deliver on its promise. Was the recent"
+    },
+    {
+      "paragraph_id": 237,
+      "page_num": 10,
+      "paragraph_text": "era of automation, as many economists assumed, an"
+    },
+    {
+      "paragraph_id": 238,
+      "page_num": 10,
+      "paragraph_text": "anomaly?"
+    },
+    {
+      "paragraph_id": 239,
+      "page_num": 10,
+      "paragraph_text": "It wasn't, Acemoglu and Johnson found. Take, for instance,"
+    },
+    {
+      "paragraph_id": 240,
+      "page_num": 10,
+      "paragraph_text": "medieval times, a period commonly dismissed as a"
+    },
+    {
+      "paragraph_id": 241,
+      "page_num": 10,
+      "paragraph_text": "technological wasteland. But the Middle Ages actually saw a"
+    },
+    {
+      "paragraph_id": 242,
+      "page_num": 10,
+      "paragraph_text": "series of innovations that included heavy wheeled plows,"
+    },
+    {
+      "paragraph_id": 243,
+      "page_num": 10,
+      "paragraph_text": "mechanical clocks, spinning wheels, smarter crop-rotation"
+    },
+    {
+      "paragraph_id": 244,
+      "page_num": 10,
+      "paragraph_text": "techniques, the widespread adoption of wheelbarrows, and a"
+    },
+    {
+      "paragraph_id": 245,
+      "page_num": 10,
+      "paragraph_text": "greater use of horses. These advancements made farming"
+    },
+    {
+      "paragraph_id": 246,
+      "page_num": 10,
+      "paragraph_text": "much more productive. But the reason we remember the"
+    },
+    {
+      "paragraph_id": 247,
+      "page_num": 10,
+      "paragraph_text": "period as the Dark Ages is precisely because the gains never"
+    },
+    {
+      "paragraph_id": 248,
+      "page_num": 10,
+      "paragraph_text": "reached the peasants who were doing the actual work."
+    },
+    {
+      "paragraph_id": 249,
+      "page_num": 10,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 10/23"
+    },
+    {
+      "paragraph_id": 250,
+      "page_num": 11,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 251,
+      "page_num": 11,
+      "paragraph_text": "Despite all the technological advances, they toiled for longer"
+    },
+    {
+      "paragraph_id": 252,
+      "page_num": 11,
+      "paragraph_text": "hours, grew increasingly malnourished, and most likely"
+    },
+    {
+      "paragraph_id": 253,
+      "page_num": 11,
+      "paragraph_text": "lived shorter lives. The surpluses created by the new"
+    },
+    {
+      "paragraph_id": 254,
+      "page_num": 11,
+      "paragraph_text": "technology went almost exclusively to the elites who sat at"
+    },
+    {
+      "paragraph_id": 255,
+      "page_num": 11,
+      "paragraph_text": "the top of society: the clergy, who used their newfound"
+    },
+    {
+      "paragraph_id": 256,
+      "page_num": 11,
+      "paragraph_text": "wealth to build soaring cathedrals and consolidate their"
+    },
+    {
+      "paragraph_id": 257,
+      "page_num": 11,
+      "paragraph_text": "power."
+    },
+    {
+      "paragraph_id": 258,
+      "page_num": 11,
+      "paragraph_text": "Or consider the Industrial Revolution, which techno-"
+    },
+    {
+      "paragraph_id": 259,
+      "page_num": 11,
+      "paragraph_text": "optimists gleefully point to as Exhibit A of the invariable"
+    },
+    {
+      "paragraph_id": 260,
+      "page_num": 11,
+      "paragraph_text": "benefit of innovation. The first, long stretch of the Industrial"
+    },
+    {
+      "paragraph_id": 261,
+      "page_num": 11,
+      "paragraph_text": "Revolution was actually disastrous for workers. Technology"
+    },
+    {
+      "paragraph_id": 262,
+      "page_num": 11,
+      "paragraph_text": "that mechanized spinning and weaving destroyed the"
+    },
+    {
+      "paragraph_id": 263,
+      "page_num": 11,
+      "paragraph_text": "livelihoods of skilled artisans, handing textile jobs to"
+    },
+    {
+      "paragraph_id": 264,
+      "page_num": 11,
+      "paragraph_text": "unskilled women and children who commanded lower"
+    },
+    {
+      "paragraph_id": 265,
+      "page_num": 11,
+      "paragraph_text": "wages and virtually no bargaining power. People crowding"
+    },
+    {
+      "paragraph_id": 266,
+      "page_num": 11,
+      "paragraph_text": "into the cities for factory jobs lived next to cesspools of"
+    },
+    {
+      "paragraph_id": 267,
+      "page_num": 11,
+      "paragraph_text": "human waste, breathed coal-polluted air, and were"
+    },
+    {
+      "paragraph_id": 268,
+      "page_num": 11,
+      "paragraph_text": "defenseless against epidemics like cholera and tuberculosis"
+    },
+    {
+      "paragraph_id": 269,
+      "page_num": 11,
+      "paragraph_text": "that wiped out their families. They were also forced to work"
+    },
+    {
+      "paragraph_id": 270,
+      "page_num": 11,
+      "paragraph_text": "longer hours while real incomes stagnated. \"I have traversed"
+    },
+    {
+      "paragraph_id": 271,
+      "page_num": 11,
+      "paragraph_text": "the seat of war in the peninsula,\" Lord Byron lamented to the"
+    },
+    {
+      "paragraph_id": 272,
+      "page_num": 11,
+      "paragraph_text": "House of Lords in 1812. \"I have been in some of the most"
+    },
+    {
+      "paragraph_id": 273,
+      "page_num": 11,
+      "paragraph_text": "oppressed provinces of Turkey; but never, under the most"
+    },
+    {
+      "paragraph_id": 274,
+      "page_num": 11,
+      "paragraph_text": "despotic of infidel governments, did I behold such squalid"
+    },
+    {
+      "paragraph_id": 275,
+      "page_num": 11,
+      "paragraph_text": "wretchedness as I have seen since my return, in the very"
+    },
+    {
+      "paragraph_id": 276,
+      "page_num": 11,
+      "paragraph_text": "heart of a Christian country.\""
+    },
+    {
+      "paragraph_id": 277,
+      "page_num": 11,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 11/23"
+    },
+    {
+      "paragraph_id": 278,
+      "page_num": 12,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 279,
+      "page_num": 12,
+      "paragraph_text": "3 US-based academics awarded the Nobel prize in economics for their work on wealth inequality"
+    },
+    {
+      "paragraph_id": 280,
+      "page_num": 12,
+      "paragraph_text": "The real reason so many men wind up getting promotions"
+    },
+    {
+      "paragraph_id": 281,
+      "page_num": 12,
+      "paragraph_text": "If the average person didn't benefit, where did all the extra"
+    },
+    {
+      "paragraph_id": 282,
+      "page_num": 12,
+      "paragraph_text": "wealth generated by the new machines go? Once again, it"
+    },
+    {
+      "paragraph_id": 283,
+      "page_num": 12,
+      "paragraph_text": "was hoarded by the elites: the industrialists. \"Normally,"
+    },
+    {
+      "paragraph_id": 284,
+      "page_num": 12,
+      "paragraph_text": "technology gets co-opted and controlled by a pretty small"
+    },
+    {
+      "paragraph_id": 285,
+      "page_num": 12,
+      "paragraph_text": "number of people who use it primarily to their own benefits,\""
+    },
+    {
+      "paragraph_id": 286,
+      "page_num": 12,
+      "paragraph_text": "Johnson told me. \"That is the big lesson from human"
+    },
+    {
+      "paragraph_id": 287,
+      "page_num": 12,
+      "paragraph_text": "history.\""
+    },
+    {
+      "paragraph_id": 288,
+      "page_num": 12,
+      "paragraph_text": "THE AUTOMOBILE— Assembly-line production created lots of blue-collar jobs, as well as new positions in engineering and management. Eric Van Den Brulle/Getty Images"
+    },
+    {
+      "paragraph_id": 289,
+      "page_num": 12,
+      "paragraph_text": "Acemoglu and Johnson recognized that technology hasn't"
+    },
+    {
+      "paragraph_id": 290,
+      "page_num": 12,
+      "paragraph_text": "always been bad: At times, they found, it's been nothing"
+    },
+    {
+      "paragraph_id": 291,
+      "page_num": 12,
+      "paragraph_text": "short of miraculous. In England, during the second phase of"
+    },
+    {
+      "paragraph_id": 292,
+      "page_num": 12,
+      "paragraph_text": "the Industrial Revolution, real wages soared by 123%. The"
+    },
+    {
+      "paragraph_id": 293,
+      "page_num": 12,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 12/23"
+    },
+    {
+      "paragraph_id": 294,
+      "page_num": 13,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 295,
+      "page_num": 13,
+      "paragraph_text": "average working day declined to nine hours, child labor was"
+    },
+    {
+      "paragraph_id": 296,
+      "page_num": 13,
+      "paragraph_text": "curbed, and life expectancy rose. In the United States,"
+    },
+    {
+      "paragraph_id": 297,
+      "page_num": 13,
+      "paragraph_text": "during the postwar boom from 1949 to 1973, real wages grew"
+    },
+    {
+      "paragraph_id": 298,
+      "page_num": 13,
+      "paragraph_text": "by almost 3% a year, creating a vibrant and stable middle"
+    },
+    {
+      "paragraph_id": 299,
+      "page_num": 13,
+      "paragraph_text": "class. \"There has never been, as far as anyone knows,"
+    },
+    {
+      "paragraph_id": 300,
+      "page_num": 13,
+      "paragraph_text": "another epoch of such rapid and shared prosperity,\""
+    },
+    {
+      "paragraph_id": 301,
+      "page_num": 13,
+      "paragraph_text": "Acemoglu and Johnson write, going all the way back to the"
+    },
+    {
+      "paragraph_id": 302,
+      "page_num": 13,
+      "paragraph_text": "Ancient Greeks and Romans. It's episodes like these that"
+    },
+    {
+      "paragraph_id": 303,
+      "page_num": 13,
+      "paragraph_text": "made economists believe so fervently in the power of"
+    },
+    {
+      "paragraph_id": 304,
+      "page_num": 13,
+      "paragraph_text": "technology."
+    },
+    {
+      "paragraph_id": 305,
+      "page_num": 13,
+      "paragraph_text": "So what separates the good technological times from the"
+    },
+    {
+      "paragraph_id": 306,
+      "page_num": 13,
+      "paragraph_text": "bad? That's the central question that Acemoglu and Johnson"
+    },
+    {
+      "paragraph_id": 307,
+      "page_num": 13,
+      "paragraph_text": "tackle in \"Power and Progress.\" Two factors, they say,"
+    },
+    {
+      "paragraph_id": 308,
+      "page_num": 13,
+      "paragraph_text": "determine the outcome of a new technology. The first is the"
+    },
+    {
+      "paragraph_id": 309,
+      "page_num": 13,
+      "paragraph_text": "nature of the technology itself — whether it creates enough"
+    },
+    {
+      "paragraph_id": 310,
+      "page_num": 13,
+      "paragraph_text": "new tasks for workers to offset the tasks it takes away. The"
+    },
+    {
+      "paragraph_id": 311,
+      "page_num": 13,
+      "paragraph_text": "first phase of the Industrial Revolution, they argue, was"
+    },
+    {
+      "paragraph_id": 312,
+      "page_num": 13,
+      "paragraph_text": "dominated by textile machines that replaced skilled"
+    },
+    {
+      "paragraph_id": 313,
+      "page_num": 13,
+      "paragraph_text": "spinners and weavers without creating enough new work for"
+    },
+    {
+      "paragraph_id": 314,
+      "page_num": 13,
+      "paragraph_text": "them to pursue, condemning them to unskilled gigs with"
+    },
+    {
+      "paragraph_id": 315,
+      "page_num": 13,
+      "paragraph_text": "lower wages and worse conditions. In the second phase of"
+    },
+    {
+      "paragraph_id": 316,
+      "page_num": 13,
+      "paragraph_text": "the Industrial Revolution, by contrast, steam-powered"
+    },
+    {
+      "paragraph_id": 317,
+      "page_num": 13,
+      "paragraph_text": "locomotives displaced stagecoach drivers — but they also"
+    },
+    {
+      "paragraph_id": 318,
+      "page_num": 13,
+      "paragraph_text": "created a host of new jobs for engineers, construction"
+    },
+    {
+      "paragraph_id": 319,
+      "page_num": 13,
+      "paragraph_text": "workers, ticket sellers, porters, and the managers who"
+    },
+    {
+      "paragraph_id": 320,
+      "page_num": 13,
+      "paragraph_text": "supervised them all. These were often highly skilled and"
+    },
+    {
+      "paragraph_id": 321,
+      "page_num": 13,
+      "paragraph_text": "highly paid jobs. And by lowering the cost of transportation,"
+    },
+    {
+      "paragraph_id": 322,
+      "page_num": 13,
+      "paragraph_text": "the steam engine also helped expand sectors like the metal-"
+    },
+    {
+      "paragraph_id": 323,
+      "page_num": 13,
+      "paragraph_text": "smelting industry and retail trade, creating jobs in those"
+    },
+    {
+      "paragraph_id": 324,
+      "page_num": 13,
+      "paragraph_text": "areas as well."
+    },
+    {
+      "paragraph_id": 325,
+      "page_num": 13,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 13/23"
+    },
+    {
+      "paragraph_id": 326,
+      "page_num": 14,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 327,
+      "page_num": 14,
+      "paragraph_text": "\"What's special about AI is its speed,\" Acemoglu"
+    },
+    {
+      "paragraph_id": 328,
+      "page_num": 14,
+      "paragraph_text": "says. \"It's much faster than past technologies."
+    },
+    {
+      "paragraph_id": 329,
+      "page_num": 14,
+      "paragraph_text": "It's pervasive. It's going to be applied pretty much in every sector. And it's very flexible.\""
+    },
+    {
+      "paragraph_id": 330,
+      "page_num": 14,
+      "paragraph_text": "The second factor that determines the outcome of new"
+    },
+    {
+      "paragraph_id": 331,
+      "page_num": 14,
+      "paragraph_text": "technologies is the prevailing balance of power between"
+    },
+    {
+      "paragraph_id": 332,
+      "page_num": 14,
+      "paragraph_text": "workers and their employers. Without enough bargaining"
+    },
+    {
+      "paragraph_id": 333,
+      "page_num": 14,
+      "paragraph_text": "power, Acemoglu and Johnson argue, workers are unable to"
+    },
+    {
+      "paragraph_id": 334,
+      "page_num": 14,
+      "paragraph_text": "force their bosses to share the wealth that new technologies"
+    },
+    {
+      "paragraph_id": 335,
+      "page_num": 14,
+      "paragraph_text": "generate. And what determines the degree of bargaining"
+    },
+    {
+      "paragraph_id": 336,
+      "page_num": 14,
+      "paragraph_text": "power is closely related to democracy. Electoral reforms —"
+    },
+    {
+      "paragraph_id": 337,
+      "page_num": 14,
+      "paragraph_text": "kickstarted by the working-class Chartist movement in 1830s"
+    },
+    {
+      "paragraph_id": 338,
+      "page_num": 14,
+      "paragraph_text": "Britain — were central to the Industrial Revolution"
+    },
+    {
+      "paragraph_id": 339,
+      "page_num": 14,
+      "paragraph_text": "transforming from bad to good. As more men won the right"
+    },
+    {
+      "paragraph_id": 340,
+      "page_num": 14,
+      "paragraph_text": "to vote, Parliament became more responsive to the needs of"
+    },
+    {
+      "paragraph_id": 341,
+      "page_num": 14,
+      "paragraph_text": "the broader public, passing laws to improve sanitation, crack"
+    },
+    {
+      "paragraph_id": 342,
+      "page_num": 14,
+      "paragraph_text": "down on child labor, and legalize trade unions. The growth"
+    },
+    {
+      "paragraph_id": 343,
+      "page_num": 14,
+      "paragraph_text": "of organized labor, in turn, laid the groundwork for workers"
+    },
+    {
+      "paragraph_id": 344,
+      "page_num": 14,
+      "paragraph_text": "to extract higher wages and better working conditions from"
+    },
+    {
+      "paragraph_id": 345,
+      "page_num": 14,
+      "paragraph_text": "their employers in the wake of technological innovations,"
+    },
+    {
+      "paragraph_id": 346,
+      "page_num": 14,
+      "paragraph_text": "along with guarantees of retraining when new machines"
+    },
+    {
+      "paragraph_id": 347,
+      "page_num": 14,
+      "paragraph_text": "took over their old jobs."
+    },
+    {
+      "paragraph_id": 348,
+      "page_num": 14,
+      "paragraph_text": "In normal times, such insights might feel purely academic —"
+    },
+    {
+      "paragraph_id": 349,
+      "page_num": 14,
+      "paragraph_text": "just another debate over how to interpret the past. But"
+    },
+    {
+      "paragraph_id": 350,
+      "page_num": 14,
+      "paragraph_text": "there's one point that both Acemoglu and the tech elite he"
+    },
+    {
+      "paragraph_id": 351,
+      "page_num": 14,
+      "paragraph_text": "criticizes agree on: We're in the midst of another"
+    },
+    {
+      "paragraph_id": 352,
+      "page_num": 14,
+      "paragraph_text": "technological revolution today with AI. \"What's special"
+    },
+    {
+      "paragraph_id": 353,
+      "page_num": 14,
+      "paragraph_text": "about AI is its speed,\" Acemoglu told me. \"It's much faster"
+    },
+    {
+      "paragraph_id": 354,
+      "page_num": 14,
+      "paragraph_text": "than past technologies. It's pervasive. It's going to be applied"
+    },
+    {
+      "paragraph_id": 355,
+      "page_num": 14,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 14/23"
+    },
+    {
+      "paragraph_id": 356,
+      "page_num": 15,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 357,
+      "page_num": 15,
+      "paragraph_text": "pretty much in every sector. And it's very flexible. All of this"
+    },
+    {
+      "paragraph_id": 358,
+      "page_num": 15,
+      "paragraph_text": "means that what we're doing right now with AI may not be"
+    },
+    {
+      "paragraph_id": 359,
+      "page_num": 15,
+      "paragraph_text": "the right thing — and if it's not the right thing, if it's a"
+    },
+    {
+      "paragraph_id": 360,
+      "page_num": 15,
+      "paragraph_text": "damaging direction, it can spread very fast and become"
+    },
+    {
+      "paragraph_id": 361,
+      "page_num": 15,
+      "paragraph_text": "dominant. So I think those are big stakes.\""
+    },
+    {
+      "paragraph_id": 362,
+      "page_num": 15,
+      "paragraph_text": "cemoglu acknowledges that his views remain far"
+    },
+    {
+      "paragraph_id": 363,
+      "page_num": 15,
+      "paragraph_text": "A"
+    },
+    {
+      "paragraph_id": 364,
+      "page_num": 15,
+      "paragraph_text": "from the consensus in his profession. But there are"
+    },
+    {
+      "paragraph_id": 365,
+      "page_num": 15,
+      "paragraph_text": "indications that his thinking is starting to have a"
+    },
+    {
+      "paragraph_id": 366,
+      "page_num": 15,
+      "paragraph_text": "broader impact in the emerging battle over AI. In June, Gita"
+    },
+    {
+      "paragraph_id": 367,
+      "page_num": 15,
+      "paragraph_text": "Gopinath, who is second in command at the International"
+    },
+    {
+      "paragraph_id": 368,
+      "page_num": 15,
+      "paragraph_text": "Monetary Fund, gave a speech urging the world to regulate"
+    },
+    {
+      "paragraph_id": 369,
+      "page_num": 15,
+      "paragraph_text": "AI in a way that would benefit society, citing Acemoglu by"
+    },
+    {
+      "paragraph_id": 370,
+      "page_num": 15,
+      "paragraph_text": "name. Klinova, at the Partnership on AI, told me that people"
+    },
+    {
+      "paragraph_id": 371,
+      "page_num": 15,
+      "paragraph_text": "high up at the leading AI labs are reading and discussing his"
+    },
+    {
+      "paragraph_id": 372,
+      "page_num": 15,
+      "paragraph_text": "work. And Paul Romer, who won the Nobel prize in 2018 for"
+    },
+    {
+      "paragraph_id": 373,
+      "page_num": 15,
+      "paragraph_text": "work that showed just how critical innovation is for"
+    },
+    {
+      "paragraph_id": 374,
+      "page_num": 15,
+      "paragraph_text": "economic growth, says he's gone through his own change in"
+    },
+    {
+      "paragraph_id": 375,
+      "page_num": 15,
+      "paragraph_text": "thinking that mirrors Acemoglu's."
+    },
+    {
+      "paragraph_id": 376,
+      "page_num": 15,
+      "paragraph_text": "\"It was wishful thinking by economists, including me, who"
+    },
+    {
+      "paragraph_id": 377,
+      "page_num": 15,
+      "paragraph_text": "wanted to believe that things would naturally turn out well,\""
+    },
+    {
+      "paragraph_id": 378,
+      "page_num": 15,
+      "paragraph_text": "Romer told me. \"What's become more and more clear to me"
+    },
+    {
+      "paragraph_id": 379,
+      "page_num": 15,
+      "paragraph_text": "is that that's just not a given. It's blindingly obvious, ex post"
+    },
+    {
+      "paragraph_id": 380,
+      "page_num": 15,
+      "paragraph_text": "facto, that there are many forms of technology that can do"
+    },
+    {
+      "paragraph_id": 381,
+      "page_num": 15,
+      "paragraph_text": "great harm, and also many forms that can be enormously"
+    },
+    {
+      "paragraph_id": 382,
+      "page_num": 15,
+      "paragraph_text": "beneficial. The trick is to have some entity that acts on"
+    },
+    {
+      "paragraph_id": 383,
+      "page_num": 15,
+      "paragraph_text": "behalf of society as a whole that says: Let's do the ones that"
+    },
+    {
+      "paragraph_id": 384,
+      "page_num": 15,
+      "paragraph_text": "are beneficial, let's not do the ones that are harmful.\""
+    },
+    {
+      "paragraph_id": 385,
+      "page_num": 15,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 15/23"
+    },
+    {
+      "paragraph_id": 386,
+      "page_num": 16,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 387,
+      "page_num": 16,
+      "paragraph_text": "Romer praises Acemoglu for challenging the conventional"
+    },
+    {
+      "paragraph_id": 388,
+      "page_num": 16,
+      "paragraph_text": "wisdom. \"I really admire him, because it's easy to be afraid of"
+    },
+    {
+      "paragraph_id": 389,
+      "page_num": 16,
+      "paragraph_text": "getting too far outside the consensus,\" he says. \"Daron is"
+    },
+    {
+      "paragraph_id": 390,
+      "page_num": 16,
+      "paragraph_text": "courageous for being willing to try new ideas and pursue"
+    },
+    {
+      "paragraph_id": 391,
+      "page_num": 16,
+      "paragraph_text": "them without trying to figure out, where's the crowd?"
+    },
+    {
+      "paragraph_id": 392,
+      "page_num": 16,
+      "paragraph_text": "There's too much herding around a narrow set of possible"
+    },
+    {
+      "paragraph_id": 393,
+      "page_num": 16,
+      "paragraph_text": "views, and we've really got to keep open to exploring other"
+    },
+    {
+      "paragraph_id": 394,
+      "page_num": 16,
+      "paragraph_text": "possibilities.\""
+    },
+    {
+      "paragraph_id": 395,
+      "page_num": 16,
+      "paragraph_text": "Early this year, a few weeks before the rest of us, a research"
+    },
+    {
+      "paragraph_id": 396,
+      "page_num": 16,
+      "paragraph_text": "initiative organized by Microsoft gave Acemoglu early access"
+    },
+    {
+      "paragraph_id": 397,
+      "page_num": 16,
+      "paragraph_text": "to GPT-4. As he played around with it, he was amazed by the"
+    },
+    {
+      "paragraph_id": 398,
+      "page_num": 16,
+      "paragraph_text": "responses he got from the bot. \"Every time I had a"
+    },
+    {
+      "paragraph_id": 399,
+      "page_num": 16,
+      "paragraph_text": "conversation with GPT-4 I was so impressed that at the end I"
+    },
+    {
+      "paragraph_id": 400,
+      "page_num": 16,
+      "paragraph_text": "said, 'Thank you,'\" he says, laughing. \"It's certainly beyond"
+    },
+    {
+      "paragraph_id": 401,
+      "page_num": 16,
+      "paragraph_text": "what I would have thought would be feasible a year ago. I"
+    },
+    {
+      "paragraph_id": 402,
+      "page_num": 16,
+      "paragraph_text": "think it shows great potential in doing a bunch of things.\""
+    },
+    {
+      "paragraph_id": 403,
+      "page_num": 16,
+      "paragraph_text": "3 US-based academics awarded the Nobel prize in economics for their work on wealth inequality"
+    },
+    {
+      "paragraph_id": 404,
+      "page_num": 16,
+      "paragraph_text": "The real reason so many men wind up getting promotions"
+    },
+    {
+      "paragraph_id": 405,
+      "page_num": 16,
+      "paragraph_text": "But the early experimentation with AI also introduced him"
+    },
+    {
+      "paragraph_id": 406,
+      "page_num": 16,
+      "paragraph_text": "to its shortcomings. He doesn't think we're anywhere close"
+    },
+    {
+      "paragraph_id": 407,
+      "page_num": 16,
+      "paragraph_text": "to the point where software will be able to do everything"
+    },
+    {
+      "paragraph_id": 408,
+      "page_num": 16,
+      "paragraph_text": "humans can — a state that computer scientists call artificial"
+    },
+    {
+      "paragraph_id": 409,
+      "page_num": 16,
+      "paragraph_text": "general intelligence. As a result, he and Johnson don't"
+    },
+    {
+      "paragraph_id": 410,
+      "page_num": 16,
+      "paragraph_text": "foresee a future of mass unemployment. People will still be"
+    },
+    {
+      "paragraph_id": 411,
+      "page_num": 16,
+      "paragraph_text": "working, but at lower wages. \"What we're concerned about is"
+    },
+    {
+      "paragraph_id": 412,
+      "page_num": 16,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 16/23"
+    },
+    {
+      "paragraph_id": 413,
+      "page_num": 17,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 414,
+      "page_num": 17,
+      "paragraph_text": "that the skills of large numbers of workers will be much less"
+    },
+    {
+      "paragraph_id": 415,
+      "page_num": 17,
+      "paragraph_text": "valuable,\" he told me. \"So their incomes will not keep up.\""
+    },
+    {
+      "paragraph_id": 416,
+      "page_num": 17,
+      "paragraph_text": "Acemoglu's interest in AI predates the explosion of ChatGPT"
+    },
+    {
+      "paragraph_id": 417,
+      "page_num": 17,
+      "paragraph_text": "by many years. That's in part thanks to his wife, Asu"
+    },
+    {
+      "paragraph_id": 418,
+      "page_num": 17,
+      "paragraph_text": "Ozdaglar, who heads the electrical engineering and"
+    },
+    {
+      "paragraph_id": 419,
+      "page_num": 17,
+      "paragraph_text": "computer science department at MIT. Through her, he"
+    },
+    {
+      "paragraph_id": 420,
+      "page_num": 17,
+      "paragraph_text": "received an early education in machine learning, which was"
+    },
+    {
+      "paragraph_id": 421,
+      "page_num": 17,
+      "paragraph_text": "making it possible for computers to complete a wider range"
+    },
+    {
+      "paragraph_id": 422,
+      "page_num": 17,
+      "paragraph_text": "of tasks. As he dug deeper into automation, he began to"
+    },
+    {
+      "paragraph_id": 423,
+      "page_num": 17,
+      "paragraph_text": "wonder about its effects not just on factory jobs, but on office"
+    },
+    {
+      "paragraph_id": 424,
+      "page_num": 17,
+      "paragraph_text": "workers. \"Robots are important, but how many blue-collar"
+    },
+    {
+      "paragraph_id": 425,
+      "page_num": 17,
+      "paragraph_text": "workers do we have left?\" he told me. \"If you have a"
+    },
+    {
+      "paragraph_id": 426,
+      "page_num": 17,
+      "paragraph_text": "technology that automates knowledge work, white-collar"
+    },
+    {
+      "paragraph_id": 427,
+      "page_num": 17,
+      "paragraph_text": "work, clerical work, that's going to be much more important"
+    },
+    {
+      "paragraph_id": 428,
+      "page_num": 17,
+      "paragraph_text": "for this next stage of automation.\""
+    },
+    {
+      "paragraph_id": 429,
+      "page_num": 17,
+      "paragraph_text": "In theory, it's possible that automation will end up being a"
+    },
+    {
+      "paragraph_id": 430,
+      "page_num": 17,
+      "paragraph_text": "net good for white-collar workers. But right now, Acemoglu"
+    },
+    {
+      "paragraph_id": 431,
+      "page_num": 17,
+      "paragraph_text": "is worried it will end up being a net bad, because society"
+    },
+    {
+      "paragraph_id": 432,
+      "page_num": 17,
+      "paragraph_text": "currently doesn't display the conditions necessary to ensure"
+    },
+    {
+      "paragraph_id": 433,
+      "page_num": 17,
+      "paragraph_text": "that new technologies benefit everyone. First, thanks to a"
+    },
+    {
+      "paragraph_id": 434,
+      "page_num": 17,
+      "paragraph_text": "decadeslong assault on organized labor, only 10% of the"
+    },
+    {
+      "paragraph_id": 435,
+      "page_num": 17,
+      "paragraph_text": "working population is unionized — a record low. Without"
+    },
+    {
+      "paragraph_id": 436,
+      "page_num": 17,
+      "paragraph_text": "bargaining power, workers won't get a say in how AI tools are"
+    },
+    {
+      "paragraph_id": 437,
+      "page_num": 17,
+      "paragraph_text": "implemented on the job, or who shares in the wealth they"
+    },
+    {
+      "paragraph_id": 438,
+      "page_num": 17,
+      "paragraph_text": "create. And second, years of misinformation have weakened"
+    },
+    {
+      "paragraph_id": 439,
+      "page_num": 17,
+      "paragraph_text": "democratic institutions — a trend that's likely to get worse in"
+    },
+    {
+      "paragraph_id": 440,
+      "page_num": 17,
+      "paragraph_text": "the age of deep fakes."
+    },
+    {
+      "paragraph_id": 441,
+      "page_num": 17,
+      "paragraph_text": "Moreover, Acemoglu is worried that AI isn't creating enough"
+    },
+    {
+      "paragraph_id": 442,
+      "page_num": 17,
+      "paragraph_text": "new tasks to offset the ones it's taking away. In a recent"
+    },
+    {
+      "paragraph_id": 443,
+      "page_num": 17,
+      "paragraph_text": "study, he found that the companies that hired more AI"
+    },
+    {
+      "paragraph_id": 444,
+      "page_num": 17,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 17/23"
+    },
+    {
+      "paragraph_id": 445,
+      "page_num": 18,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 446,
+      "page_num": 18,
+      "paragraph_text": "specialists over the past decade went on to hire fewer people"
+    },
+    {
+      "paragraph_id": 447,
+      "page_num": 18,
+      "paragraph_text": "overall. That suggests that even before the ChatGPT era,"
+    },
+    {
+      "paragraph_id": 448,
+      "page_num": 18,
+      "paragraph_text": "employers were using AI to replace their human workers"
+    },
+    {
+      "paragraph_id": 449,
+      "page_num": 18,
+      "paragraph_text": "with software, rather than using it to make humans more"
+    },
+    {
+      "paragraph_id": 450,
+      "page_num": 18,
+      "paragraph_text": "productive – just as they had with earlier forms of digital"
+    },
+    {
+      "paragraph_id": 451,
+      "page_num": 18,
+      "paragraph_text": "technologies. Companies, of course, are always eager to trim"
+    },
+    {
+      "paragraph_id": 452,
+      "page_num": 18,
+      "paragraph_text": "costs and goose short-term profits. But Acemoglu also"
+    },
+    {
+      "paragraph_id": 453,
+      "page_num": 18,
+      "paragraph_text": "blames the field of AI research for the emphasis on replacing"
+    },
+    {
+      "paragraph_id": 454,
+      "page_num": 18,
+      "paragraph_text": "workers. Computer scientists, he notes, judge their AI"
+    },
+    {
+      "paragraph_id": 455,
+      "page_num": 18,
+      "paragraph_text": "creations by seeing whether their programs can achieve"
+    },
+    {
+      "paragraph_id": 456,
+      "page_num": 18,
+      "paragraph_text": "\"human parity\" — completing certain tasks as well as people."
+    },
+    {
+      "paragraph_id": 457,
+      "page_num": 18,
+      "paragraph_text": "\"It's become second nature to people in the industry and in"
+    },
+    {
+      "paragraph_id": 458,
+      "page_num": 18,
+      "paragraph_text": "the broader ecosystem to judge these new technologies in"
+    },
+    {
+      "paragraph_id": 459,
+      "page_num": 18,
+      "paragraph_text": "how well they do in being humanlike,\" he told me. \"That"
+    },
+    {
+      "paragraph_id": 460,
+      "page_num": 18,
+      "paragraph_text": "creates a very natural pathway to automation and"
+    },
+    {
+      "paragraph_id": 461,
+      "page_num": 18,
+      "paragraph_text": "replicating what humans do — and often not enough in how"
+    },
+    {
+      "paragraph_id": 462,
+      "page_num": 18,
+      "paragraph_text": "they can be most useful for humans with very different"
+    },
+    {
+      "paragraph_id": 463,
+      "page_num": 18,
+      "paragraph_text": "skills\" than computers."
+    },
+    {
+      "paragraph_id": 464,
+      "page_num": 18,
+      "paragraph_text": "COMPUTERS AND ROBOTS — New technologies have destroyed factory and clerical jobs in recent decades, gutting the middle class. Mark Madeo/Future via Getty Image;\nIssarawat Tattong/Getty Images"
+    },
+    {
+      "paragraph_id": 465,
+      "page_num": 18,
+      "paragraph_text": "Acemoglu argues that building tools that are useful to"
+    },
+    {
+      "paragraph_id": 466,
+      "page_num": 18,
+      "paragraph_text": "human workers, instead of tools that will replace them,"
+    },
+    {
+      "paragraph_id": 467,
+      "page_num": 18,
+      "paragraph_text": "would benefit not only workers but their employers as well."
+    },
+    {
+      "paragraph_id": 468,
+      "page_num": 18,
+      "paragraph_text": "Why focus so much energy on doing something humans can"
+    },
+    {
+      "paragraph_id": 469,
+      "page_num": 18,
+      "paragraph_text": "already do reasonably well, when AI could instead help us do"
+    },
+    {
+      "paragraph_id": 470,
+      "page_num": 18,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 18/23"
+    },
+    {
+      "paragraph_id": 471,
+      "page_num": 19,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 472,
+      "page_num": 19,
+      "paragraph_text": "what we never could before? It's a message that Erik"
+    },
+    {
+      "paragraph_id": 473,
+      "page_num": 19,
+      "paragraph_text": "Brynjolfsson, another prominent economist studying"
+    },
+    {
+      "paragraph_id": 474,
+      "page_num": 19,
+      "paragraph_text": "technological change, has been pushing for a decade now. \"It"
+    },
+    {
+      "paragraph_id": 475,
+      "page_num": 19,
+      "paragraph_text": "would have been lame if someone had set out to make a car"
+    },
+    {
+      "paragraph_id": 476,
+      "page_num": 19,
+      "paragraph_text": "with feet and legs that was humanlike,\" Brynjolfsson told"
+    },
+    {
+      "paragraph_id": 477,
+      "page_num": 19,
+      "paragraph_text": "me. \"That would have been a pretty slow-moving car.\""
+    },
+    {
+      "paragraph_id": 478,
+      "page_num": 19,
+      "paragraph_text": "Building AI with the goal of imitating humans similarly fails"
+    },
+    {
+      "paragraph_id": 479,
+      "page_num": 19,
+      "paragraph_text": "to realize the true potential of the technology."
+    },
+    {
+      "paragraph_id": 480,
+      "page_num": 19,
+      "paragraph_text": "\"The future is going to be largely about knowledge work,\""
+    },
+    {
+      "paragraph_id": 481,
+      "page_num": 19,
+      "paragraph_text": "Acemoglu says. \"Generative AI could be one of the tools that"
+    },
+    {
+      "paragraph_id": 482,
+      "page_num": 19,
+      "paragraph_text": "make workers much more productive. That's a great"
+    },
+    {
+      "paragraph_id": 483,
+      "page_num": 19,
+      "paragraph_text": "promise. There's a high road here where you can actually"
+    },
+    {
+      "paragraph_id": 484,
+      "page_num": 19,
+      "paragraph_text": "increase productivity, make profits, as well as contribute to"
+    },
+    {
+      "paragraph_id": 485,
+      "page_num": 19,
+      "paragraph_text": "social good — if you find a way to use this technology as a"
+    },
+    {
+      "paragraph_id": 486,
+      "page_num": 19,
+      "paragraph_text": "tool that empowers workers.\""
+    },
+    {
+      "paragraph_id": 487,
+      "page_num": 19,
+      "paragraph_text": "n March, Acemoglu signed a controversial open letter"
+    },
+    {
+      "paragraph_id": 488,
+      "page_num": 19,
+      "paragraph_text": "I"
+    },
+    {
+      "paragraph_id": 489,
+      "page_num": 19,
+      "paragraph_text": "calling on AI labs to pause the training of their systems"
+    },
+    {
+      "paragraph_id": 490,
+      "page_num": 19,
+      "paragraph_text": "for at least six months. He didn't think companies"
+    },
+    {
+      "paragraph_id": 491,
+      "page_num": 19,
+      "paragraph_text": "would adopt the moratorium, and he disagreed with the"
+    },
+    {
+      "paragraph_id": 492,
+      "page_num": 19,
+      "paragraph_text": "letter's emphasis on the existential risk that AI poses to"
+    },
+    {
+      "paragraph_id": 493,
+      "page_num": 19,
+      "paragraph_text": "humanity. But he joined the list of more than a thousand"
+    },
+    {
+      "paragraph_id": 494,
+      "page_num": 19,
+      "paragraph_text": "other signatories anyway — a group that included the AI"
+    },
+    {
+      "paragraph_id": 495,
+      "page_num": 19,
+      "paragraph_text": "scientist Yoshua Bengio, the historian Yuval Noah Harari,"
+    },
+    {
+      "paragraph_id": 496,
+      "page_num": 19,
+      "paragraph_text": "the former presidential candidate Andrew Yang, and,"
+    },
+    {
+      "paragraph_id": 497,
+      "page_num": 19,
+      "paragraph_text": "strangely, Elon Musk. \"I thought it was remarkable in"
+    },
+    {
+      "paragraph_id": 498,
+      "page_num": 19,
+      "paragraph_text": "bringing together an amazing cross-section of very different"
+    },
+    {
+      "paragraph_id": 499,
+      "page_num": 19,
+      "paragraph_text": "people who were articulating concerns about the direction of"
+    },
+    {
+      "paragraph_id": 500,
+      "page_num": 19,
+      "paragraph_text": "tech,\" Acemoglu told me. \"High-profile efforts to say, 'Look,"
+    },
+    {
+      "paragraph_id": 501,
+      "page_num": 19,
+      "paragraph_text": "there might be something wrong with the direction of"
+    },
+    {
+      "paragraph_id": 502,
+      "page_num": 19,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 19/23"
+    },
+    {
+      "paragraph_id": 503,
+      "page_num": 20,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 504,
+      "page_num": 20,
+      "paragraph_text": "change, and we should take a look and think about"
+    },
+    {
+      "paragraph_id": 505,
+      "page_num": 20,
+      "paragraph_text": "regulation' — that's important.\""
+    },
+    {
+      "paragraph_id": 506,
+      "page_num": 20,
+      "paragraph_text": "When society is ready to start talking about specific ways to"
+    },
+    {
+      "paragraph_id": 507,
+      "page_num": 20,
+      "paragraph_text": "ensure that AI leads to shared prosperity, Acemoglu and"
+    },
+    {
+      "paragraph_id": 508,
+      "page_num": 20,
+      "paragraph_text": "Johnson devote an entire chapter at the end of their book to"
+    },
+    {
+      "paragraph_id": 509,
+      "page_num": 20,
+      "paragraph_text": "what they view as promising solutions. Among them: Taxing"
+    },
+    {
+      "paragraph_id": 510,
+      "page_num": 20,
+      "paragraph_text": "wages less, and software more, so companies won't be"
+    },
+    {
+      "paragraph_id": 511,
+      "page_num": 20,
+      "paragraph_text": "incentivized to replace their workers with technology."
+    },
+    {
+      "paragraph_id": 512,
+      "page_num": 20,
+      "paragraph_text": "Fostering new organizations that advocate the needs of"
+    },
+    {
+      "paragraph_id": 513,
+      "page_num": 20,
+      "paragraph_text": "workers in the age of AI, the way Greenpeace pushes for"
+    },
+    {
+      "paragraph_id": 514,
+      "page_num": 20,
+      "paragraph_text": "climate activism. Repealing Section 230 of the"
+    },
+    {
+      "paragraph_id": 515,
+      "page_num": 20,
+      "paragraph_text": "Communications Decency Act, to force internet companies"
+    },
+    {
+      "paragraph_id": 516,
+      "page_num": 20,
+      "paragraph_text": "to stop promoting the kind of misinformation that hurts the"
+    },
+    {
+      "paragraph_id": 517,
+      "page_num": 20,
+      "paragraph_text": "democratic process. Creating federal subsidies for"
+    },
+    {
+      "paragraph_id": 518,
+      "page_num": 20,
+      "paragraph_text": "technology that complements workers instead of replacing"
+    },
+    {
+      "paragraph_id": 519,
+      "page_num": 20,
+      "paragraph_text": "them. And, most broadly, breaking up Big Tech to foster"
+    },
+    {
+      "paragraph_id": 520,
+      "page_num": 20,
+      "paragraph_text": "greater competition and innovation."
+    },
+    {
+      "paragraph_id": 521,
+      "page_num": 20,
+      "paragraph_text": "I sensed an underlying discomfort among economists at the prospect of messing with how technology unfolds in the marketplace."
+    },
+    {
+      "paragraph_id": 522,
+      "page_num": 20,
+      "paragraph_text": "Economists — at least the ones who aren't die-hard"
+    },
+    {
+      "paragraph_id": 523,
+      "page_num": 20,
+      "paragraph_text": "conservatives — don't object in general to Acemoglu's"
+    },
+    {
+      "paragraph_id": 524,
+      "page_num": 20,
+      "paragraph_text": "proposals to increase the bargaining power of workers. But"
+    },
+    {
+      "paragraph_id": 525,
+      "page_num": 20,
+      "paragraph_text": "many struggle with the idea of trying to steer AI research and"
+    },
+    {
+      "paragraph_id": 526,
+      "page_num": 20,
+      "paragraph_text": "implementation in a direction that's beneficial for workers."
+    },
+    {
+      "paragraph_id": 527,
+      "page_num": 20,
+      "paragraph_text": "Some question whether it's even possible to predict which"
+    },
+    {
+      "paragraph_id": 528,
+      "page_num": 20,
+      "paragraph_text": "technologies will create enough new tasks to offset the ones"
+    },
+    {
+      "paragraph_id": 529,
+      "page_num": 20,
+      "paragraph_text": "they replace. But in my private conversations with"
+    },
+    {
+      "paragraph_id": 530,
+      "page_num": 20,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 20/23"
+    },
+    {
+      "paragraph_id": 531,
+      "page_num": 21,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 532,
+      "page_num": 21,
+      "paragraph_text": "economists, I've also sensed an underlying discomfort at the"
+    },
+    {
+      "paragraph_id": 533,
+      "page_num": 21,
+      "paragraph_text": "prospect of messing with how technology unfolds in the"
+    },
+    {
+      "paragraph_id": 534,
+      "page_num": 21,
+      "paragraph_text": "marketplace. Since 1800, when the Industrial Revolution"
+    },
+    {
+      "paragraph_id": 535,
+      "page_num": 21,
+      "paragraph_text": "was first taking hold in the US, GDP per capita — the most"
+    },
+    {
+      "paragraph_id": 536,
+      "page_num": 21,
+      "paragraph_text": "common measure of living standards — has grown more"
+    },
+    {
+      "paragraph_id": 537,
+      "page_num": 21,
+      "paragraph_text": "than twentyfold. The invisible hand of technology, most"
+    },
+    {
+      "paragraph_id": 538,
+      "page_num": 21,
+      "paragraph_text": "economists continue to believe, will ultimately benefit"
+    },
+    {
+      "paragraph_id": 539,
+      "page_num": 21,
+      "paragraph_text": "everyone, if left to its own devices."
+    },
+    {
+      "paragraph_id": 540,
+      "page_num": 21,
+      "paragraph_text": "I used to think that way, too. A decade ago, when I first"
+    },
+    {
+      "paragraph_id": 541,
+      "page_num": 21,
+      "paragraph_text": "began reporting on the likely effects of machine learning,"
+    },
+    {
+      "paragraph_id": 542,
+      "page_num": 21,
+      "paragraph_text": "the consensus was that careers like mine — ones that require"
+    },
+    {
+      "paragraph_id": 543,
+      "page_num": 21,
+      "paragraph_text": "a significant measure of creativity and social intelligence —"
+    },
+    {
+      "paragraph_id": 544,
+      "page_num": 21,
+      "paragraph_text": "were still safe. In recent months, even as it became clear how"
+    },
+    {
+      "paragraph_id": 545,
+      "page_num": 21,
+      "paragraph_text": "well ChatGPT can write, I kept reassuring myself with the"
+    },
+    {
+      "paragraph_id": 546,
+      "page_num": 21,
+      "paragraph_text": "conventional wisdom. AI is going to make us more"
+    },
+    {
+      "paragraph_id": 547,
+      "page_num": 21,
+      "paragraph_text": "productive, and that will be great for society. Now, after"
+    },
+    {
+      "paragraph_id": 548,
+      "page_num": 21,
+      "paragraph_text": "reviewing Acemoglu's research, I've been hearing a new"
+    },
+    {
+      "paragraph_id": 549,
+      "page_num": 21,
+      "paragraph_text": "mantra in my head: We're all fucked."
+    },
+    {
+      "paragraph_id": 550,
+      "page_num": 21,
+      "paragraph_text": "That's not the takeaway Acemoglu intended. In our"
+    },
+    {
+      "paragraph_id": 551,
+      "page_num": 21,
+      "paragraph_text": "conversations, he told me over and over that we're not"
+    },
+    {
+      "paragraph_id": 552,
+      "page_num": 21,
+      "paragraph_text": "powerless in the face of the dystopian future he foresees —"
+    },
+    {
+      "paragraph_id": 553,
+      "page_num": 21,
+      "paragraph_text": "that we have the ability to steer the way AI unfolds. Yes, that"
+    },
+    {
+      "paragraph_id": 554,
+      "page_num": 21,
+      "paragraph_text": "will require passing a laundry list of huge policies, in the face"
+    },
+    {
+      "paragraph_id": 555,
+      "page_num": 21,
+      "paragraph_text": "of a tech lobby with unlimited resources, through a"
+    },
+    {
+      "paragraph_id": 556,
+      "page_num": 21,
+      "paragraph_text": "dysfunctional Congress and a deeply pro-business Supreme"
+    },
+    {
+      "paragraph_id": 557,
+      "page_num": 21,
+      "paragraph_text": "Court, amid a public fed a digital firehose of increasingly"
+    },
+    {
+      "paragraph_id": 558,
+      "page_num": 21,
+      "paragraph_text": "brazen lies. And yes, there are days when he doesn't feel all"
+    },
+    {
+      "paragraph_id": 559,
+      "page_num": 21,
+      "paragraph_text": "that great about our chances either."
+    },
+    {
+      "paragraph_id": 560,
+      "page_num": 21,
+      "paragraph_text": "\"I realize this is a very, very tall order,\" Acemoglu told me."
+    },
+    {
+      "paragraph_id": 561,
+      "page_num": 21,
+      "paragraph_text": "But you know whose chances looked even grimmer? Workers"
+    },
+    {
+      "paragraph_id": 562,
+      "page_num": 21,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 21/23"
+    },
+    {
+      "paragraph_id": 563,
+      "page_num": 22,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 564,
+      "page_num": 22,
+      "paragraph_text": "in England during the mid-19th century, who endured"
+    },
+    {
+      "paragraph_id": 565,
+      "page_num": 22,
+      "paragraph_text": "almost 100 years of a tech-driven dystopia. At the time, few"
+    },
+    {
+      "paragraph_id": 566,
+      "page_num": 22,
+      "paragraph_text": "had the right to vote, let alone to unionize. The Chartists"
+    },
+    {
+      "paragraph_id": 567,
+      "page_num": 22,
+      "paragraph_text": "who demanded universal male suffrage were jailed. The"
+    },
+    {
+      "paragraph_id": 568,
+      "page_num": 22,
+      "paragraph_text": "Luddites who broke the textile machines that displaced"
+    },
+    {
+      "paragraph_id": 569,
+      "page_num": 22,
+      "paragraph_text": "them were exiled to Australia or hanged. And yet they"
+    },
+    {
+      "paragraph_id": 570,
+      "page_num": 22,
+      "paragraph_text": "recognized that they deserved more, and they fought for the"
+    },
+    {
+      "paragraph_id": 571,
+      "page_num": 22,
+      "paragraph_text": "kinds of rights that translated into higher wages and a better"
+    },
+    {
+      "paragraph_id": 572,
+      "page_num": 22,
+      "paragraph_text": "life for them and, two centuries later, for us. Had they not"
+    },
+    {
+      "paragraph_id": 573,
+      "page_num": 22,
+      "paragraph_text": "bothered, the march of technology would have turned out"
+    },
+    {
+      "paragraph_id": 574,
+      "page_num": 22,
+      "paragraph_text": "very differently."
+    },
+    {
+      "paragraph_id": 575,
+      "page_num": 22,
+      "paragraph_text": "\"We have greatly benefited from technology, but there's"
+    },
+    {
+      "paragraph_id": 576,
+      "page_num": 22,
+      "paragraph_text": "nothing automatic about that,\" Acemoglu told me. \"It could"
+    },
+    {
+      "paragraph_id": 577,
+      "page_num": 22,
+      "paragraph_text": "have gone in a very bad direction had it not been for"
+    },
+    {
+      "paragraph_id": 578,
+      "page_num": 22,
+      "paragraph_text": "institutional, regulatory, and technological adjustments."
+    },
+    {
+      "paragraph_id": 579,
+      "page_num": 22,
+      "paragraph_text": "That's why this is a momentous period: because there are"
+    },
+    {
+      "paragraph_id": 580,
+      "page_num": 22,
+      "paragraph_text": "similar choices that need to be made today. The conclusion"
+    },
+    {
+      "paragraph_id": 581,
+      "page_num": 22,
+      "paragraph_text": "to be drawn is not that technology is workers' enemy. It's"
+    },
+    {
+      "paragraph_id": 582,
+      "page_num": 22,
+      "paragraph_text": "that we need to make sure we end up with directions of"
+    },
+    {
+      "paragraph_id": 583,
+      "page_num": 22,
+      "paragraph_text": "technology that are more conducive to wage growth and"
+    },
+    {
+      "paragraph_id": 584,
+      "page_num": 22,
+      "paragraph_text": "shared prosperity.\" That's why Acemoglu dedicated \"Power"
+    },
+    {
+      "paragraph_id": 585,
+      "page_num": 22,
+      "paragraph_text": "and Progress\" not only to his wife but to his two sons. History"
+    },
+    {
+      "paragraph_id": 586,
+      "page_num": 22,
+      "paragraph_text": "may point to how destructive AI is likely to be. But it doesn't"
+    },
+    {
+      "paragraph_id": 587,
+      "page_num": 22,
+      "paragraph_text": "have to repeat itself."
+    },
+    {
+      "paragraph_id": 588,
+      "page_num": 22,
+      "paragraph_text": "\"Our book is an analysis,\" he told me. \"But it also encourages"
+    },
+    {
+      "paragraph_id": 589,
+      "page_num": 22,
+      "paragraph_text": "people to be involved for a better future. I wrote it for the"
+    },
+    {
+      "paragraph_id": 590,
+      "page_num": 22,
+      "paragraph_text": "next generation, with the hope that it will get better.\""
+    },
+    {
+      "paragraph_id": 591,
+      "page_num": 22,
+      "paragraph_text": "Aki Ito is a senior correspondent at Insider."
+    },
+    {
+      "paragraph_id": 592,
+      "page_num": 22,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 22/23"
+    },
+    {
+      "paragraph_id": 593,
+      "page_num": 23,
+      "paragraph_text": "10/15/24, 10:18 AM AI-Driven Cataclysm Could Rock the Job Market: Top Economist - Business Insider"
+    },
+    {
+      "paragraph_id": 594,
+      "page_num": 23,
+      "paragraph_text": "About Discourse Stories"
+    },
+    {
+      "paragraph_id": 595,
+      "page_num": 23,
+      "paragraph_text": "Through our Discourse journalism, Business Insider seeks to"
+    },
+    {
+      "paragraph_id": 596,
+      "page_num": 23,
+      "paragraph_text": "explore and illuminate the day’s most fascinating issues and"
+    },
+    {
+      "paragraph_id": 597,
+      "page_num": 23,
+      "paragraph_text": "ideas. Our writers provide thought-provoking perspectives,"
+    },
+    {
+      "paragraph_id": 598,
+      "page_num": 23,
+      "paragraph_text": "informed by analysis, reporting, and expertise. Read more"
+    },
+    {
+      "paragraph_id": 599,
+      "page_num": 23,
+      "paragraph_text": "Discourse stories here."
+    },
+    {
+      "paragraph_id": 600,
+      "page_num": 23,
+      "paragraph_text": "https://www.businessinsider.com/ai-chatgpt-replace-jobs-unemployment-salaries-technology-economist-daron-acemoglu-2023-9 23/23"
+    }
+  ]
+}
