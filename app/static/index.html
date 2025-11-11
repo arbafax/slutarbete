@@ -35,6 +35,23 @@
         <input class="hidden" id="file" type="file" accept="application/pdf" />
       </div>
 
+
+      <hr />
+      <h3>Extrahera text från URL</h3>
+      <input id="urlInput" type="url" placeholder="https://exempel.se/sida" style="width: min(680px, 95%)" />
+      <button id="fetchBtn">Hämta & spara som TXT</button>
+
+      <section id="urlResult" style="display:none; margin-top:1rem">
+        <ul>
+          <li>• Källa: <a id="urlSource" href="#" target="_blank" rel="noopener">-</a></li>
+          <li>• Tecken: <span id="urlChars">-</span></li>
+          <li>• Ord: <span id="urlWords">-</span></li>
+          <li>• TXT sparad som: <span id="urlFile">-</span></li>
+        </ul>
+        <p><a id="downloadTxt" class="btn" href="#" download>Ladda ner TXT</a></p>
+      </section>
+
+
       <div id="result" class="result hidden"></div>
     </div>
 
@@ -98,6 +115,56 @@
 
       // Fallback file picker
       fileInput.addEventListener('change', e => handleFile(e.target.files?.[0]));
+
+      const Uels = {
+        input:  document.getElementById("urlInput"),
+        btn:    document.getElementById("fetchBtn"),
+        panel:  document.getElementById("urlResult"),
+        src:    document.getElementById("urlSource"),
+        chars:  document.getElementById("urlChars"),
+        words:  document.getElementById("urlWords"),
+        file:   document.getElementById("urlFile"),
+        dl:     document.getElementById("downloadTxt"),
+      };
+
+      async function fetchAndSaveUrl(url) {
+        const res = await fetch("/api/fetch_url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url })
+        });
+        if (!res.ok) {
+          const msg = await res.text().catch(()=>"");
+          throw new Error(`HTTP ${res.status} – ${msg}`);
+        }
+        return res.json();
+      }
+
+      function renderUrlResult(data) {
+        console.log("URL response:", data);
+        Uels.src.href = data.source_url || "#";
+        Uels.src.textContent = data.source_url || "okänd";
+        Uels.chars.textContent = data.chars ?? "okänd";
+        Uels.words.textContent = data.words ?? "okänd";
+        Uels.file.textContent  = data.txt_filename || (data.txt_url?.split("/").pop() || "-");
+        Uels.dl.href = data.txt_url || "#";
+        if (data.txt_filename) Uels.dl.download = data.txt_filename;
+        Uels.panel.style.display = "block";
+      }
+
+      Uels.btn.addEventListener("click", async () => {
+        const url = (Uels.input.value || "").trim();
+        if (!url) { alert("Ange en URL först."); return; }
+        Uels.panel.style.display = "none";
+        try {
+          const data = await fetchAndSaveUrl(url);
+          renderUrlResult(data);
+        } catch (e) {
+          console.error(e);
+          alert("Kunde inte hämta URL: " + e.message);
+        }
+      });
+
     </script>
   </body>
 </html>

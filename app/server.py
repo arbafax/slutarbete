@@ -9,7 +9,10 @@ import io
 import json
 import re
 import fitz  # pymupdf
+import httpx
 
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 from typing import List, Dict, Optional
 
 # import pdfplumber
@@ -65,6 +68,26 @@ app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
 # -----------------------------
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _html_to_text(html: str) -> str:
+    # Robust HTML→text: ta bort script/style och komprimera whitespace
+    soup = BeautifulSoup(html, "lxml")  # fallbackar till html.parser om lxml saknas
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+    text = soup.get_text(separator="\n")
+    # normalisera
+    lines = [ln.strip() for ln in text.splitlines()]
+    text = "\n".join(ln for ln in lines if ln)  # slopa tomrader
+    return text
+
+
+def _build_txt_filename_from_url(url: str) -> str:
+    p = urlparse(url)
+    host = p.netloc or "unknown"
+    path = p.path.strip("/").replace("/", "_")
+    base = sanitize_basename(f"{host}_{path or 'index'}")
+    return f"{base}.txt"
 
 
 def _normalize_text(s: str) -> str:
@@ -216,9 +239,61 @@ def index_alias():
     )
 
 
-# # Root serves index.html via StaticFiles
-# @app.get("/index.html")
-# def root_index():
-#     return HTMLResponse(
-#         open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
-#     )
+from fastapi import Body
+
+
+@app.post("/api/fetch_url")
+async def fetch_url(payload: dict = Body(...)):
+    url = (payload.get("url") or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="Missing 'url'")
+    if not (url.startswith("http://") or url.startswith("https://")):
+        raise HTTPException(
+            status_code=400, detail="URL must start with http:// or https://"
+        )
+
+    # Hämta sidan
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; PDFJSONBot/1.0; +local-dev)"}
+        timeout = httpx.Timeout(15.0, connect=10.0)
+        async with httpx.AsyncClient(
+            headers=headers, timeout=timeout, follow_redirects=True
+        ) as client:
+            resp = await client.get(url)
+        resp.raise_for_status()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Fetch failed: {e!s}")
+
+    # Bestäm innehållstyp
+    ctype = resp.headers.get("content-type", "").lower()
+
+    if "text/html" in ctype or ctype.startswith("text/") or resp.text:
+        text = _html_to_text(resp.text)
+    else:
+        # Enkel fallback: om det inte är HTML, skriv råbytes som text om möjligt
+        try:
+            text = resp.text  # httpx försöker dekoda med rätt encoding
+        except Exception:
+            raise HTTPException(
+                status_code=415, detail=f"Unsupported content-type: {ctype}"
+            )
+
+    # Spara till /outputs
+    txt_name = _build_txt_filename_from_url(url)
+    txt_path = os.path.join(OUTPUT_DIR, txt_name)
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write(text)
+
+    # Svara frontend
+    return JSONResponse(
+        content={
+            "message": "OK",
+            "source_url": url,
+            "txt_filename": txt_name,
+            "txt_url": f"/outputs/{txt_name}",
+            "chars": len(text),
+            "words": len(text.split()),
+            "created_at": utc_timestamp(),
+        },
+        status_code=200,
+    )
