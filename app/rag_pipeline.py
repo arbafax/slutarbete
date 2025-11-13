@@ -32,6 +32,7 @@ client = genai.Client(api_key=my_api_key)
 
 class EmbeddingBackend:
     def embed(self, texts: List[str]) -> List[List[float]]:
+        print("##### EmbeddingBackend.embed()")
         raise NotImplementedError
 
 
@@ -43,6 +44,7 @@ class OpenAIBackend(EmbeddingBackend):
         self.model = model
 
     def embed(self, texts: List[str]) -> List[List[float]]:
+        print("##### OpenAIBackend.embed()")
         resp = self.client.embeddings.create(model=self.model, input=texts)
         return [d.embedding for d in resp.data]
 
@@ -54,6 +56,7 @@ class SBERTBackend(EmbeddingBackend):
         self.model = SentenceTransformer(model)
 
     def embed(self, texts: List[str]) -> List[List[float]]:
+        print("##### SBERTBackend.embed()")
         return self.model.encode(texts, normalize_embeddings=True).tolist()
 
 
@@ -65,6 +68,7 @@ class OllamaBackend(EmbeddingBackend):
         self.host = host.rstrip("/")
 
     def embed(self, texts: List[str]) -> List[List[float]]:
+        print("##### OllamaBackend.embed()")
         out = []
         for t in texts:
             r = requests.post(
@@ -76,6 +80,7 @@ class OllamaBackend(EmbeddingBackend):
 
 
 def get_backend(kind: Optional[str] = None) -> EmbeddingBackend:
+    print("### get_backend()")
     backend = (kind or os.getenv("EMBED_BACKEND") or "openai").lower()
     if backend == "openai":
         return OpenAIBackend()
@@ -133,6 +138,7 @@ class ScrapeResult:
 
 
 def scrape_url(url: str, timeout: int = 20) -> ScrapeResult:
+    print("### scrape_url()")
     headers = {"User-Agent": "Mozilla/5.0 (compatible; RAG-Scraper/1.0; +local-dev)"}
     r = requests.get(url, headers=headers, timeout=timeout)
     r.raise_for_status()
@@ -142,6 +148,7 @@ def scrape_url(url: str, timeout: int = 20) -> ScrapeResult:
 
 
 def clean_html(raw_html: str) -> str:
+    print("### clean_html()")
     soup = BeautifulSoup(raw_html, "html.parser")
     for tag in soup(["script", "style", "noscript", "template", "svg"]):
         tag.decompose()
@@ -155,6 +162,7 @@ def clean_html(raw_html: str) -> str:
 
 
 def normalize_html(cleaned_html: str) -> BeautifulSoup:
+    print("### normalize_html()")
     soup = BeautifulSoup(cleaned_html, "html.parser")
     for text_node in soup.find_all(string=True):
         if text_node.parent and text_node.parent.name in ("pre", "code"):
@@ -168,6 +176,7 @@ def normalize_html(cleaned_html: str) -> BeautifulSoup:
 
 
 def resolve_links(soup: BeautifulSoup, base_url: str) -> BeautifulSoup:
+    print("### resolve_links()")
     for tag in soup.find_all(["a", "img", "script", "link", "source"]):
         attr = "href" if tag.name in ("a", "link") else "src"
         if tag.has_attr(attr):
@@ -176,6 +185,7 @@ def resolve_links(soup: BeautifulSoup, base_url: str) -> BeautifulSoup:
 
 
 def html_to_markdown(soup: BeautifulSoup) -> str:
+    print("### html_to_markdown()")
     return md(
         str(soup),
         heading_style="ATX",
@@ -208,6 +218,7 @@ class Block:
 def split_markdown_into_blocks(
     markdown_text: str, min_level: int = 1, max_level: int = 6
 ):
+    print("### split_markdown_into_blocks()")
     lines = markdown_text.splitlines()
     pattern = re.compile(r"^(#{1,6})\s+(.*)$")
     blocks, curr_heading, curr_level, buff = [], None, None, []
@@ -240,6 +251,7 @@ def split_markdown_into_blocks(
 
 
 def chunk_text(text: str, max_tokens: int = 512, hard_limit: int = 2048) -> List[str]:
+    print("### chunk_text()")
     if approx_token_count(text) <= max_tokens:
         return [text.strip()]
     paragraphs = re.split(r"\n{2,}", text)
@@ -271,6 +283,7 @@ def chunk_text(text: str, max_tokens: int = 512, hard_limit: int = 2048) -> List
 
 
 def _breadcrumbs(blocks: List[Block], idx: int) -> List[str]:
+    print("### _breadcrumbs()")
     me = blocks[idx]
     trail, cur_level = [], me.level
     for k in range(idx - 1, -1, -1):
@@ -284,6 +297,7 @@ def _breadcrumbs(blocks: List[Block], idx: int) -> List[str]:
 def build_records(
     url: str, title: Optional[str], blocks: List[Block], max_tokens_per_chunk: int = 512
 ) -> List[Dict]:
+    print("### build_records()")
     records = []
     doc_id = slugify(title or urlparse(url).path or "document")
     for i, b in enumerate(blocks):
@@ -323,6 +337,7 @@ def embed_records(
     backend: Optional[EmbeddingBackend] = None,
     batch_size: int = 64,
 ) -> None:
+    print("### embed_records()")
     backend = backend or get_backend()
     texts = [r["markdown"] for r in records]
     for start in range(0, len(texts), batch_size):
@@ -334,6 +349,7 @@ def embed_records(
 def process_url_for_rag(
     url: str, max_tokens_per_chunk: int = 512, embed_backend: Optional[str] = None
 ) -> Dict:
+    print("### process_url_for_rag()")
     scraped = scrape_url(url)
     cleaned = clean_html(scraped.html)
     soup = normalize_html(cleaned)
@@ -362,24 +378,44 @@ def cosine_similarity(vec1, vec2):
     Returns:
     float: The cosine similarity between the two vectors.
     """
+    print("### cosine_similarity()")
     # Compute the dot product of the two vectors and divide by the product of their norms
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
     ### end cosine_similarity
 
 
-def semantic_search(query, chunks, embeddings, k=5):
-    query_embedding = create_embeddings(query).embeddings[0].values
-    similarity_scores = []
-    for i, chunk_embedding in enumerate(embeddings.embeddings):
-        similarity_score = cosine_similarity(query_embedding, chunk_embedding.values)
-        similarity_scores.append((i, similarity_score))
+def semantic_search(query, text_chunks, embeddings, k=5):
+    """
+    Performs semantic search on the text chunks using the given query and embeddings.
 
-    similarity_scores.sort(
-        key=lambda x: x[1], reverse=True
-    )  ## sortera fallande för att få de besta träffarna först
+    Args:
+    query (str): The query for the semantic search.
+    text_chunks (List[str]): A list of text chunks to search through.
+    embeddings (List[dict]): A list of embeddings for the text chunks.
+    k (int): The number of top relevant text chunks to return. Default is 5.
+
+    Returns:
+    List[str]: A list of the top k most relevant text chunks based on the query.
+    """
+    # Create an embedding for the query
+    query_embedding = create_embeddings(query).data[0].embedding
+    similarity_scores = []  # Initialize a list to store similarity scores
+
+    # Calculate similarity scores between the query embedding and each text chunk embedding
+    for i, chunk_embedding in enumerate(embeddings):
+        similarity_score = cosine_similarity(
+            np.array(query_embedding), np.array(chunk_embedding.embedding)
+        )
+        similarity_scores.append(
+            (i, similarity_score)
+        )  # Append the index and similarity score
+
+    # Sort the similarity scores in descending order
+    similarity_scores.sort(key=lambda x: x[1], reverse=True)
+    # Get the indices of the top k most similar text chunks
     top_indices = [index for index, _ in similarity_scores[:k]]
-
-    return [chunks[index] for index in top_indices]
+    # Return the top k most relevant text chunks
+    return [text_chunks[index] for index in top_indices]
     ### end semantic_search
 
 

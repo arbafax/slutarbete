@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime, timezone
 
+import traceback
+
 import os
 import io
 import time
@@ -318,6 +320,7 @@ async def api_fetch_url(payload: dict = Body(...)):
     }
     Returnerar paths till sparade filer och lite statistik.
     """
+    hlog("#########################")
     url = (payload.get("url") or "").strip()
     if not url or not url.lower().startswith(("http://", "https://")):
         raise HTTPException(status_code=400, detail="Provide a valid http(s) URL")
@@ -330,6 +333,9 @@ async def api_fetch_url(payload: dict = Body(...)):
             url, max_tokens_per_chunk=max_tokens, embed_backend=embed_backend
         )
     except Exception as e:
+        print("=== RAG pipeline crash ===")
+        traceback.print_exc()
+        print("=== end ===")
         raise HTTPException(status_code=502, detail=f"Pipeline failed: {e!s}")
 
     # skriv ut som två filer: metadata+md och embeddings

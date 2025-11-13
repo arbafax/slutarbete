@@ -5,64 +5,348 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PDF → JSON Extractor</title>
     <style>
-      :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-      body { margin: 0; background: #0b1220; color: #e6ecff; }
-      .wrap { max-width: 840px; margin: 48px auto; padding: 0 20px; }
-      h1 { font-size: 28px; margin: 0 0 8px; }
-      p { color: #b7c1e1; }
-      .zone {
-        margin-top: 24px; border: 2px dashed #3d4b72; border-radius: 16px;
-        padding: 32px; text-align: center; transition: 150ms ease;
-        background: rgba(23,34,64,0.55);
+      :root {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color-scheme: light;
+        --md-bg: #f3f4f6;
+        --md-surface: #ffffff;
+        --md-surface-alt: #f9fafb;
+        --md-primary: #2563eb;
+        --md-primary-dark: #1d4ed8;
+        --md-outline: #d1d5db;
+        --md-outline-strong: #9ca3af;
+        --md-text: #111827;
+        --md-text-muted: #6b7280;
+        --md-radius-lg: 18px;
+        --md-shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.08);
+        --md-shadow-strong: 0 18px 45px rgba(15, 23, 42, 0.16);
       }
-      .zone.dragover { border-color: #8fb3ff; background: rgba(39,64,122,0.55); }
-      .btn { display: inline-block; padding: 10px 14px; border-radius: 10px; border: 1px solid #4a5c8a; cursor: pointer; }
-      .btn:hover { background: #1a2748; }
-      .hidden { display: none; }
-      .result { margin-top: 24px; background: #121a33; border: 1px solid #2a3862; padding: 16px; border-radius: 12px; }
-      code { color: #9fd3ff; }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, #e5edff 0, var(--md-bg) 55%);
+        color: var(--md-text);
+      }
+
+      a {
+        color: var(--md-primary);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 32px 16px 40px;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: 960px;
+      }
+
+      .header {
+        margin-bottom: 24px;
+      }
+
+      .kicker {
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--md-primary);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      h1 {
+        font-size: clamp(26px, 3vw, 32px);
+        margin: 0 0 6px;
+      }
+
+      .lede {
+        margin: 0;
+        font-size: 15px;
+        color: var(--md-text-muted);
+        max-width: 620px;
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr);
+        gap: 20px;
+      }
+
+      @media (min-width: 900px) {
+        .cards-grid {
+          grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        }
+      }
+
+      .card {
+        background: var(--md-surface);
+        border-radius: var(--md-radius-lg);
+        padding: 22px 22px 20px;
+        box-shadow: var(--md-shadow-soft);
+      }
+
+      .card + .card {
+        margin-top: 0;
+      }
+
+      .card-header {
+        margin-bottom: 16px;
+      }
+
+      .card-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+
+      .card-subtitle {
+        margin: 0;
+        font-size: 13px;
+        color: var(--md-text-muted);
+      }
+
+      .zone {
+        margin-top: 12px;
+        border: 1.6px dashed var(--md-outline-strong);
+        border-radius: 16px;
+        padding: 28px 20px;
+        text-align: center;
+        transition: 150ms ease;
+        background: var(--md-surface-alt);
+      }
+
+      .zone.dragover {
+        border-color: var(--md-primary);
+        background: #e0ebff;
+      }
+
+      .zone p {
+        margin: 4px 0;
+        color: var(--md-text-muted);
+      }
+
+      .zone p strong {
+        color: var(--md-text);
+        font-size: 15px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: none;
+        outline: none;
+        background: var(--md-primary);
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35);
+        transition: background 140ms ease, transform 140ms ease,
+                    box-shadow 140ms ease;
+        text-decoration: none;
+      }
+
+      .btn:hover {
+        background: var(--md-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 16px 30px rgba(37, 99, 235, 0.45);
+        text-decoration: none;
+      }
+
+      .btn:active {
+        transform: translateY(0);
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.28);
+      }
+
+      .btn-secondary {
+        background: #e5edff;
+        color: var(--md-primary-dark);
+        box-shadow: none;
+      }
+
+      .btn-secondary:hover {
+        background: #d2dfff;
+        box-shadow: none;
+      }
+
+      .btn-inline {
+        margin-left: 8px;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .section {
+        margin-top: 18px;
+      }
+
+      .field-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      input[type="url"] {
+        flex: 1 1 220px;
+        min-width: 0;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--md-outline);
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        background: var(--md-surface-alt);
+      }
+
+      input[type="url"]:focus {
+        border-color: var(--md-primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        background: #ffffff;
+      }
+
+      .meta-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: var(--md-text-muted);
+      }
+
+      .meta-list code {
+        font-size: 12px;
+        background: #eef2ff;
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+
+      #urlResult,
+      #ragResult {
+        margin-top: 14px;
+        font-size: 13px;
+      }
+
+      #ragResult h4,
+      #urlResult h4 {
+        margin: 0 0 4px;
+        font-size: 14px;
+      }
+
+      #result {
+        margin-top: 20px;
+        padding: 18px 20px;
+        border-radius: var(--md-radius-lg);
+        background: var(--md-surface);
+        box-shadow: var(--md-shadow-soft);
+        font-size: 14px;
+      }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <h1>PDF → JSON Extractor</h1>
-      <p>Dra & släpp en <strong>PDF</strong> eller välj fil. Texten extraheras till stycken med metadata och sparas som JSON på servern.</p>
+    <div class="app-shell">
+      <div class="wrap">
+        <header class="header">
+          <div class="kicker">AI-kursens slutarbete</div>
+          <h1>PDF & webbtext → strukturerad data</h1>
+          <p class="lede">
+            Ladda upp en PDF eller ange en URL så extraheras texten, delas upp i stycken
+            och sparas som JSON/TXT på servern tillsammans med metadata.
+          </p>
+        </header>
 
-      <div id="dropzone" class="zone" tabindex="0">
-        <p><strong>Släpp PDF här</strong></p>
-        <p>eller</p>
-        <label class="btn" for="file">Välj PDF…</label>
-        <input class="hidden" id="file" type="file" accept="application/pdf" />
+        <div class="cards-grid">
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">1. Ladda upp PDF</h2>
+              <p class="card-subtitle">
+                Dra in en PDF-fil eller välj från din dator. Filen extraheras på servern och
+                sparas som JSON.
+              </p>
+            </div>
+
+            <div id="dropzone" class="zone" tabindex="0">
+              <p><strong>Släpp PDF här</strong></p>
+              <p>eller</p>
+              <label class="btn" for="file">Välj PDF…</label>
+              <input class="file-input" id="file" type="file" accept="application/pdf" />
+            </div>
+
+            <div id="result" class="result hidden"></div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">2. Extrahera text från URL</h2>
+              <p class="card-subtitle">
+                Ange en webbadress, så hämtas sidans text, sparas som TXT och kan även indexeras för RAG.
+              </p>
+            </div>
+
+            <div class="section">
+              <label for="urlInput" style="font-size:13px; color:var(--md-text-muted);">
+                Webbadress
+              </label>
+              <div class="field-row">
+                <input
+                  id="urlInput"
+                  type="url"
+                  placeholder="https://exempel.se/sida"
+                />
+                <button id="fetchBtn" class="btn btn-secondary btn-inline">
+                  Hämta &amp; spara
+                </button>
+              </div>
+            </div>
+
+            <section id="urlResult" style="display:none; margin-top:1rem">
+              <h4>TXT-resultat</h4>
+              <ul class="meta-list">
+                <li>• Källa: <a id="urlSource" href="#" target="_blank" rel="noopener">-</a></li>
+                <li>• Tecken: <span id="urlChars">-</span></li>
+                <li>• Ord: <span id="urlWords">-</span></li>
+                <li>• TXT sparad som: <span id="urlFile">-</span></li>
+              </ul>
+              <p style="margin-top:10px;">
+                <a id="downloadTxt" class="btn btn-secondary" href="#" download>Ladda ner TXT</a>
+              </p>
+            </section>
+
+            <section id="ragResult" style="display:none; margin-top:1rem">
+              <h4>RAG-resultat</h4>
+              <ul class="meta-list">
+                <li>• Records (JSON): <a id="recordsJson" href="#" target="_blank" rel="noopener">-</a></li>
+                <li>• Embeddings (JSONL): <a id="embJsonl" href="#" target="_blank" rel="noopener">-</a></li>
+                <li>• Antal chunkar: <span id="ragChunks">-</span></li>
+              </ul>
+            </section>
+          </section>
+        </div>
+
       </div>
-
-
-      <hr />
-      <h3>Extrahera text från URL</h3>
-      <input id="urlInput" type="url" placeholder="https://exempel.se/sida" style="width: min(680px, 95%)" />
-      <button id="fetchBtn">Hämta & spara som TXT</button>
-
-      <section id="urlResult" style="display:none; margin-top:1rem">
-        <ul>
-          <li>• Källa: <a id="urlSource" href="#" target="_blank" rel="noopener">-</a></li>
-          <li>• Tecken: <span id="urlChars">-</span></li>
-          <li>• Ord: <span id="urlWords">-</span></li>
-          <li>• TXT sparad som: <span id="urlFile">-</span></li>
-        </ul>
-        <p><a id="downloadTxt" class="btn" href="#" download>Ladda ner TXT</a></p>
-      </section>
-
-      <section id="ragResult" style="display:none; margin-top:1rem">
-        <h4>RAG-resultat</h4> 
-        <ul>
-          <li>• Records (JSON): <a id="recordsJson" href="#" target="_blank" rel="noopener">-</a></li>
-          <li>• Embeddings (JSONL): <a id="embJsonl" href="#" target="_blank" rel="noopener">-</a></li>
-          <li>• Antal chunkar: <span id="ragChunks">-</span></li>
-        </ul>
-      </section>
-
-
-      <div id="result" class="result hidden"></div>
     </div>
+
 
     <script>
       const drop = document.getElementById('dropzone');
