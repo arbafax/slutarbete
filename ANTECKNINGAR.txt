@@ -1,6 +1,0 @@
-
-● Kolla in https://pypi.org/project/pymupdf4llm/ som alternativ till PdfPlumber och PdfReader
-
-● https://pypi.org/project/html-to-markdown/
-
-● Kolla in och läs: https://www.reddit.com/r/LangChain/comments/1ftz07p/html_to_markdown/

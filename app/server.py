@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Body, HTTPException
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 import os
 import io
+import time
 import json
 import re
 import fitz  # pymupdf
@@ -14,6 +15,10 @@ import httpx
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from typing import List, Dict, Optional
+
+from fastapi import Body
+from pathlib import Path
+from rag_pipeline import process_url_for_rag
 
 # import pdfplumber
 # from pypdf import PdfReader
@@ -59,8 +64,11 @@ app.add_middleware(
 )
 
 # Serve frontend (mounted at /static to avoid shadowing the API)
-app.mount("/static", StaticFiles(directory=STATIC_DIR, html=False), name="static")
-app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
+try:
+    app.mount("/static", StaticFiles(directory=STATIC_DIR, html=False), name="static")
+    app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
+except Exception:
+    pass
 
 
 # -----------------------------
@@ -242,8 +250,8 @@ def index_alias():
 from fastapi import Body
 
 
-@app.post("/api/fetch_url")
-async def fetch_url(payload: dict = Body(...)):
+@app.post("/api/fetch_url_old")
+async def fetch_url_old(payload: dict = Body(...)):
     url = (payload.get("url") or "").strip()
     if not url:
         raise HTTPException(status_code=400, detail="Missing 'url'")
@@ -296,4 +304,100 @@ async def fetch_url(payload: dict = Body(...)):
             "created_at": utc_timestamp(),
         },
         status_code=200,
+    )
+
+
+@app.post("/api/fetch_url")
+async def api_fetch_url(payload: dict = Body(...)):
+    """
+    Body:
+    {
+      "url": "https://exempel.se/sida",
+      "max_tokens_per_chunk": 512,            # valfritt
+      "embed_backend": "openai|sbert|ollama"  # valfritt, annars ENV EMBED_BACKEND/openai
+    }
+    Returnerar paths till sparade filer och lite statistik.
+    """
+    url = (payload.get("url") or "").strip()
+    if not url or not url.lower().startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="Provide a valid http(s) URL")
+
+    max_tokens = int(payload.get("max_tokens_per_chunk") or 512)
+    embed_backend = payload.get("embed_backend")  # None => env/standard används
+
+    try:
+        pkg = process_url_for_rag(
+            url, max_tokens_per_chunk=max_tokens, embed_backend=embed_backend
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Pipeline failed: {e!s}")
+
+    # skriv ut som två filer: metadata+md och embeddings
+    ts = ""  ## int(time.time())
+    base = (
+        re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60] or "document"
+    )
+    stem = f"rag_{base}_{ts}"
+
+    # 1) records utan den stora vektorn (för läsbarhet)
+    records_slim = []
+    embeddings = []
+    all_markdown = []
+    for r in pkg["records"]:
+        slim = {k: v for k, v in r.items() if k != "embedding"}
+        h = r.get("heading") or ""
+        body = r.get("markdown", "")
+        if h:
+            all_markdown.append(f"# {h}\n{body}\n")
+        else:
+            all_markdown.append(f"{body}\n")
+
+        records_slim.append(slim)
+        embeddings.append({"id": r["id"], "embedding": r["embedding"]})
+
+    all_md = "\n".join(all_markdown).strip()
+    chars = len(all_md)
+    words = len(all_md.split())
+
+    meta = {
+        "source_url": pkg["source_url"],
+        "title": pkg["title"],
+        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "record_count": len(pkg["records"]),
+        "max_tokens_per_chunk": max_tokens,
+        "embed_backend": embed_backend or os.getenv("EMBED_BACKEND") or "openai",
+    }
+
+    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    meta_path = Path(OUTPUT_DIR) / f"{stem}.json"
+    emb_path = Path(OUTPUT_DIR) / f"{stem}.embeddings.jsonl"
+    txt_path = Path(OUTPUT_DIR) / f"{stem}.txt"
+
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {"meta": meta, "records": records_slim}, f, ensure_ascii=False, indent=2
+        )
+
+    with open(emb_path, "w", encoding="utf-8") as f:
+        for row in embeddings:
+            f.write(json.dumps(row) + "\n")
+
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write(all_md)
+
+    return JSONResponse(
+        content={
+            "message": "OK",
+            "source_url": pkg["source_url"],
+            "title": pkg["title"],
+            "record_count": meta["record_count"],
+            "outputs": {
+                "records_json": f"/outputs/{meta_path.name}",
+                "embeddings_jsonl": f"/outputs/{emb_path.name}",
+            },
+            "params": {
+                "max_tokens_per_chunk": max_tokens,
+                "embed_backend": meta["embed_backend"],
+            },
+        }
     )

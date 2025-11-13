@@ -79,3 +79,42 @@ I ytterligare ett terminalfönster (eller samma där du kör serve innan du star
         curl http://localhost:11434/api/generate -d '{"model":"llama3.1","prompt":"Hej! Säg något kort."}'
         # ska ge ett JSON-svar med text
 
+
+### Server.py
+
+För att köra server.py i en teminal navigera till mappen app /slutarbete och kör
+
+        source .venv/bin/activate
+
+navigera till mappen /app och kör
+
+        uvicorn server:app --reload --port 8000
+
+## Anteckningar av/för utvecklingen
+
+### saker att kolla upp
+
+- Kolla in https://pypi.org/project/pymupdf4llm/ som alternativ till PdfPlumber och PdfReader
+
+- https://pypi.org/project/html-to-markdown/
+
+- Kolla in och läs: https://www.reddit.com/r/LangChain/comments/1ftz07p/html_to_markdown/
+
+- Kolla upp Modellen (t.ex. text-embedding-3-large)
+
+- Kolla markdownify och BeautifulSoup
+
+#### Nästa steg att testa eller prova
+
+en annan pdf-läsare
+
+        $ pip install -U pymupdf4llm
+
+#### För RAG pipeline
+
+        pip install requests beautifulsoup4 markdownify tiktoken
+        # För lokal embedding:
+        pip install sentence-transformers
+        # För OpenAI:
+        pip install openai
+        # För Ollama (kör ollama lokalt): inget extra pip-krav

@@ -51,6 +51,15 @@
         <p><a id="downloadTxt" class="btn" href="#" download>Ladda ner TXT</a></p>
       </section>
 
+      <section id="ragResult" style="display:none; margin-top:1rem">
+        <h4>RAG-resultat</h4> 
+        <ul>
+          <li>• Records (JSON): <a id="recordsJson" href="#" target="_blank" rel="noopener">-</a></li>
+          <li>• Embeddings (JSONL): <a id="embJsonl" href="#" target="_blank" rel="noopener">-</a></li>
+          <li>• Antal chunkar: <span id="ragChunks">-</span></li>
+        </ul>
+      </section>
+
 
       <div id="result" class="result hidden"></div>
     </div>
@@ -164,6 +173,36 @@
           alert("Kunde inte hämta URL: " + e.message);
         }
       });
+
+      const Rels = {
+        panel:  document.getElementById("ragResult"),
+        records: document.getElementById("recordsJson"),
+        emb:     document.getElementById("embJsonl"),
+        chunks:  document.getElementById("ragChunks"),
+      };
+
+      // Patcha render-funktionen:
+      function renderUrlResult(data) {
+        console.log("URL response:", data);
+
+        // Befintlig TXT-panel (du har redan dessa fält)
+        Uels.src.href = data.source_url || "#";
+        Uels.src.textContent = data.source_url || "okänd";
+        Uels.chars.textContent = data.chars ?? "okänd";
+        Uels.words.textContent = data.words ?? "okänd";
+        Uels.file.textContent  = data.txt_filename || (data.txt_url?.split("/").pop() || "-");
+        Uels.dl.href = data.txt_url || "#";
+        if (data.txt_filename) Uels.dl.download = data.txt_filename;
+        Uels.panel.style.display = "block";
+
+        // Ny RAG-panel
+        Rels.records.href = data.records_json || "#";
+        Rels.records.textContent = data.records_json ? data.records_json.split("/").pop() : "-";
+        Rels.emb.href = data.embeddings_jsonl || "#";
+        Rels.emb.textContent = data.embeddings_jsonl ? data.embeddings_jsonl.split("/").pop() : "-";
+        Rels.chunks.textContent = data.record_count ?? "-";
+        Rels.panel.style.display = "block";
+      }
 
     </script>
   </body>
