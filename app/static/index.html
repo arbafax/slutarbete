@@ -424,7 +424,8 @@
         const res = await fetch("/api/fetch_url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url })
+          body: JSON.stringify({ url }),
+          NOT_USED_embed_backend: "DUMMY"
         });
         if (!res.ok) {
           const msg = await res.text().catch(()=>"");

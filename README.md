@@ -118,3 +118,20 @@ en annan pdf-läsare
         # För OpenAI:
         pip install openai
         # För Ollama (kör ollama lokalt): inget extra pip-krav
+
+
+kolla upp beautiful soup 
+
+bs_obj = bs4(html.text, "html5lib")
+
+
+
+
+def create_embeddings(text,
+    model="text-embedding-004",
+    task_type="SEMANTIC_SIMILARITY"):
+        return client.models.embed_content(
+            model=model,
+            contents=text,
+            config=types.EmbedContentConfig(task_type=task_type))
+ 

@@ -49,7 +49,7 @@ LIGATURE_MAP = {
 
 
 def hlog(logtxt: str):
-    print(logtxt)
+    print(f"server.py: {logtxt}")
 
 
 from fastapi.staticfiles import StaticFiles
@@ -252,61 +252,61 @@ def index_alias():
 from fastapi import Body
 
 
-@app.post("/api/fetch_url_old")
-async def fetch_url_old(payload: dict = Body(...)):
-    url = (payload.get("url") or "").strip()
-    if not url:
-        raise HTTPException(status_code=400, detail="Missing 'url'")
-    if not (url.startswith("http://") or url.startswith("https://")):
-        raise HTTPException(
-            status_code=400, detail="URL must start with http:// or https://"
-        )
+# @app.post("/api/fetch_url_old")
+# async def fetch_url_old(payload: dict = Body(...)):
+#     url = (payload.get("url") or "").strip()
+#     if not url:
+#         raise HTTPException(status_code=400, detail="Missing 'url'")
+#     if not (url.startswith("http://") or url.startswith("https://")):
+#         raise HTTPException(
+#             status_code=400, detail="URL must start with http:// or https://"
+#         )
 
-    # Hämta sidan
-    try:
-        headers = {"User-Agent": "Mozilla/5.0 (compatible; PDFJSONBot/1.0; +local-dev)"}
-        timeout = httpx.Timeout(15.0, connect=10.0)
-        async with httpx.AsyncClient(
-            headers=headers, timeout=timeout, follow_redirects=True
-        ) as client:
-            resp = await client.get(url)
-        resp.raise_for_status()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=f"Fetch failed: {e!s}")
+#     # Hämta sidan
+#     try:
+#         headers = {"User-Agent": "Mozilla/5.0 (compatible; PDFJSONBot/1.0; +local-dev)"}
+#         timeout = httpx.Timeout(15.0, connect=10.0)
+#         async with httpx.AsyncClient(
+#             headers=headers, timeout=timeout, follow_redirects=True
+#         ) as client:
+#             resp = await client.get(url)
+#         resp.raise_for_status()
+#     except httpx.HTTPError as e:
+#         raise HTTPException(status_code=502, detail=f"Fetch failed: {e!s}")
 
-    # Bestäm innehållstyp
-    ctype = resp.headers.get("content-type", "").lower()
+#     # Bestäm innehållstyp
+#     ctype = resp.headers.get("content-type", "").lower()
 
-    if "text/html" in ctype or ctype.startswith("text/") or resp.text:
-        text = _html_to_text(resp.text)
-    else:
-        # Enkel fallback: om det inte är HTML, skriv råbytes som text om möjligt
-        try:
-            text = resp.text  # httpx försöker dekoda med rätt encoding
-        except Exception:
-            raise HTTPException(
-                status_code=415, detail=f"Unsupported content-type: {ctype}"
-            )
+#     if "text/html" in ctype or ctype.startswith("text/") or resp.text:
+#         text = _html_to_text(resp.text)
+#     else:
+#         # Enkel fallback: om det inte är HTML, skriv råbytes som text om möjligt
+#         try:
+#             text = resp.text  # httpx försöker dekoda med rätt encoding
+#         except Exception:
+#             raise HTTPException(
+#                 status_code=415, detail=f"Unsupported content-type: {ctype}"
+#             )
 
-    # Spara till /outputs
-    txt_name = _build_txt_filename_from_url(url)
-    txt_path = os.path.join(OUTPUT_DIR, txt_name)
-    with open(txt_path, "w", encoding="utf-8") as f:
-        f.write(text)
+#     # Spara till /outputs
+#     txt_name = _build_txt_filename_from_url(url)
+#     txt_path = os.path.join(OUTPUT_DIR, txt_name)
+#     with open(txt_path, "w", encoding="utf-8") as f:
+#         f.write(text)
 
-    # Svara frontend
-    return JSONResponse(
-        content={
-            "message": "OK",
-            "source_url": url,
-            "txt_filename": txt_name,
-            "txt_url": f"/outputs/{txt_name}",
-            "chars": len(text),
-            "words": len(text.split()),
-            "created_at": utc_timestamp(),
-        },
-        status_code=200,
-    )
+#     # Svara frontend
+#     return JSONResponse(
+#         content={
+#             "message": "OK",
+#             "source_url": url,
+#             "txt_filename": txt_name,
+#             "txt_url": f"/outputs/{txt_name}",
+#             "chars": len(text),
+#             "words": len(text.split()),
+#             "created_at": utc_timestamp(),
+#         },
+#         status_code=200,
+#     )
 
 
 @app.post("/api/fetch_url")
@@ -320,8 +320,9 @@ async def api_fetch_url(payload: dict = Body(...)):
     }
     Returnerar paths till sparade filer och lite statistik.
     """
-    hlog("#########################")
+    hlog("### api_fetch_url()")
     url = (payload.get("url") or "").strip()
+    hlog(f"url :  -->  {url}")
     if not url or not url.lower().startswith(("http://", "https://")):
         raise HTTPException(status_code=400, detail="Provide a valid http(s) URL")
 
@@ -329,6 +330,7 @@ async def api_fetch_url(payload: dict = Body(...)):
     embed_backend = payload.get("embed_backend")  # None => env/standard används
 
     try:
+        hlog("About to call process_url_for_rag")
         pkg = process_url_for_rag(
             url, max_tokens_per_chunk=max_tokens, embed_backend=embed_backend
         )
@@ -338,6 +340,7 @@ async def api_fetch_url(payload: dict = Body(...)):
         print("=== end ===")
         raise HTTPException(status_code=502, detail=f"Pipeline failed: {e!s}")
 
+    hlog("Back from process_url_for_rag")
     # skriv ut som två filer: metadata+md och embeddings
     ts = ""  ## int(time.time())
     base = (

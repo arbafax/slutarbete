@@ -18,13 +18,17 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
+
 from google import genai
 from google.genai import types
 
+## create an GenAI client
+genai_api_key = os.getenv("GENAI_API_KEY")
+client = genai.Client(api_key=genai_api_key)
 
-## create an openAI client
-my_api_key = "AIzaSyBxHq5cPvm-0GGo8fHtPLDNDihB9X_oUlM"
-client = genai.Client(api_key=my_api_key)
+
+def hlog(logtxt: str):
+    print(f"rag_pipeline.py: {logtxt}")
 
 
 # ---------------- Embeddings-backends ----------------
@@ -32,19 +36,45 @@ client = genai.Client(api_key=my_api_key)
 
 class EmbeddingBackend:
     def embed(self, texts: List[str]) -> List[List[float]]:
-        print("##### EmbeddingBackend.embed()")
+        hlog("##### EmbeddingBackend.embed()")
         raise NotImplementedError
 
 
+class GenAIBackend(EmbeddingBackend):
+    def __init__(
+        self,
+        model: str = "text-embedding-004",
+    ):
+        from google import genai
+        from google.genai import types
+
+        self.client = genai.Client(api_key=os.getenv("GENAI_API_KEY"))
+        self.model = model
+
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        hlog("### GenAIBackend.embed()")
+        resp = self.client.models.embed_content(
+            model=self.model,
+            contents=texts,
+            config=types.EmbedContentConfig(task_type="SEMANTIC_SIMILARITY"),
+        )
+        hlog(resp)
+        return resp
+        # return [d.embeddings for d in resp]
+
+
 class OpenAIBackend(EmbeddingBackend):
-    def __init__(self, model: str = "text-embedding-3-large"):
+    def __init__(
+        self,
+        model: str = "text-embedding-3-large",
+    ):
         from openai import OpenAI
 
         self.client = OpenAI()
         self.model = model
 
     def embed(self, texts: List[str]) -> List[List[float]]:
-        print("##### OpenAIBackend.embed()")
+        hlog("### OpenAIBackend.embed()")
         resp = self.client.embeddings.create(model=self.model, input=texts)
         return [d.embedding for d in resp.data]
 
@@ -56,7 +86,7 @@ class SBERTBackend(EmbeddingBackend):
         self.model = SentenceTransformer(model)
 
     def embed(self, texts: List[str]) -> List[List[float]]:
-        print("##### SBERTBackend.embed()")
+        hlog("### SBERTBackend.embed()")
         return self.model.encode(texts, normalize_embeddings=True).tolist()
 
 
@@ -68,7 +98,7 @@ class OllamaBackend(EmbeddingBackend):
         self.host = host.rstrip("/")
 
     def embed(self, texts: List[str]) -> List[List[float]]:
-        print("##### OllamaBackend.embed()")
+        hlog("### OllamaBackend.embed()")
         out = []
         for t in texts:
             r = requests.post(
@@ -80,18 +110,21 @@ class OllamaBackend(EmbeddingBackend):
 
 
 def get_backend(kind: Optional[str] = None) -> EmbeddingBackend:
-    print("### get_backend()")
-    backend = (kind or os.getenv("EMBED_BACKEND") or "openai").lower()
+    hlog("### get_backend()")
+    hlog(f"kind: {kind}")
+    backend = (kind or "genai").lower()
+    hlog(f"Using '{backend}' as backend for embeddings")
+
     if backend == "openai":
         return OpenAIBackend()
+    if backend == "genai":
+        return GenAIBackend()
     if backend == "sbert":
         return SBERTBackend()
     if backend == "ollama":
         return OllamaBackend()
 
-    ## fulkodat
-    return SBERTBackend()
-    # raise ValueError("Unknown EMBED_BACKEND; use openai | sbert | ollama")
+    raise ValueError("Unknown EMBED_BACKEND; use openai | sbert | ollama")
 
 
 # ---------------- Helpers for scraping ----------------
@@ -138,7 +171,7 @@ class ScrapeResult:
 
 
 def scrape_url(url: str, timeout: int = 20) -> ScrapeResult:
-    print("### scrape_url()")
+    hlog("### scrape_url()")
     headers = {"User-Agent": "Mozilla/5.0 (compatible; RAG-Scraper/1.0; +local-dev)"}
     r = requests.get(url, headers=headers, timeout=timeout)
     r.raise_for_status()
@@ -148,7 +181,7 @@ def scrape_url(url: str, timeout: int = 20) -> ScrapeResult:
 
 
 def clean_html(raw_html: str) -> str:
-    print("### clean_html()")
+    hlog("### clean_html()")
     soup = BeautifulSoup(raw_html, "html.parser")
     for tag in soup(["script", "style", "noscript", "template", "svg"]):
         tag.decompose()
@@ -162,7 +195,7 @@ def clean_html(raw_html: str) -> str:
 
 
 def normalize_html(cleaned_html: str) -> BeautifulSoup:
-    print("### normalize_html()")
+    hlog("### normalize_html()")
     soup = BeautifulSoup(cleaned_html, "html.parser")
     for text_node in soup.find_all(string=True):
         if text_node.parent and text_node.parent.name in ("pre", "code"):
@@ -176,7 +209,7 @@ def normalize_html(cleaned_html: str) -> BeautifulSoup:
 
 
 def resolve_links(soup: BeautifulSoup, base_url: str) -> BeautifulSoup:
-    print("### resolve_links()")
+    hlog("### resolve_links()")
     for tag in soup.find_all(["a", "img", "script", "link", "source"]):
         attr = "href" if tag.name in ("a", "link") else "src"
         if tag.has_attr(attr):
@@ -185,7 +218,8 @@ def resolve_links(soup: BeautifulSoup, base_url: str) -> BeautifulSoup:
 
 
 def html_to_markdown(soup: BeautifulSoup) -> str:
-    print("### html_to_markdown()")
+    hlog("### html_to_markdown()")
+    hlog(f"### html: {str(soup)}")
     return md(
         str(soup),
         heading_style="ATX",
@@ -218,7 +252,8 @@ class Block:
 def split_markdown_into_blocks(
     markdown_text: str, min_level: int = 1, max_level: int = 6
 ):
-    print("### split_markdown_into_blocks()")
+    hlog("### split_markdown_into_blocks()")
+    hlog(f"markdown_text : {markdown_text}")
     lines = markdown_text.splitlines()
     pattern = re.compile(r"^(#{1,6})\s+(.*)$")
     blocks, curr_heading, curr_level, buff = [], None, None, []
@@ -251,7 +286,7 @@ def split_markdown_into_blocks(
 
 
 def chunk_text(text: str, max_tokens: int = 512, hard_limit: int = 2048) -> List[str]:
-    print("### chunk_text()")
+    hlog("### chunk_text()")
     if approx_token_count(text) <= max_tokens:
         return [text.strip()]
     paragraphs = re.split(r"\n{2,}", text)
@@ -283,7 +318,7 @@ def chunk_text(text: str, max_tokens: int = 512, hard_limit: int = 2048) -> List
 
 
 def _breadcrumbs(blocks: List[Block], idx: int) -> List[str]:
-    print("### _breadcrumbs()")
+    hlog("### _breadcrumbs()")
     me = blocks[idx]
     trail, cur_level = [], me.level
     for k in range(idx - 1, -1, -1):
@@ -297,7 +332,7 @@ def _breadcrumbs(blocks: List[Block], idx: int) -> List[str]:
 def build_records(
     url: str, title: Optional[str], blocks: List[Block], max_tokens_per_chunk: int = 512
 ) -> List[Dict]:
-    print("### build_records()")
+    hlog("### build_records()")
     records = []
     doc_id = slugify(title or urlparse(url).path or "document")
     for i, b in enumerate(blocks):
@@ -337,11 +372,19 @@ def embed_records(
     backend: Optional[EmbeddingBackend] = None,
     batch_size: int = 64,
 ) -> None:
-    print("### embed_records()")
+    hlog("### embed_records()")
     backend = backend or get_backend()
+    hlog(f"backend = {backend}")
     texts = [r["markdown"] for r in records]
+    hlog(f"len(texts) = {len(texts)}")
+    hlog(f"texts = {texts}")
+    i = 0
     for start in range(0, len(texts), batch_size):
+        i += 1
+        if i >= 2:  ## to not overly consume credits while developing
+            break
         vecs = backend.embed(texts[start : start + batch_size])
+        hlog(f"vecs = {vecs}")
         for i, v in enumerate(vecs):
             records[start + i]["embedding"] = v
 
@@ -349,13 +392,14 @@ def embed_records(
 def process_url_for_rag(
     url: str, max_tokens_per_chunk: int = 512, embed_backend: Optional[str] = None
 ) -> Dict:
-    print("### process_url_for_rag()")
+    hlog("### process_url_for_rag()")
     scraped = scrape_url(url)
     cleaned = clean_html(scraped.html)
     soup = normalize_html(cleaned)
     soup = resolve_links(soup, scraped.base_url)
     title = soup.title.string.strip() if (soup.title and soup.title.string) else None
     markdown = html_to_markdown(soup)
+    hlog(f"markdown : {markdown}")
     blocks = split_markdown_into_blocks(markdown, min_level=1, max_level=6)
     if not blocks:
         blocks = [Block(level=1, heading="Innehåll", content=markdown)]
@@ -363,6 +407,7 @@ def process_url_for_rag(
         scraped.url, title, blocks, max_tokens_per_chunk=max_tokens_per_chunk
     )
     backend = get_backend(embed_backend)
+    hlog(f"About to call embed_records using {backend} as backend")
     embed_records(records, backend=backend)
     return {"source_url": scraped.url, "title": title, "records": records}
 
@@ -378,7 +423,7 @@ def cosine_similarity(vec1, vec2):
     Returns:
     float: The cosine similarity between the two vectors.
     """
-    print("### cosine_similarity()")
+    hlog("### cosine_similarity()")
     # Compute the dot product of the two vectors and divide by the product of their norms
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
     ### end cosine_similarity
@@ -424,6 +469,7 @@ def create_embeddings(
     model="text-embedding-004",
     task_type="SEMANTIC_SIMILARITY",  ## observera att vi använder en annan modell när vi embeddar än när vi chattar
 ):
+
     return client.models.embed_content(
         model=model, contents=text, config=types.EmbedContentConfig(task_type=task_type)
     )
