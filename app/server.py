@@ -3,6 +3,7 @@
 #   file: server.py
 #
 #   Holds the API endpoints.
+#   Read and write towards the file system
 #   Uses rag_pipeline.py
 #
 ###################################################
@@ -256,10 +257,18 @@ def process_pdf_for_rag(
 
 
 @app.post("/api/upload_pdf")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(
+    file: UploadFile = File(...),
+    embed_backend: str = "google",
+    max_tokens_per_chunk: int = 512,
+):
     """
     Upload PDF and create embeddings for semantic search
-    Now works just like URL extraction!
+    Now works just like URL extraction with configurable parameters!
+
+    Query params:
+    - embed_backend: google|openai|sbert|ollama (default: google)
+    - max_tokens_per_chunk: 256|512|1024|2048 (default: 512)
     """
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a .pdf file")
@@ -271,16 +280,12 @@ async def upload_pdf(file: UploadFile = File(...)):
     with open(upload_path, "wb") as out:
         out.write(pdf_bytes)
 
-    # Get embed backend from form (default to google)
-    # Note: FastAPI doesn't easily support form data + file, so we use default
-    embed_backend = "google"  # Could be made configurable via query param
-
     try:
-        # NEW: Process with RAG pipeline
+        # Process with RAG pipeline using provided parameters
         pkg = process_pdf_for_rag(
             pdf_bytes,
             filename=file.filename,
-            max_tokens_per_chunk=512,
+            max_tokens_per_chunk=max_tokens_per_chunk,
             embed_backend=embed_backend,
         )
     except Exception as e:
@@ -314,7 +319,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         "collection_name": collection_name,
         "created_at": utc_timestamp(),
         "record_count": len(pkg["records"]),
-        "max_tokens_per_chunk": 512,
+        "max_tokens_per_chunk": max_tokens_per_chunk,
         "embed_backend": embed_backend,
         "type": "pdf",
     }
@@ -345,7 +350,7 @@ async def upload_pdf(file: UploadFile = File(...)):
     vector_stores[collection_name] = pkg["vector_store"]
 
     hlog(
-        f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks, vector store created"
+        f"✓ PDF '{file.filename}' processed with {embed_backend}: {len(pkg['records'])} chunks ({max_tokens_per_chunk} tokens/chunk)"
     )
 
     return JSONResponse(
@@ -365,7 +370,7 @@ async def upload_pdf(file: UploadFile = File(...)):
                 "stats": pkg["vector_store"].get_stats(),
             },
             "params": {
-                "max_tokens_per_chunk": 512,
+                "max_tokens_per_chunk": max_tokens_per_chunk,
                 "embed_backend": embed_backend,
             },
         },

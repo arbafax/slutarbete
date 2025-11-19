@@ -399,9 +399,30 @@
       <!-- PDF Upload Section -->
       <div class="card">
         <h2>
-          Semantisk Sökning i PDF
+          PDF med Semantisk Sökning
         </h2>
         <p class="text-muted">Ladda upp en PDF så skapas automatiskt embeddings för semantisk sökning i dokumentet.</p>
+        
+        <div class="input-group" style="margin-bottom: 16px;">
+          <div style="flex: 1;">
+            <label>Embedding Model för PDF</label>
+            <select id="pdfEmbedBackend">
+              <option value="google">Google (Standard)</option>
+              <option value="openai">OpenAI</option>
+              <option value="sbert">Sentence-BERT</option>
+              <option value="ollama">Ollama (Lokal)</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label>Chunk-storlek (tokens)</label>
+            <select id="pdfChunkSize">
+              <option value="256">256 tokens (små chunkar)</option>
+              <option value="512" selected>512 tokens (standard)</option>
+              <option value="1024">1024 tokens (stora chunkar)</option>
+              <option value="2048">2048 tokens (mycket stora)</option>
+            </select>
+          </div>
+        </div>
         
         <div id="dropzone" class="zone" tabindex="0">
           <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled); margin-bottom: 16px;">cloud_upload</span>
@@ -447,7 +468,7 @@
         <div id="urlResult" style="display:none; margin-top:20px">
           <div class="stats">
             <div class="stat-card">
-              <div class="stat-label">Collection</div>
+              <div class="stat-label">Samling</div>
               <div class="stat-value" id="collectionName">-</div>
             </div>
             <div class="stat-card">
@@ -481,9 +502,9 @@
         
         <div class="input-group">
           <div style="flex: 1;">
-            <label>Välj samling</label>
+            <label>Välj Samling</label>
             <select id="searchCollection">
-              <option value="">-- Välj samling --</option>
+              <option value="">-- Välj collection --</option>
             </select>
           </div>
           <button class="btn btn-outlined" id="refreshCollections">
@@ -538,9 +559,15 @@
         }
         uploadingUI(file);
         try {
+          const pdfBackend = document.getElementById('pdfEmbedBackend').value;
+          const pdfChunkSize = document.getElementById('pdfChunkSize').value;
+          
           const form = new FormData();
           form.append('file', file, file.name);
-          const res = await fetch('/api/upload_pdf', { method: 'POST', body: form });
+          
+          // Skicka parametrar som query params
+          const url = `/api/upload_pdf?embed_backend=${pdfBackend}&max_tokens_per_chunk=${pdfChunkSize}`;
+          const res = await fetch(url, { method: 'POST', body: form });
           const data = await res.json();
           if (!res.ok) throw new Error(data?.detail || 'Okänt fel');
 
@@ -548,7 +575,7 @@
             <p><span class="material-icons" style="vertical-align: middle; color: var(--secondary);">check_circle</span> <strong>Klart!</strong></p>
             <div class="stats">
               <div class="stat-card">
-                <div class="stat-label">Collection</div>
+                <div class="stat-label">Samling</div>
                 <div class="stat-value">${data.collection_name || '-'}</div>
               </div>
               <div class="stat-card">
@@ -559,6 +586,16 @@
                 <div class="stat-label">Vektorer</div>
                 <div class="stat-value">${data.vector_store?.stats?.total_vectors || '0'}</div>
               </div>
+            </div>
+            <div style="display: flex; gap: 8px; margin: 16px 0;">
+              <span class="chip">
+                <span class="material-icons" style="font-size: 16px;">model_training</span>
+                ${data.params?.embed_backend || 'google'}
+              </span>
+              <span class="chip">
+                <span class="material-icons" style="font-size: 16px;">splitscreen</span>
+                ${data.params?.max_tokens_per_chunk || 512} tokens
+              </span>
             </div>
             <h3><span class="material-icons">file_download</span> Nedladdningar</h3>
             <ul>
@@ -750,7 +787,7 @@
                 </div>
               </div>
               <div class="search-result-text">${res.markdown}</div>
-              <!-- 
+              <!--
                 ${res.url ? `<p style="margin-top:12px; font-size:12px;">
                   <a href="${res.url}${res.anchor || ''}" target="_blank">
                     <span class="material-icons" style="font-size: 14px; vertical-align: middle;">link</span>
