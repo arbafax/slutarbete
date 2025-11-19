@@ -4,195 +4,266 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PDF → JSON Extractor + RAG Search</title>
+    
+    <!-- Google Material Design -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
     <style>
       :root { 
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        --bg-dark: #0b1220;
-        --bg-medium: #121a33;
-        --bg-card: #1a2748;
-        --border: #3d4b72;
-        --border-hover: #8fb3ff;
-        --text-primary: #e6ecff;
-        --text-secondary: #b7c1e1;
-        --accent: #9fd3ff;
+        font-family: 'Roboto', sans-serif;
+        --primary: #1976d2;
+        --primary-dark: #1565c0;
+        --primary-light: #42a5f5;
+        --secondary: #388e3c;
+        --error: #d32f2f;
+        --background: #fafafa;
+        --surface: #ffffff;
+        --on-primary: #ffffff;
+        --on-surface: rgba(0, 0, 0, 0.87);
+        --on-surface-medium: rgba(0, 0, 0, 0.60);
+        --on-surface-disabled: rgba(0, 0, 0, 0.38);
+        --divider: rgba(0, 0, 0, 0.12);
       }
       
       * { box-sizing: border-box; }
       
       body { 
         margin: 0; 
-        background: var(--bg-dark); 
-        color: var(--text-primary);
-        line-height: 1.6;
+        background: var(--background); 
+        color: var(--on-surface);
+        line-height: 1.5;
       }
       
       .wrap { 
         max-width: 1200px; 
-        margin: 48px auto; 
-        padding: 0 20px; 
+        margin: 24px auto; 
+        padding: 0 16px; 
       }
       
-      h1 { 
-        font-size: 32px; 
-        margin: 0 0 8px;
-        background: linear-gradient(135deg, #8fb3ff, #9fd3ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+      .app-bar {
+        background: var(--primary);
+        color: var(--on-primary);
+        padding: 16px 24px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        margin-bottom: 24px;
+      }
+      
+      .app-bar h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 400;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .app-bar p {
+        margin: 8px 0 0 0;
+        opacity: 0.9;
+        font-size: 14px;
       }
       
       h2 { 
-        font-size: 24px; 
-        margin: 32px 0 16px;
-        border-bottom: 2px solid var(--border);
-        padding-bottom: 8px;
+        font-size: 20px;
+        font-weight: 500;
+        margin: 0 0 16px;
+        color: var(--on-surface);
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
       
       h3 { 
-        font-size: 18px; 
-        margin: 24px 0 12px; 
+        font-size: 16px;
+        font-weight: 500;
+        margin: 24px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
       
-      p { color: var(--text-secondary); }
+      .card {
+        background: var(--surface);
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 24px;
+        margin-bottom: 24px;
+      }
       
       .zone {
-        margin-top: 24px; 
-        border: 2px dashed var(--border); 
-        border-radius: 16px;
-        padding: 32px; 
-        text-align: center; 
-        transition: 150ms ease;
-        background: rgba(23,34,64,0.55);
+        border: 2px dashed var(--divider);
+        border-radius: 4px;
+        padding: 48px 32px;
+        text-align: center;
+        transition: all 0.2s;
+        background: #fafafa;
+        margin-top: 16px;
       }
       
       .zone.dragover { 
-        border-color: var(--border-hover); 
-        background: rgba(39,64,122,0.55); 
+        border-color: var(--primary);
+        background: #e3f2fd;
       }
       
       .btn { 
-        display: inline-block; 
-        padding: 10px 16px; 
-        border-radius: 10px; 
-        border: 1px solid var(--border); 
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: none;
         cursor: pointer;
-        background: var(--bg-medium);
-        color: var(--text-primary);
-        text-decoration: none;
-        transition: all 150ms ease;
+        font-family: 'Roboto', sans-serif;
         font-size: 14px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+        text-decoration: none;
+        background: transparent;
+        color: var(--primary);
       }
       
-      .btn:hover { 
-        background: var(--bg-card); 
-        border-color: var(--border-hover);
+      .btn:hover {
+        background: rgba(25, 118, 210, 0.08);
       }
       
-      .btn-primary {
-        background: linear-gradient(135deg, #4a7cff, #7ba3ff);
-        border-color: #4a7cff;
+      .btn-raised {
+        background: var(--primary);
+        color: var(--on-primary);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       }
       
-      .btn-primary:hover {
-        background: linear-gradient(135deg, #5a8cff, #8bb3ff);
+      .btn-raised:hover {
+        background: var(--primary-dark);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
       }
       
-      .hidden { display: none; }
+      .btn-outlined {
+        border: 1px solid var(--primary);
+        color: var(--primary);
+      }
+      
+      .btn-outlined:hover {
+        background: rgba(25, 118, 210, 0.08);
+      }
+      
+      .btn:disabled {
+        background: var(--on-surface-disabled);
+        color: rgba(0, 0, 0, 0.26);
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      
+      .hidden { display: none !important; }
       
       .result { 
-        margin-top: 24px; 
-        background: var(--bg-medium); 
-        border: 1px solid var(--border); 
-        padding: 20px; 
-        border-radius: 12px; 
-      }
-      
-      code { 
-        color: var(--accent);
-        background: rgba(159, 211, 255, 0.1);
-        padding: 2px 6px;
+        margin-top: 16px;
+        padding: 16px;
+        background: #e8f5e9;
+        border-left: 4px solid var(--secondary);
         border-radius: 4px;
       }
       
-      input[type="text"], input[type="url"], textarea {
-        width: 100%;
-        padding: 10px 14px;
-        background: var(--bg-medium);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-size: 14px;
-        font-family: inherit;
+      code { 
+        background: rgba(0, 0, 0, 0.05);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 13px;
       }
       
-      input:focus, textarea:focus {
+      input[type="text"], 
+      input[type="url"], 
+      textarea,
+      select {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--surface);
+        border: 1px solid var(--divider);
+        border-bottom: 2px solid var(--divider);
+        border-radius: 4px 4px 0 0;
+        color: var(--on-surface);
+        font-size: 16px;
+        font-family: 'Roboto', sans-serif;
+        transition: border-color 0.2s;
+      }
+      
+      input:focus, 
+      textarea:focus,
+      select:focus {
         outline: none;
-        border-color: var(--border-hover);
+        border-bottom-color: var(--primary);
+        background: var(--surface);
       }
       
       .input-group {
         display: flex;
         gap: 12px;
-        align-items: center;
-        margin-top: 12px;
+        align-items: flex-end;
+        margin-top: 16px;
       }
       
-      .input-group input {
+      .input-group input,
+      .input-group select {
         flex: 1;
       }
       
-      select {
-        padding: 8px 12px;
-        background: var(--bg-medium);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-size: 14px;
+      .input-group .btn {
+        margin-bottom: 2px;
       }
       
       .search-result {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 8px;
+        background: var(--surface);
+        border-radius: 4px;
         padding: 16px;
-        margin-bottom: 12px;
-        transition: border-color 150ms ease;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        transition: box-shadow 0.2s;
       }
       
       .search-result:hover {
-        border-color: var(--border-hover);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.16);
       }
       
       .search-result-header {
         display: flex;
         justify-content: space-between;
-        align-items: start;
-        margin-bottom: 8px;
+        align-items: flex-start;
+        margin-bottom: 12px;
       }
       
       .search-result-title {
-        font-weight: 600;
-        color: var(--accent);
+        font-weight: 500;
+        font-size: 16px;
+        color: var(--on-surface);
         margin: 0 0 4px 0;
       }
       
       .search-result-score {
-        background: rgba(143, 179, 255, 0.2);
-        padding: 4px 10px;
+        background: #e3f2fd;
+        color: var(--primary);
+        padding: 4px 12px;
         border-radius: 12px;
         font-size: 12px;
-        color: var(--accent);
+        font-weight: 500;
+        white-space: nowrap;
       }
       
       .search-result-breadcrumbs {
         font-size: 12px;
-        color: var(--text-secondary);
+        color: var(--on-surface-medium);
         margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
       
       .search-result-text {
-        color: var(--text-secondary);
+        color: var(--on-surface-medium);
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.6;
       }
       
       .stats {
@@ -203,30 +274,31 @@
       }
       
       .stat-card {
-        background: var(--bg-card);
-        padding: 16px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        padding: 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
       
       .stat-label {
         font-size: 12px;
-        color: var(--text-secondary);
+        color: var(--on-surface-medium);
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        font-weight: 500;
       }
       
       .stat-value {
-        font-size: 24px;
-        font-weight: 600;
-        color: var(--accent);
-        margin-top: 4px;
+        font-size: 32px;
+        font-weight: 300;
+        color: var(--primary);
+        margin-top: 8px;
       }
       
       hr {
         border: none;
-        border-top: 1px solid var(--border);
-        margin: 32px 0;
+        border-top: 1px solid var(--divider);
+        margin: 24px 0;
       }
       
       ul {
@@ -238,7 +310,7 @@
       }
       
       a {
-        color: var(--accent);
+        color: var(--primary);
         text-decoration: none;
       }
       
@@ -246,63 +318,130 @@
         text-decoration: underline;
       }
       
-      .loading {
+      .spinner {
         display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid var(--border);
-        border-top-color: var(--accent);
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--primary-light);
+        border-top-color: var(--primary);
         border-radius: 50%;
-        animation: spin 0.6s linear infinite;
+        animation: spin 0.8s linear infinite;
       }
       
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
       
-      .section {
-        background: var(--bg-medium);
-        padding: 24px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        margin-bottom: 24px;
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        background: #e0e0e0;
+        border-radius: 16px;
+        font-size: 13px;
+        color: var(--on-surface-medium);
+      }
+      
+      .info-box {
+        margin-top: 16px;
+        padding: 16px;
+        background: #e3f2fd;
+        border-left: 4px solid var(--primary);
+        border-radius: 4px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      
+      .info-box .material-icons {
+        color: var(--primary);
+      }
+      
+      .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--on-surface-medium);
+      }
+      
+      .empty-state .material-icons {
+        font-size: 64px;
+        color: var(--on-surface-disabled);
+        margin-bottom: 16px;
+      }
+      
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--on-surface-medium);
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+      
+      .material-icons {
+        user-select: none;
+      }
+      
+      .text-muted {
+        color: var(--on-surface-medium);
       }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <h1>🔍 PDF → JSON Extractor + RAG Search</h1>
-      <p>Ladda upp PDF-filer, extrahera text från webbsidor, och sök semantiskt i innehållet med AI-powered vektorsökning.</p>
+    <div class="app-bar">
+      <h1>
+        RAG Search System
+      </h1>
+      <p>Ladda upp PDF-filer, extrahera text från webbsidor, och sök semantiskt med AI</p>
+    </div>
 
+    <div class="wrap">
       <!-- PDF Upload Section -->
-      <section class="section">
-        <h2>📄 PDF med Semantisk Sökning</h2>
-        <p>Ladda upp en PDF så skapas automatiskt embeddings för semantisk sökning i dokumentet.</p>
+      <div class="card">
+        <h2>
+          Semantisk Sökning i PDF
+        </h2>
+        <p class="text-muted">Ladda upp en PDF så skapas automatiskt embeddings för semantisk sökning i dokumentet.</p>
         
         <div id="dropzone" class="zone" tabindex="0">
+          <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled); margin-bottom: 16px;">cloud_upload</span>
           <p><strong>Släpp PDF här</strong></p>
-          <p>eller</p>
-          <label class="btn" for="file">Välj PDF…</label>
+          <p class="text-muted">eller</p>
+          <label class="btn btn-outlined" for="file">
+            <span class="material-icons">folder_open</span>
+            Välj PDF
+          </label>
           <input class="hidden" id="file" type="file" accept="application/pdf" />
         </div>
         
         <div id="result" class="result hidden"></div>
-      </section>
+      </div>
 
       <!-- URL Fetch Section -->
-      <section class="section">
-        <h2>🌐 Extrahera från URL</h2>
-        <p>Hämta och indexera innehåll från vilken webbsida som helst. Innehållet blir automatiskt sökbart.</p>
+      <div class="card">
+        <h2>
+          Extrahera från URL
+        </h2>
+        <p class="text-muted">Hämta och indexera innehåll från vilken webbsida som helst. Innehållet blir automatiskt sökbart.</p>
         
         <div class="input-group">
-          <input id="urlInput" type="url" placeholder="https://exempel.se/sida" />
-          <select id="embedBackend">
-            <option value="google">Google (Standard)</option>
-            <option value="openai">OpenAI</option>
-            <option value="sbert">Sentence-BERT</option>
-            <option value="ollama">Ollama (Lokal)</option>
-          </select>
-          <button class="btn btn-primary" id="fetchBtn">Hämta & Indexera</button>
+          <div style="flex: 1;">
+            <label>Webbadress</label>
+            <input id="urlInput" type="url" placeholder="https://exempel.se/sida" />
+          </div>
+          <div style="width: 200px;">
+            <label>Embedding Model</label>
+            <select id="embedBackend">
+              <option value="google">Google (Standard)</option>
+              <option value="openai">OpenAI</option>
+              <option value="sbert">Sentence-BERT</option>
+              <option value="ollama">Ollama (Lokal)</option>
+            </select>
+          </div>
+          <button class="btn btn-raised" id="fetchBtn">
+            <span class="material-icons">download</span>
+            Hämta
+          </button>
         </div>
 
         <div id="urlResult" style="display:none; margin-top:20px">
@@ -312,7 +451,7 @@
               <div class="stat-value" id="collectionName">-</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Antal Chunkar</div>
+              <div class="stat-label">Chunkar</div>
               <div class="stat-value" id="recordCount">-</div>
             </div>
             <div class="stat-card">
@@ -321,40 +460,60 @@
             </div>
           </div>
           
-          <h3>📥 Nedladdningar</h3>
+          <h3>
+            <span class="material-icons">file_download</span>
+            Nedladdningar
+          </h3>
           <ul>
-            <li><a id="recordsJson" href="#" target="_blank">Records (JSON)</a></li>
-            <li><a id="embJsonl" href="#" target="_blank">Embeddings (JSONL)</a></li>
-            <li><a id="markdownTxt" href="#" target="_blank">Markdown Text</a></li>
+            <li><a id="recordsJson" href="#" target="_blank"><span class="material-icons" style="font-size: 16px; vertical-align: text-bottom;">description</span> Records (JSON)</a></li>
+            <li><a id="embJsonl" href="#" target="_blank"><span class="material-icons" style="font-size: 16px; vertical-align: text-bottom;">storage</span> Embeddings (JSONL)</a></li>
+            <li><a id="markdownTxt" href="#" target="_blank"><span class="material-icons" style="font-size: 16px; vertical-align: text-bottom;">article</span> Markdown Text</a></li>
           </ul>
         </div>
-      </section>
+      </div>
 
       <!-- Search Section -->
-      <section class="section">
-        <h2>🔎 Semantisk Sökning</h2>
-        <p>Sök i indexerat innehåll med naturligt språk. AI:n hittar mest relevanta stycken även om orden inte matchar exakt.</p>
+      <div class="card">
+        <h2>
+          Semantisk Sökning
+        </h2>
+        <p class="text-muted">Sök i indexerat innehåll med naturligt språk. AI:n hittar mest relevanta stycken även om orden inte matchar exakt.</p>
         
         <div class="input-group">
-          <select id="searchCollection">
-            <option value="">-- Välj collection --</option>
-          </select>
-          <button class="btn" id="refreshCollections">↻ Uppdatera</button>
+          <div style="flex: 1;">
+            <label>Välj samling</label>
+            <select id="searchCollection">
+              <option value="">-- Välj samling --</option>
+            </select>
+          </div>
+          <button class="btn btn-outlined" id="refreshCollections">
+            <span class="material-icons">refresh</span>
+            Uppdatera
+          </button>
         </div>
 
         <div class="input-group" style="margin-top: 12px;">
-          <input id="searchQuery" type="text" placeholder="Vad letar du efter?" />
-          <select id="searchK">
-            <option value="3">Top 3</option>
-            <option value="5" selected>Top 5</option>
-            <option value="10">Top 10</option>
-            <option value="20">Top 20</option>
-          </select>
-          <button class="btn btn-primary" id="searchBtn">Sök</button>
+          <div style="flex: 1;">
+            <label>Sökfråga</label>
+            <input id="searchQuery" type="text" placeholder="Vad letar du efter?" />
+          </div>
+          <div style="width: 120px;">
+            <label>Antal resultat</label>
+            <select id="searchK">
+              <option value="3">Top 3</option>
+              <option value="5" selected>Top 5</option>
+              <option value="10">Top 10</option>
+              <option value="20">Top 20</option>
+            </select>
+          </div>
+          <button class="btn btn-raised" id="searchBtn">
+            <span class="material-icons">search</span>
+            Sök
+          </button>
         </div>
 
         <div id="searchResults" style="margin-top: 24px;"></div>
-      </section>
+      </div>
     </div>
 
     <script>
@@ -369,12 +528,12 @@
       }
 
       function uploadingUI(file) {
-        show(`<p>Laddar upp: <code>${file.name}</code> <span class="loading"></span></p>`);
+        show(`<p><span class="material-icons" style="vertical-align: middle;">upload_file</span> Laddar upp: <code>${file.name}</code> <span class="spinner"></span></p>`);
       }
 
       async function handleFile(file) {
         if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
-          show('<p>Välj en giltig PDF-fil.</p>');
+          show('<p><span class="material-icons" style="vertical-align: middle; color: var(--error);">error</span> Välj en giltig PDF-fil.</p>');
           return;
         }
         uploadingUI(file);
@@ -386,14 +545,14 @@
           if (!res.ok) throw new Error(data?.detail || 'Okänt fel');
 
           show(`
-            <p><strong>✓ Klart!</strong></p>
+            <p><span class="material-icons" style="vertical-align: middle; color: var(--secondary);">check_circle</span> <strong>Klart!</strong></p>
             <div class="stats">
               <div class="stat-card">
                 <div class="stat-label">Collection</div>
                 <div class="stat-value">${data.collection_name || '-'}</div>
               </div>
               <div class="stat-card">
-                <div class="stat-label">Antal Chunkar</div>
+                <div class="stat-label">Chunkar</div>
                 <div class="stat-value">${data.record_count || '0'}</div>
               </div>
               <div class="stat-card">
@@ -401,26 +560,28 @@
                 <div class="stat-value">${data.vector_store?.stats?.total_vectors || '0'}</div>
               </div>
             </div>
-            <h3>📥 Nedladdningar</h3>
+            <h3><span class="material-icons">file_download</span> Nedladdningar</h3>
             <ul>
-              <li><a href="${data.outputs?.records_json || '#'}" target="_blank">Records (JSON)</a></li>
-              <li><a href="${data.outputs?.embeddings_jsonl || '#'}" target="_blank">Embeddings (JSONL)</a></li>
-              <li><a href="${data.outputs?.text_file || '#'}" target="_blank">Extraherad text</a></li>
+              <li><a href="${data.outputs?.records_json || '#'}" target="_blank"><span class="material-icons" style="font-size: 16px; vertical-align: text-bottom;">description</span> Records (JSON)</a></li>
+              <li><a href="${data.outputs?.embeddings_jsonl || '#'}" target="_blank"><span class="material-icons" style="font-size: 16px; vertical-align: text-bottom;">storage</span> Embeddings (JSONL)</a></li>
+              <li><a href="${data.outputs?.text_file || '#'}" target="_blank"><span class="material-icons" style="font-size: 16px; vertical-align: text-bottom;">article</span> Extraherad text</a></li>
             </ul>
-            <p style="margin-top:16px; padding:12px; background:rgba(143,179,255,0.1); border-radius:8px; border:1px solid var(--border);">
-              💡 <strong>Nu kan du söka!</strong> Gå till Semantisk Sökning-sektionen och välj <code>${data.collection_name}</code> för att söka i ditt dokument.
-            </p>
+            <div class="info-box">
+              <span class="material-icons">info</span>
+              <div>
+                <strong>Nu kan du söka!</strong><br>
+                Gå till Semantisk Sökning-sektionen och välj <code>${data.collection_name}</code> för att söka i ditt dokument.
+              </div>
+            </div>
           `);
           
-          // Refresh collections dropdown
           refreshCollections();
         } catch (err) {
           console.error(err);
-          show(`<p style="color:#ffb3b3">Fel: ${err.message}</p>`);
+          show(`<p style="color: var(--error);"><span class="material-icons" style="vertical-align: middle;">error</span> Fel: ${err.message}</p>`);
         }
       }
 
-      // Drag & Drop events
       ['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => {
         e.preventDefault(); e.stopPropagation(); drop.classList.add('dragover');
       }));
@@ -473,17 +634,10 @@
         urlEls.vectors.textContent = data.vector_store?.stats?.total_vectors || "0";
         
         urlEls.recordsJson.href = data.outputs?.records_json || "#";
-        urlEls.recordsJson.textContent = data.outputs?.records_json?.split("/").pop() || "-";
-        
         urlEls.embJsonl.href = data.outputs?.embeddings_jsonl || "#";
-        urlEls.embJsonl.textContent = data.outputs?.embeddings_jsonl?.split("/").pop() || "-";
-        
         urlEls.markdownTxt.href = data.outputs?.markdown_txt || "#";
-        urlEls.markdownTxt.textContent = data.outputs?.markdown_txt?.split("/").pop() || "-";
         
         urlEls.panel.style.display = "block";
-        
-        // Refresh collections dropdown
         refreshCollections();
       }
 
@@ -493,7 +647,7 @@
         
         const backend = urlEls.backend.value;
         urlEls.panel.style.display = "none";
-        urlEls.btn.innerHTML = '<span class="loading"></span> Hämtar...';
+        urlEls.btn.innerHTML = '<span class="spinner"></span> Hämtar...';
         urlEls.btn.disabled = true;
         
         try {
@@ -503,7 +657,7 @@
           console.error(e);
           alert("Kunde inte hämta URL: " + e.message);
         } finally {
-          urlEls.btn.textContent = "Hämta & Indexera";
+          urlEls.btn.innerHTML = '<span class="material-icons">download</span> Hämta';
           urlEls.btn.disabled = false;
         }
       });
@@ -535,11 +689,10 @@
           data.collections.forEach(col => {
             const opt = document.createElement('option');
             opt.value = col.name;
-            opt.textContent = `${col.name} ${col.loaded ? '(loaded)' : ''}`;
+            opt.textContent = `${col.name} ${col.loaded ? '✓' : ''}`;
             select.appendChild(opt);
           });
           
-          // Restore selection if still exists
           if (currentValue && data.collections.some(c => c.name === currentValue)) {
             select.value = currentValue;
           }
@@ -565,11 +718,16 @@
         console.log("Search results:", data);
         
         if (!data.results || data.results.length === 0) {
-          searchEls.results.innerHTML = '<p>Inga resultat hittades.</p>';
+          searchEls.results.innerHTML = `
+            <div class="empty-state">
+              <div class="material-icons">search_off</div>
+              <p>Inga resultat hittades för "${data.query}"</p>
+            </div>
+          `;
           return;
         }
 
-        let html = `<h3>Hittade ${data.results_count} resultat för "${data.query}"</h3>`;
+        let html = `<h3 style="margin-top: 0;"><span class="material-icons">search</span> Hittade ${data.results_count} resultat för "${data.query}"</h3>`;
         
         data.results.forEach(res => {
           const breadcrumbs = res.breadcrumbs && res.breadcrumbs.length > 0 
@@ -579,14 +737,27 @@
           html += `
             <div class="search-result">
               <div class="search-result-header">
-                <div>
+                <div style="flex: 1;">
                   <h4 class="search-result-title">${res.heading || 'Untitled'}</h4>
-                  ${breadcrumbs ? `<div class="search-result-breadcrumbs">${breadcrumbs}</div>` : ''}
+                  ${breadcrumbs ? `<div class="search-result-breadcrumbs">
+                    <span class="material-icons" style="font-size: 12px;">arrow_forward</span>
+                    ${breadcrumbs}
+                  </div>` : ''}
                 </div>
-                <div class="search-result-score">Score: ${res.score}</div>
+                <div class="search-result-score">
+                  <span class="material-icons" style="font-size: 14px; vertical-align: middle;">star</span>
+                  ${res.score}
+                </div>
               </div>
               <div class="search-result-text">${res.markdown}</div>
-              ${res.url ? `<p style="margin-top:8px; font-size:12px;"><a href="${res.url}${res.anchor || ''}" target="_blank">Källa ↗</a></p>` : ''}
+              <!-- 
+                ${res.url ? `<p style="margin-top:12px; font-size:12px;">
+                  <a href="${res.url}${res.anchor || ''}" target="_blank">
+                    <span class="material-icons" style="font-size: 14px; vertical-align: middle;">link</span>
+                    Källa
+                  </a>
+                -->
+              </p>` : ''}
             </div>
           `;
         });
@@ -609,27 +780,25 @@
           return;
         }
         
-        searchEls.results.innerHTML = '<p><span class="loading"></span> Söker...</p>';
+        searchEls.results.innerHTML = '<p><span class="spinner"></span> Söker...</p>';
         
         try {
           const data = await performSearch(collection, query, k);
           renderSearchResults(data);
         } catch (e) {
           console.error(e);
-          searchEls.results.innerHTML = `<p style="color:#ffb3b3">Sökning misslyckades: ${e.message}</p>`;
+          searchEls.results.innerHTML = `<p style="color: var(--error);"><span class="material-icons" style="vertical-align: middle;">error</span> Sökning misslyckades: ${e.message}</p>`;
         }
       });
 
       searchEls.refresh.addEventListener("click", refreshCollections);
 
-      // Search on Enter key
       searchEls.query.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
           searchEls.btn.click();
         }
       });
 
-      // Initial load of collections
       refreshCollections();
     </script>
   </body>
