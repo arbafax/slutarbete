@@ -571,20 +571,17 @@ def process_url_for_rag(
 
 
 # Keep old functions for backwards compatibility
-# def cosine_similarity(vec1, vec2):
-#     """Calculate cosine similarity between two vectors"""
-#     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+def cosine_similarity(vec1, vec2):
+    """Calculate cosine similarity between two vectors"""
+    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
 
-####
-#   create_embeddings() ANVÄNDS INTE
-####
-# def create_embeddings(
-#     text,
-#     model="text-embedding-004",
-#     task_type="SEMANTIC_SIMILARITY",
-# ):
-#     """Create embeddings using Google API"""
-#     return client.models.embed_content(
-#         model=model, contents=text, config=types.EmbedContentConfig(task_type=task_type)
-#     )
+def create_embeddings(
+    text,
+    model="text-embedding-004",
+    task_type="SEMANTIC_SIMILARITY",
+):
+    """Create embeddings using Google API"""
+    return client.models.embed_content(
+        model=model, contents=text, config=types.EmbedContentConfig(task_type=task_type)
+    )

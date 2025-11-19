@@ -1,3 +1,13 @@
+###################################################
+#
+#   file: server.py
+#
+#   Holds the API endpoints.
+#   Uses rag_pipeline.py
+#
+###################################################
+
+
 from fastapi import FastAPI, UploadFile, File, Body, HTTPException
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -148,6 +158,98 @@ def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
     return out, page_count
 
 
+def extract_text_from_pdf(pdf_bytes: bytes) -> str:
+    """Extract full text from PDF"""
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    full_text = []
+
+    for page in doc:
+        text = page.get_text()
+        if text.strip():
+            full_text.append(text)
+
+    doc.close()
+    return "\n\n".join(full_text)
+
+
+def process_pdf_for_rag(
+    pdf_bytes: bytes,
+    filename: str,
+    max_tokens_per_chunk: int = 512,
+    embed_backend: Optional[str] = None,
+) -> Dict:
+    """
+    Process PDF and create embeddings for semantic search
+    Similar to process_url_for_rag but for PDFs
+    """
+    from rag_pipeline import (
+        Block,
+        split_markdown_into_blocks,
+        build_records,
+        embed_records,
+        get_backend,
+        FAISSVectorStore,
+    )
+
+    # Extract full text
+    full_text = extract_text_from_pdf(pdf_bytes)
+
+    # Normalize text
+    full_text = _normalize_text(full_text)
+
+    # Split into blocks (treat each major section as a block)
+    # For PDFs without markdown structure, we'll create simple blocks
+    paragraphs = re.split(r"\n\s*\n", full_text)
+
+    blocks = []
+    for i, para in enumerate(paragraphs):
+        if para.strip():
+            # Try to detect if first line is a heading (short line in caps or with numbers)
+            lines = para.split("\n", 1)
+            first_line = lines[0].strip()
+
+            is_heading = len(first_line) < 80 and (
+                first_line.isupper() or re.match(r"^\d+[\.\)]\s+", first_line)
+            )
+
+            if is_heading and len(lines) > 1:
+                heading = first_line
+                content = lines[1]
+            else:
+                heading = f"Section {i+1}"
+                content = para
+
+            blocks.append(Block(level=1, heading=heading, content=content))
+
+    if not blocks:
+        blocks = [Block(level=1, heading="Document Content", content=full_text)]
+
+    # Build records with chunks
+    title = os.path.splitext(filename)[0]
+    records = build_records(
+        url=f"pdf://{filename}",
+        title=title,
+        blocks=blocks,
+        max_tokens_per_chunk=max_tokens_per_chunk,
+    )
+
+    # Create embeddings
+    backend = get_backend(embed_backend)
+    embed_records(records, backend=backend)
+
+    # Create vector store
+    dimension = backend.get_dimension()
+    vector_store = FAISSVectorStore(dimension=dimension)
+    vector_store.add_records(records)
+
+    return {
+        "source_file": filename,
+        "title": title,
+        "records": records,
+        "vector_store": vector_store,
+    }
+
+
 # -----------------------------
 # API Endpoints
 # -----------------------------
@@ -155,6 +257,10 @@ def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
 
 @app.post("/api/upload_pdf")
 async def upload_pdf(file: UploadFile = File(...)):
+    """
+    Upload PDF and create embeddings for semantic search
+    Now works just like URL extraction!
+    """
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a .pdf file")
 
@@ -165,29 +271,103 @@ async def upload_pdf(file: UploadFile = File(...)):
     with open(upload_path, "wb") as out:
         out.write(pdf_bytes)
 
-    try:
-        paragraphs, page_count = extract_paragraphs_pymupdf_with_pages(pdf_bytes)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Extraction failed: {e}")
+    # Get embed backend from form (default to google)
+    # Note: FastAPI doesn't easily support form data + file, so we use default
+    embed_backend = "google"  # Could be made configurable via query param
 
-    result = {
+    try:
+        # NEW: Process with RAG pipeline
+        pkg = process_pdf_for_rag(
+            pdf_bytes,
+            filename=file.filename,
+            max_tokens_per_chunk=512,
+            embed_backend=embed_backend,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
+
+    # Generate collection name
+    collection_name = sanitize_basename(file.filename)
+
+    # Prepare output data
+    records_slim = []
+    embeddings = []
+    all_text = []
+
+    for r in pkg["records"]:
+        slim = {k: v for k, v in r.items() if k != "embedding"}
+        records_slim.append(slim)
+        embeddings.append({"id": r["id"], "embedding": r["embedding"]})
+
+        h = r.get("heading") or ""
+        body = r.get("markdown", "")
+        if h:
+            all_text.append(f"# {h}\n{body}\n")
+        else:
+            all_text.append(f"{body}\n")
+
+    all_text_str = "\n".join(all_text).strip()
+
+    meta = {
+        "source_file": safe_name_pdf,
+        "title": pkg["title"],
+        "collection_name": collection_name,
         "created_at": utc_timestamp(),
-        "source_file": f"{safe_name_pdf}",
-        "page_count": page_count,
-        "chunk_count": len(paragraphs),
-        "paragraphs": paragraphs,
+        "record_count": len(pkg["records"]),
+        "max_tokens_per_chunk": 512,
+        "embed_backend": embed_backend,
+        "type": "pdf",
     }
 
-    json_filename = sanitize_basename(file.filename) + ".json"
-    json_path = os.path.join(OUTPUT_DIR, json_filename)
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    # Save output files
+    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    stem = collection_name
+
+    meta_path = Path(OUTPUT_DIR) / f"{stem}.json"
+    emb_path = Path(OUTPUT_DIR) / f"{stem}.embeddings.jsonl"
+    txt_path = Path(OUTPUT_DIR) / f"{stem}.txt"
+
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {"meta": meta, "records": records_slim}, f, ensure_ascii=False, indent=2
+        )
+
+    with open(emb_path, "w", encoding="utf-8") as f:
+        for row in embeddings:
+            f.write(json.dumps(row) + "\n")
+
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write(all_text_str)
+
+    # Save vector store
+    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+    pkg["vector_store"].save(str(vector_store_path))
+    vector_stores[collection_name] = pkg["vector_store"]
+
+    hlog(
+        f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks, vector store created"
+    )
 
     return JSONResponse(
         content={
-            **result,
-            "json_url": f"/outputs/{json_filename}",
-            "json_filename": json_filename,
+            "message": "OK",
+            "source_file": safe_name_pdf,
+            "title": pkg["title"],
+            "collection_name": collection_name,
+            "record_count": meta["record_count"],
+            "outputs": {
+                "records_json": f"/outputs/{meta_path.name}",
+                "embeddings_jsonl": f"/outputs/{emb_path.name}",
+                "text_file": f"/outputs/{txt_path.name}",
+            },
+            "vector_store": {
+                "available": True,
+                "stats": pkg["vector_store"].get_stats(),
+            },
+            "params": {
+                "max_tokens_per_chunk": 512,
+                "embed_backend": embed_backend,
+            },
         },
         status_code=200,
     )
