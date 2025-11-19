@@ -4,8 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime, timezone
 
-import traceback
-
 import os
 import io
 import time
@@ -18,14 +16,10 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from typing import List, Dict, Optional
 
-from fastapi import Body
 from pathlib import Path
-from rag_pipeline import process_url_for_rag
+from rag_pipeline import process_url_for_rag, FAISSVectorStore, get_backend
 
-# import pdfplumber
-# from pypdf import PdfReader
-
-import pymupdf4llm
+# import pymupdf4llm
 
 # --- Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,11 +27,13 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+VECTOR_STORE_DIR = os.path.join(BASE_DIR, "vector_stores")
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
+os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
 
 LIGATURE_MAP = {
     "\ufb00": "ff",
@@ -47,16 +43,17 @@ LIGATURE_MAP = {
     "\ufb04": "ffl",
 }
 
+# Global registry for loaded vector stores
+vector_stores: Dict[str, FAISSVectorStore] = {}
+
 
 def hlog(logtxt: str):
-    print(f"server.py: {logtxt}")
+    print(logtxt)
 
 
-from fastapi.staticfiles import StaticFiles
+app = FastAPI(title="PDF → JSON Extractor + RAG Search")
 
-app = FastAPI(title="PDF → JSON Extractor")
-
-# CORS (adjust origins as needed)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -65,10 +62,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve frontend (mounted at /static to avoid shadowing the API)
+# Serve frontend
 try:
     app.mount("/static", StaticFiles(directory=STATIC_DIR, html=False), name="static")
     app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
+    app.mount(
+        "/vector_stores", StaticFiles(directory=VECTOR_STORE_DIR), name="vector_stores"
+    )
 except Exception:
     pass
 
@@ -81,14 +81,12 @@ def utc_timestamp() -> str:
 
 
 def _html_to_text(html: str) -> str:
-    # Robust HTML→text: ta bort script/style och komprimera whitespace
-    soup = BeautifulSoup(html, "lxml")  # fallbackar till html.parser om lxml saknas
+    soup = BeautifulSoup(html, "lxml")
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
     text = soup.get_text(separator="\n")
-    # normalisera
     lines = [ln.strip() for ln in text.splitlines()]
-    text = "\n".join(ln for ln in lines if ln)  # slopa tomrader
+    text = "\n".join(ln for ln in lines if ln)
     return text
 
 
@@ -101,19 +99,11 @@ def _build_txt_filename_from_url(url: str) -> str:
 
 
 def _normalize_text(s: str) -> str:
-    # ersätt ligaturer och normalisera whitespace utan att ta bort legitima blanksteg
     for k, v in LIGATURE_MAP.items():
         s = s.replace(k, v)
-
-    # ta bort hårda radbrytningar i mitten av meningar men behåll blankrader som styckesdelare
     s = s.replace("\r\n", "\n").replace("\r", "\n")
-
-    # slå ihop radbrytningar där raden inte ser ut att avsluta en mening
-    s = re.sub(r"(?<![\.!?:;])\n(?!\n)", " ", s)  # rad->mellanrum om inte meningsslut
-
-    # komprimera mer än två spaces, men lämna ett space
+    s = re.sub(r"(?<![\.!?:;])\n(?!\n)", " ", s)
     s = re.sub(r"[ \t]{2,}", " ", s)
-
     return s.strip()
 
 
@@ -124,7 +114,6 @@ def sanitize_basename(name: str) -> str:
 
 
 def _split_paragraphs(block_text: str) -> list[str]:
-    # dela på tomma rader/indrag/avstånd – enkel men oftast träffsäker
     parts = re.split(r"\n\s*\n", block_text.strip())
     paras = []
     for p in parts:
@@ -141,7 +130,6 @@ def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
     pid = 1
     for page_index, page in enumerate(doc, start=1):
         blocks = page.get_text("blocks")
-        # sortera top-to-bottom, left-to-right
         blocks.sort(key=lambda b: (round(b[1], 1), round(b[0], 1)))
         for b in blocks:
             text = b[4]
@@ -153,7 +141,6 @@ def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
                         "paragraph_id": pid,
                         "page_num": page_index,
                         "paragraph_text": para,
-                        # lägg till fler metadata här om du vill: "x0": b[0], "y0": b[1], ...
                     }
                 )
                 pid += 1
@@ -162,52 +149,40 @@ def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
 
 
 # -----------------------------
-# API
+# API Endpoints
 # -----------------------------
-
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
 
 
 @app.post("/api/upload_pdf")
 async def upload_pdf(file: UploadFile = File(...)):
-    # 1) validera filtyp
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a .pdf file")
 
     pdf_bytes = await file.read()
-
-    # 2) Spara originalet från upload
     safe_name_pdf = sanitize_basename(file.filename) + ".pdf"
-
     upload_path = os.path.join(UPLOAD_DIR, safe_name_pdf)
+
     with open(upload_path, "wb") as out:
         out.write(pdf_bytes)
 
-    # 3) extrahera
     try:
         paragraphs, page_count = extract_paragraphs_pymupdf_with_pages(pdf_bytes)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extraction failed: {e}")
 
-    # 4) resultatstruktur
     result = {
         "created_at": utc_timestamp(),
-        "source_file": f"{safe_name_pdf}",  # (montera om du vill exponera uploads)
-        # "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "source_file": f"{safe_name_pdf}",
         "page_count": page_count,
         "chunk_count": len(paragraphs),
         "paragraphs": paragraphs,
     }
 
-    # 5) skriv JSON till disk
     json_filename = sanitize_basename(file.filename) + ".json"
     json_path = os.path.join(OUTPUT_DIR, json_filename)
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
-    # 6) returnera resultat + länk till JSON-filen
-    #    (filen är åtkomlig via /outputs/<json_filename> tack vare StaticFiles-mounten)
     return JSONResponse(
         content={
             **result,
@@ -222,19 +197,16 @@ async def upload_pdf(file: UploadFile = File(...)):
 def download_json(basename: str):
     safe = sanitize_basename(basename)
     path = os.path.join(OUTPUT_DIR, f"{safe}.json")
-    hlog(path)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(path, media_type="application/json", filename=f"{safe}.json")
 
 
-# Simple health endpoint
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
 
 
-# Serve the SPA index
 @app.get("/")
 def root_index():
     return HTMLResponse(
@@ -249,109 +221,53 @@ def index_alias():
     )
 
 
-from fastapi import Body
-
-
-# @app.post("/api/fetch_url_old")
-# async def fetch_url_old(payload: dict = Body(...)):
-#     url = (payload.get("url") or "").strip()
-#     if not url:
-#         raise HTTPException(status_code=400, detail="Missing 'url'")
-#     if not (url.startswith("http://") or url.startswith("https://")):
-#         raise HTTPException(
-#             status_code=400, detail="URL must start with http:// or https://"
-#         )
-
-#     # Hämta sidan
-#     try:
-#         headers = {"User-Agent": "Mozilla/5.0 (compatible; PDFJSONBot/1.0; +local-dev)"}
-#         timeout = httpx.Timeout(15.0, connect=10.0)
-#         async with httpx.AsyncClient(
-#             headers=headers, timeout=timeout, follow_redirects=True
-#         ) as client:
-#             resp = await client.get(url)
-#         resp.raise_for_status()
-#     except httpx.HTTPError as e:
-#         raise HTTPException(status_code=502, detail=f"Fetch failed: {e!s}")
-
-#     # Bestäm innehållstyp
-#     ctype = resp.headers.get("content-type", "").lower()
-
-#     if "text/html" in ctype or ctype.startswith("text/") or resp.text:
-#         text = _html_to_text(resp.text)
-#     else:
-#         # Enkel fallback: om det inte är HTML, skriv råbytes som text om möjligt
-#         try:
-#             text = resp.text  # httpx försöker dekoda med rätt encoding
-#         except Exception:
-#             raise HTTPException(
-#                 status_code=415, detail=f"Unsupported content-type: {ctype}"
-#             )
-
-#     # Spara till /outputs
-#     txt_name = _build_txt_filename_from_url(url)
-#     txt_path = os.path.join(OUTPUT_DIR, txt_name)
-#     with open(txt_path, "w", encoding="utf-8") as f:
-#         f.write(text)
-
-#     # Svara frontend
-#     return JSONResponse(
-#         content={
-#             "message": "OK",
-#             "source_url": url,
-#             "txt_filename": txt_name,
-#             "txt_url": f"/outputs/{txt_name}",
-#             "chars": len(text),
-#             "words": len(text.split()),
-#             "created_at": utc_timestamp(),
-#         },
-#         status_code=200,
-#     )
-
-
 @app.post("/api/fetch_url")
 async def api_fetch_url(payload: dict = Body(...)):
     """
+    Process URL and create vector store for semantic search
+
     Body:
     {
-      "url": "https://exempel.se/sida",
-      "max_tokens_per_chunk": 512,            # valfritt
-      "embed_backend": "openai|sbert|ollama"  # valfritt, annars ENV EMBED_BACKEND/openai
+      "url": "https://example.com/page",
+      "max_tokens_per_chunk": 512,
+      "embed_backend": "google|openai|sbert|ollama",
+      "collection_name": "my_collection"  # optional, will be auto-generated if not provided
     }
-    Returnerar paths till sparade filer och lite statistik.
     """
-    hlog("### api_fetch_url()")
     url = (payload.get("url") or "").strip()
-    hlog(f"url :  -->  {url}")
     if not url or not url.lower().startswith(("http://", "https://")):
         raise HTTPException(status_code=400, detail="Provide a valid http(s) URL")
 
     max_tokens = int(payload.get("max_tokens_per_chunk") or 512)
-    embed_backend = payload.get("embed_backend")  # None => env/standard används
+    embed_backend = payload.get("embed_backend")
+    collection_name = payload.get("collection_name")
 
     try:
-        hlog("About to call process_url_for_rag")
         pkg = process_url_for_rag(
-            url, max_tokens_per_chunk=max_tokens, embed_backend=embed_backend
+            url,
+            max_tokens_per_chunk=max_tokens,
+            embed_backend=embed_backend,
+            create_vector_store=True,
         )
     except Exception as e:
-        print("=== RAG pipeline crash ===")
-        traceback.print_exc()
-        print("=== end ===")
         raise HTTPException(status_code=502, detail=f"Pipeline failed: {e!s}")
 
-    hlog("Back from process_url_for_rag")
-    # skriv ut som två filer: metadata+md och embeddings
-    ts = ""  ## int(time.time())
-    base = (
-        re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60] or "document"
-    )
-    stem = f"rag_{base}_{ts}"
+    # Generate collection name if not provided
+    if not collection_name:
+        base = (
+            re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60]
+            or "document"
+        )
+        collection_name = f"{base}_{int(time.time())}"
 
-    # 1) records utan den stora vektorn (för läsbarhet)
+    collection_name = sanitize_basename(collection_name)
+
+    # Prepare output files
+    stem = collection_name
     records_slim = []
     embeddings = []
     all_markdown = []
+
     for r in pkg["records"]:
         slim = {k: v for k, v in r.items() if k != "embedding"}
         h = r.get("heading") or ""
@@ -365,16 +281,15 @@ async def api_fetch_url(payload: dict = Body(...)):
         embeddings.append({"id": r["id"], "embedding": r["embedding"]})
 
     all_md = "\n".join(all_markdown).strip()
-    chars = len(all_md)
-    words = len(all_md.split())
 
     meta = {
         "source_url": pkg["source_url"],
         "title": pkg["title"],
-        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "collection_name": collection_name,
+        "created_at": utc_timestamp(),
         "record_count": len(pkg["records"]),
         "max_tokens_per_chunk": max_tokens,
-        "embed_backend": embed_backend or os.getenv("EMBED_BACKEND") or "openai",
+        "embed_backend": embed_backend or os.getenv("EMBED_BACKEND") or "google",
     }
 
     Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
@@ -382,6 +297,7 @@ async def api_fetch_url(payload: dict = Body(...)):
     emb_path = Path(OUTPUT_DIR) / f"{stem}.embeddings.jsonl"
     txt_path = Path(OUTPUT_DIR) / f"{stem}.txt"
 
+    # Save files
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(
             {"meta": meta, "records": records_slim}, f, ensure_ascii=False, indent=2
@@ -394,19 +310,181 @@ async def api_fetch_url(payload: dict = Body(...)):
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(all_md)
 
+    # Save vector store to disk and load into memory
+    if "vector_store" in pkg:
+        vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+        pkg["vector_store"].save(str(vector_store_path))
+        vector_stores[collection_name] = pkg["vector_store"]
+        hlog(
+            f"✓ Vector store '{collection_name}' created and loaded with {len(pkg['records'])} vectors"
+        )
+
     return JSONResponse(
         content={
             "message": "OK",
             "source_url": pkg["source_url"],
             "title": pkg["title"],
+            "collection_name": collection_name,
             "record_count": meta["record_count"],
             "outputs": {
                 "records_json": f"/outputs/{meta_path.name}",
                 "embeddings_jsonl": f"/outputs/{emb_path.name}",
+                "markdown_txt": f"/outputs/{txt_path.name}",
+            },
+            "vector_store": {
+                "available": True,
+                "stats": (
+                    pkg["vector_store"].get_stats() if "vector_store" in pkg else None
+                ),
             },
             "params": {
                 "max_tokens_per_chunk": max_tokens,
                 "embed_backend": meta["embed_backend"],
             },
+        }
+    )
+
+
+@app.post("/api/search")
+async def api_search(payload: dict = Body(...)):
+    """
+    Semantic search in a vector store collection
+
+    Body:
+    {
+      "query": "what are you looking for?",
+      "collection": "collection_name",
+      "k": 5,
+      "embed_backend": "google|openai|sbert|ollama"  # optional, must match collection's backend
+    }
+    """
+    query = payload.get("query", "").strip()
+    collection = payload.get("collection", "").strip()
+    k = int(payload.get("k", 5))
+    embed_backend = payload.get("embed_backend")
+
+    if not query:
+        raise HTTPException(status_code=400, detail="Missing 'query' parameter")
+
+    if not collection:
+        raise HTTPException(status_code=400, detail="Missing 'collection' parameter")
+
+    # Load vector store if not in memory
+    if collection not in vector_stores:
+        vector_store_path = Path(VECTOR_STORE_DIR) / collection
+        if not (vector_store_path.with_suffix(".faiss").exists()):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection '{collection}' not found. Available: {list(vector_stores.keys())}",
+            )
+
+        # Load from disk
+        try:
+            store = FAISSVectorStore()
+            store.load(str(vector_store_path))
+            vector_stores[collection] = store
+            hlog(f"✓ Loaded vector store '{collection}' from disk")
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Failed to load collection: {e}"
+            )
+
+    store = vector_stores[collection]
+
+    try:
+        backend = get_backend(embed_backend)
+        results = store.search_with_text(query, k=k, backend=backend)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
+
+    # Format results for frontend
+    formatted_results = []
+    for res in results:
+        rec = res["record"]
+        formatted_results.append(
+            {
+                "rank": res["rank"],
+                "score": round(res["score"], 4),
+                "id": rec["id"],
+                "title": rec.get("title"),
+                "heading": rec.get("heading"),
+                "url": rec.get("url"),
+                "anchor": rec.get("anchor"),
+                "breadcrumbs": rec.get("breadcrumbs", []),
+                "markdown": (
+                    rec["markdown"][:300] + "..."
+                    if len(rec["markdown"]) > 300
+                    else rec["markdown"]
+                ),
+                "full_markdown": rec["markdown"],
+                "tokens_est": rec.get("tokens_est"),
+            }
+        )
+
+    return JSONResponse(
+        content={
+            "query": query,
+            "collection": collection,
+            "k": k,
+            "results_count": len(formatted_results),
+            "results": formatted_results,
+            "store_stats": store.get_stats(),
+        }
+    )
+
+
+@app.get("/api/collections")
+def list_collections():
+    """List all available vector store collections"""
+    collections = []
+
+    # Check disk
+    for item in Path(VECTOR_STORE_DIR).glob("*.faiss"):
+        name = item.stem
+        is_loaded = name in vector_stores
+
+        stats = None
+        if is_loaded:
+            stats = vector_stores[name].get_stats()
+
+        collections.append({"name": name, "loaded": is_loaded, "stats": stats})
+
+    return JSONResponse(
+        content={
+            "collections": collections,
+            "loaded_count": len(vector_stores),
+            "total_count": len(collections),
+        }
+    )
+
+
+@app.delete("/api/collection/{collection_name}")
+def delete_collection(collection_name: str):
+    """Delete a vector store collection"""
+    collection_name = sanitize_basename(collection_name)
+
+    # Remove from memory
+    if collection_name in vector_stores:
+        del vector_stores[collection_name]
+
+    # Remove from disk
+    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+    deleted_files = []
+
+    for ext in [".faiss", ".pkl"]:
+        file_path = vector_store_path.with_suffix(ext)
+        if file_path.exists():
+            file_path.unlink()
+            deleted_files.append(str(file_path.name))
+
+    if not deleted_files:
+        raise HTTPException(
+            status_code=404, detail=f"Collection '{collection_name}' not found"
+        )
+
+    return JSONResponse(
+        content={
+            "message": f"Collection '{collection_name}' deleted",
+            "deleted_files": deleted_files,
         }
     )

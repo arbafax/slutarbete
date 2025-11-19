@@ -3,32 +3,36 @@
 #   file: rag_pipeline.py
 #
 #   Helper classes for RAG as well as a pipeline for a RAG Process
-#   File partly created by ChatGPT 5.0
+#   Now with FAISS vector store integration
 #
 ###################################################
 
 
 import numpy as np
-
-import os, re, math, json, html, time
+import os, re, math, json, html, time, pickle
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 from urllib.parse import urljoin, urlparse
+from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
-
 from google import genai
 from google.genai import types
 
-## create an GenAI client
-genai_api_key = os.getenv("GENAI_API_KEY")
-client = genai.Client(api_key=genai_api_key)
+try:
+    import faiss
+
+    FAISS_AVAILABLE = True
+except ImportError:
+    FAISS_AVAILABLE = False
+    print("WARNING: faiss not installed. Run: pip install faiss-cpu")
 
 
-def hlog(logtxt: str):
-    print(f"rag_pipeline.py: {logtxt}")
+## create a genai client
+my_api_key = "AIzaSyBxHq5cPvm-0GGo8fHtPLDNDihB9X_oUlM"
+client = genai.Client(api_key=my_api_key)
 
 
 # ---------------- Embeddings-backends ----------------
@@ -36,47 +40,27 @@ def hlog(logtxt: str):
 
 class EmbeddingBackend:
     def embed(self, texts: List[str]) -> List[List[float]]:
-        hlog("##### EmbeddingBackend.embed()")
+        raise NotImplementedError
+
+    def get_dimension(self) -> int:
+        """Return embedding dimension"""
         raise NotImplementedError
 
 
-class GenAIBackend(EmbeddingBackend):
-    def __init__(
-        self,
-        model: str = "text-embedding-004",
-    ):
-        from google import genai
-        from google.genai import types
-
-        self.client = genai.Client(api_key=os.getenv("GENAI_API_KEY"))
-        self.model = model
-
-    def embed(self, texts: List[str]) -> List[List[float]]:
-        hlog("### GenAIBackend.embed()")
-        resp = self.client.models.embed_content(
-            model=self.model,
-            contents=texts,
-            config=types.EmbedContentConfig(task_type="SEMANTIC_SIMILARITY"),
-        )
-        hlog(resp)
-        return resp
-        # return [d.embeddings for d in resp]
-
-
 class OpenAIBackend(EmbeddingBackend):
-    def __init__(
-        self,
-        model: str = "text-embedding-3-large",
-    ):
+    def __init__(self, model: str = "text-embedding-3-large"):
         from openai import OpenAI
 
         self.client = OpenAI()
         self.model = model
+        self._dimension = 3072 if "large" in model else 1536
 
     def embed(self, texts: List[str]) -> List[List[float]]:
-        hlog("### OpenAIBackend.embed()")
         resp = self.client.embeddings.create(model=self.model, input=texts)
         return [d.embedding for d in resp.data]
+
+    def get_dimension(self) -> int:
+        return self._dimension
 
 
 class SBERTBackend(EmbeddingBackend):
@@ -84,10 +68,13 @@ class SBERTBackend(EmbeddingBackend):
         from sentence_transformers import SentenceTransformer
 
         self.model = SentenceTransformer(model)
+        self._dimension = self.model.get_sentence_embedding_dimension()
 
     def embed(self, texts: List[str]) -> List[List[float]]:
-        hlog("### SBERTBackend.embed()")
         return self.model.encode(texts, normalize_embeddings=True).tolist()
+
+    def get_dimension(self) -> int:
+        return self._dimension
 
 
 class OllamaBackend(EmbeddingBackend):
@@ -96,9 +83,9 @@ class OllamaBackend(EmbeddingBackend):
     ):
         self.model = model
         self.host = host.rstrip("/")
+        self._dimension = 768  # default for nomic-embed-text
 
     def embed(self, texts: List[str]) -> List[List[float]]:
-        hlog("### OllamaBackend.embed()")
         out = []
         for t in texts:
             r = requests.post(
@@ -108,23 +95,199 @@ class OllamaBackend(EmbeddingBackend):
             out.append(r.json()["embedding"])
         return out
 
+    def get_dimension(self) -> int:
+        return self._dimension
+
+
+class GoogleBackend(EmbeddingBackend):
+    """Google Gemini embedding backend"""
+
+    def __init__(self, model: str = "text-embedding-004"):
+        self.model = model
+        self._dimension = 768
+
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        results = []
+        for text in texts:
+            resp = client.models.embed_content(
+                model=self.model,
+                contents=text,
+                config=types.EmbedContentConfig(task_type="SEMANTIC_SIMILARITY"),
+            )
+            results.append(resp.embeddings[0].values)
+        return results
+
+    def get_dimension(self) -> int:
+        return self._dimension
+
 
 def get_backend(kind: Optional[str] = None) -> EmbeddingBackend:
-    hlog("### get_backend()")
-    hlog(f"kind: {kind}")
-    backend = (kind or "genai").lower()
-    hlog(f"Using '{backend}' as backend for embeddings")
-
+    backend = (kind or os.getenv("EMBED_BACKEND") or "google").lower()
     if backend == "openai":
         return OpenAIBackend()
-    if backend == "genai":
-        return GenAIBackend()
     if backend == "sbert":
         return SBERTBackend()
     if backend == "ollama":
         return OllamaBackend()
+    if backend == "google":
+        return GoogleBackend()
 
-    raise ValueError("Unknown EMBED_BACKEND; use openai | sbert | ollama")
+    # fallback
+    return GoogleBackend()
+
+
+# ---------------- FAISS Vector Store ----------------
+
+
+class FAISSVectorStore:
+    """
+    FAISS-based vector store for semantic search.
+    Stores embeddings and associated records.
+    """
+
+    def __init__(self, dimension: int = 768, index_type: str = "flat"):
+        """
+        Args:
+            dimension: Embedding vector dimension
+            index_type: 'flat' for exact search, 'ivf' for approximate (faster with many vectors)
+        """
+        if not FAISS_AVAILABLE:
+            raise ImportError("faiss not installed. Run: pip install faiss-cpu")
+
+        self.dimension = dimension
+        self.index_type = index_type
+
+        # Create index
+        if index_type == "flat":
+            # Exact search using inner product (for normalized vectors = cosine similarity)
+            self.index = faiss.IndexFlatIP(dimension)
+        elif index_type == "ivf":
+            # Approximate search (faster for large datasets)
+            quantizer = faiss.IndexFlatIP(dimension)
+            self.index = faiss.IndexIVFFlat(quantizer, dimension, 100)  # 100 clusters
+        else:
+            raise ValueError(f"Unknown index_type: {index_type}")
+
+        self.id_to_record = {}  # Store full records
+        self.record_ids = []  # Keep track of record IDs in order
+        self.is_trained = False
+
+    def add_records(self, records: List[Dict]):
+        """Add records with embeddings to the store"""
+        if not records:
+            return
+
+        vectors = []
+        for r in records:
+            # Normalize vector for cosine similarity
+            vec = np.array(r["embedding"], dtype="float32")
+            vec = vec / np.linalg.norm(vec)  # normalize
+            vectors.append(vec)
+
+            # Store record
+            idx = len(self.record_ids)
+            self.id_to_record[idx] = r
+            self.record_ids.append(r["id"])
+
+        vectors_array = np.array(vectors, dtype="float32")
+
+        # Train index if needed (for IVF)
+        if self.index_type == "ivf" and not self.is_trained:
+            self.index.train(vectors_array)
+            self.is_trained = True
+
+        self.index.add(vectors_array)
+
+    def search(self, query_embedding: List[float], k: int = 5) -> List[Dict]:
+        """
+        Search for k nearest neighbors
+
+        Returns:
+            List of dicts with 'record', 'score' (cosine similarity), and 'rank'
+        """
+        if self.index.ntotal == 0:
+            return []
+
+        # Normalize query vector
+        query_vec = np.array([query_embedding], dtype="float32")
+        query_vec = query_vec / np.linalg.norm(query_vec)
+
+        # Search
+        k = min(k, self.index.ntotal)  # Can't search for more than we have
+        distances, indices = self.index.search(query_vec, k)
+
+        results = []
+        for rank, (score, idx) in enumerate(zip(distances[0], indices[0]), 1):
+            if idx == -1:  # FAISS returns -1 for unfilled results
+                continue
+            if idx in self.id_to_record:
+                results.append(
+                    {
+                        "record": self.id_to_record[idx],
+                        "score": float(score),  # This is cosine similarity (0-1)
+                        "rank": rank,
+                    }
+                )
+
+        return results
+
+    def search_with_text(
+        self, query_text: str, k: int = 5, backend: Optional[EmbeddingBackend] = None
+    ) -> List[Dict]:
+        """Search using text query (will be embedded)"""
+        backend = backend or get_backend()
+        query_embedding = backend.embed([query_text])[0]
+        return self.search(query_embedding, k)
+
+    def save(self, base_path: str):
+        """Save index and metadata to disk"""
+        base_path = Path(base_path)
+        base_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Save FAISS index
+        faiss.write_index(self.index, str(base_path) + ".faiss")
+
+        # Save metadata
+        metadata = {
+            "id_to_record": self.id_to_record,
+            "record_ids": self.record_ids,
+            "dimension": self.dimension,
+            "index_type": self.index_type,
+            "is_trained": self.is_trained,
+        }
+        with open(str(base_path) + ".pkl", "wb") as f:
+            pickle.dump(metadata, f)
+
+        print(f"✓ Saved vector store to {base_path}.faiss + .pkl")
+
+    def load(self, base_path: str):
+        """Load index and metadata from disk"""
+        base_path = Path(base_path)
+
+        # Load FAISS index
+        self.index = faiss.read_index(str(base_path) + ".faiss")
+
+        # Load metadata
+        with open(str(base_path) + ".pkl", "rb") as f:
+            metadata = pickle.load(f)
+
+        self.id_to_record = metadata["id_to_record"]
+        self.record_ids = metadata["record_ids"]
+        self.dimension = metadata["dimension"]
+        self.index_type = metadata["index_type"]
+        self.is_trained = metadata["is_trained"]
+
+        print(f"✓ Loaded vector store from {base_path} ({self.index.ntotal} vectors)")
+
+    def get_stats(self) -> Dict:
+        """Get statistics about the store"""
+        return {
+            "total_vectors": self.index.ntotal,
+            "dimension": self.dimension,
+            "index_type": self.index_type,
+            "is_trained": self.is_trained,
+            "records_count": len(self.id_to_record),
+        }
 
 
 # ---------------- Helpers for scraping ----------------
@@ -171,7 +334,6 @@ class ScrapeResult:
 
 
 def scrape_url(url: str, timeout: int = 20) -> ScrapeResult:
-    hlog("### scrape_url()")
     headers = {"User-Agent": "Mozilla/5.0 (compatible; RAG-Scraper/1.0; +local-dev)"}
     r = requests.get(url, headers=headers, timeout=timeout)
     r.raise_for_status()
@@ -181,7 +343,6 @@ def scrape_url(url: str, timeout: int = 20) -> ScrapeResult:
 
 
 def clean_html(raw_html: str) -> str:
-    hlog("### clean_html()")
     soup = BeautifulSoup(raw_html, "html.parser")
     for tag in soup(["script", "style", "noscript", "template", "svg"]):
         tag.decompose()
@@ -195,7 +356,6 @@ def clean_html(raw_html: str) -> str:
 
 
 def normalize_html(cleaned_html: str) -> BeautifulSoup:
-    hlog("### normalize_html()")
     soup = BeautifulSoup(cleaned_html, "html.parser")
     for text_node in soup.find_all(string=True):
         if text_node.parent and text_node.parent.name in ("pre", "code"):
@@ -209,7 +369,6 @@ def normalize_html(cleaned_html: str) -> BeautifulSoup:
 
 
 def resolve_links(soup: BeautifulSoup, base_url: str) -> BeautifulSoup:
-    hlog("### resolve_links()")
     for tag in soup.find_all(["a", "img", "script", "link", "source"]):
         attr = "href" if tag.name in ("a", "link") else "src"
         if tag.has_attr(attr):
@@ -218,12 +377,9 @@ def resolve_links(soup: BeautifulSoup, base_url: str) -> BeautifulSoup:
 
 
 def html_to_markdown(soup: BeautifulSoup) -> str:
-    hlog("### html_to_markdown()")
-    hlog(f"### html: {str(soup)}")
     return md(
         str(soup),
         heading_style="ATX",
-        # strip=["script", "style"],
         convert=[
             "br",
             "p",
@@ -252,8 +408,6 @@ class Block:
 def split_markdown_into_blocks(
     markdown_text: str, min_level: int = 1, max_level: int = 6
 ):
-    hlog("### split_markdown_into_blocks()")
-    hlog(f"markdown_text : {markdown_text}")
     lines = markdown_text.splitlines()
     pattern = re.compile(r"^(#{1,6})\s+(.*)$")
     blocks, curr_heading, curr_level, buff = [], None, None, []
@@ -286,7 +440,6 @@ def split_markdown_into_blocks(
 
 
 def chunk_text(text: str, max_tokens: int = 512, hard_limit: int = 2048) -> List[str]:
-    hlog("### chunk_text()")
     if approx_token_count(text) <= max_tokens:
         return [text.strip()]
     paragraphs = re.split(r"\n{2,}", text)
@@ -318,7 +471,6 @@ def chunk_text(text: str, max_tokens: int = 512, hard_limit: int = 2048) -> List
 
 
 def _breadcrumbs(blocks: List[Block], idx: int) -> List[str]:
-    hlog("### _breadcrumbs()")
     me = blocks[idx]
     trail, cur_level = [], me.level
     for k in range(idx - 1, -1, -1):
@@ -332,7 +484,6 @@ def _breadcrumbs(blocks: List[Block], idx: int) -> List[str]:
 def build_records(
     url: str, title: Optional[str], blocks: List[Block], max_tokens_per_chunk: int = 512
 ) -> List[Dict]:
-    hlog("### build_records()")
     records = []
     doc_id = slugify(title or urlparse(url).path or "document")
     for i, b in enumerate(blocks):
@@ -349,14 +500,14 @@ def build_records(
                     "level": b.level,
                     "markdown": ch,
                     "chunk_index": j,
-                    "chunk_count": None,  # sätts ev senare
+                    "chunk_count": None,
                     "block_index": i,
                     "tokens_est": approx_token_count(ch),
                     "anchor": f"#{slugify(b.heading)}" if b.heading else None,
                     "breadcrumbs": _breadcrumbs(blocks, i),
                 }
             )
-    # sätt chunk_count per block
+    # Set chunk_count per block
     by_block = {}
     for r in records:
         by_block.setdefault(r["block_index"], []).append(r)
@@ -372,34 +523,32 @@ def embed_records(
     backend: Optional[EmbeddingBackend] = None,
     batch_size: int = 64,
 ) -> None:
-    hlog("### embed_records()")
     backend = backend or get_backend()
-    hlog(f"backend = {backend}")
     texts = [r["markdown"] for r in records]
-    hlog(f"len(texts) = {len(texts)}")
-    hlog(f"texts = {texts}")
-    i = 0
     for start in range(0, len(texts), batch_size):
-        i += 1
-        if i >= 2:  ## to not overly consume credits while developing
-            break
         vecs = backend.embed(texts[start : start + batch_size])
-        hlog(f"vecs = {vecs}")
         for i, v in enumerate(vecs):
             records[start + i]["embedding"] = v
 
 
 def process_url_for_rag(
-    url: str, max_tokens_per_chunk: int = 512, embed_backend: Optional[str] = None
+    url: str,
+    max_tokens_per_chunk: int = 512,
+    embed_backend: Optional[str] = None,
+    create_vector_store: bool = True,
 ) -> Dict:
-    hlog("### process_url_for_rag()")
+    """
+    Process URL and optionally create a FAISS vector store
+
+    Args:
+        create_vector_store: If True, creates and returns a FAISSVectorStore
+    """
     scraped = scrape_url(url)
     cleaned = clean_html(scraped.html)
     soup = normalize_html(cleaned)
     soup = resolve_links(soup, scraped.base_url)
     title = soup.title.string.strip() if (soup.title and soup.title.string) else None
     markdown = html_to_markdown(soup)
-    hlog(f"markdown : {markdown}")
     blocks = split_markdown_into_blocks(markdown, min_level=1, max_level=6)
     if not blocks:
         blocks = [Block(level=1, heading="Innehåll", content=markdown)]
@@ -407,70 +556,35 @@ def process_url_for_rag(
         scraped.url, title, blocks, max_tokens_per_chunk=max_tokens_per_chunk
     )
     backend = get_backend(embed_backend)
-    hlog(f"About to call embed_records using {backend} as backend")
     embed_records(records, backend=backend)
-    return {"source_url": scraped.url, "title": title, "records": records}
+
+    result = {"source_url": scraped.url, "title": title, "records": records}
+
+    # Create vector store if requested
+    if create_vector_store and FAISS_AVAILABLE:
+        dimension = backend.get_dimension()
+        vector_store = FAISSVectorStore(dimension=dimension)
+        vector_store.add_records(records)
+        result["vector_store"] = vector_store
+
+    return result
 
 
-def cosine_similarity(vec1, vec2):
-    """
-    Calculates the cosine similarity between two vectors.
-
-    Args:
-    vec1 (np.ndarray): The first vector.
-    vec2 (np.ndarray): The second vector.
-
-    Returns:
-    float: The cosine similarity between the two vectors.
-    """
-    hlog("### cosine_similarity()")
-    # Compute the dot product of the two vectors and divide by the product of their norms
-    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
-    ### end cosine_similarity
+# Keep old functions for backwards compatibility
+# def cosine_similarity(vec1, vec2):
+#     """Calculate cosine similarity between two vectors"""
+#     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
 
-def semantic_search(query, text_chunks, embeddings, k=5):
-    """
-    Performs semantic search on the text chunks using the given query and embeddings.
-
-    Args:
-    query (str): The query for the semantic search.
-    text_chunks (List[str]): A list of text chunks to search through.
-    embeddings (List[dict]): A list of embeddings for the text chunks.
-    k (int): The number of top relevant text chunks to return. Default is 5.
-
-    Returns:
-    List[str]: A list of the top k most relevant text chunks based on the query.
-    """
-    # Create an embedding for the query
-    query_embedding = create_embeddings(query).data[0].embedding
-    similarity_scores = []  # Initialize a list to store similarity scores
-
-    # Calculate similarity scores between the query embedding and each text chunk embedding
-    for i, chunk_embedding in enumerate(embeddings):
-        similarity_score = cosine_similarity(
-            np.array(query_embedding), np.array(chunk_embedding.embedding)
-        )
-        similarity_scores.append(
-            (i, similarity_score)
-        )  # Append the index and similarity score
-
-    # Sort the similarity scores in descending order
-    similarity_scores.sort(key=lambda x: x[1], reverse=True)
-    # Get the indices of the top k most similar text chunks
-    top_indices = [index for index, _ in similarity_scores[:k]]
-    # Return the top k most relevant text chunks
-    return [text_chunks[index] for index in top_indices]
-    ### end semantic_search
-
-
-def create_embeddings(
-    text,
-    model="text-embedding-004",
-    task_type="SEMANTIC_SIMILARITY",  ## observera att vi använder en annan modell när vi embeddar än när vi chattar
-):
-
-    return client.models.embed_content(
-        model=model, contents=text, config=types.EmbedContentConfig(task_type=task_type)
-    )
-    ### end create_embeddings
+####
+#   create_embeddings() ANVÄNDS INTE
+####
+# def create_embeddings(
+#     text,
+#     model="text-embedding-004",
+#     task_type="SEMANTIC_SIMILARITY",
+# ):
+#     """Create embeddings using Google API"""
+#     return client.models.embed_content(
+#         model=model, contents=text, config=types.EmbedContentConfig(task_type=task_type)
+#     )
