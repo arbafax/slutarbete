@@ -83,12 +83,11 @@ kolla upp beautiful soup
 
 bs_obj = bs4(html.text, "html5lib")
 
-
-def create_embeddings(text,
-    model="text-embedding-004",
-    task_type="SEMANTIC_SIMILARITY"):
-        return client.models.embed_content(
-            model=model,
-            contents=text,
-            config=types.EmbedContentConfig(task_type=task_type))
+### kommande steg i utvecklingen
+* Skicka ett antal embeddings tillsammans med frågan till en LLM
+* Sätta system-promt
+* Sätta fråge-prompt
+* Styla responsen
+* Dokumentera koden
+* Skriva användarinstruktioner
  
