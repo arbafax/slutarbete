@@ -8,7 +8,6 @@
 #
 ###################################################
 
-
 from fastapi import FastAPI, UploadFile, File, Body, HTTPException
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +21,7 @@ import json
 import re
 import fitz  # pymupdf
 import httpx
+import requests
 
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
@@ -30,9 +30,14 @@ from typing import List, Dict, Optional
 from pathlib import Path
 from rag_pipeline import process_url_for_rag, FAISSVectorStore, get_backend
 
-# import pymupdf4llm
+from google import genai
+from google.genai import types
 
-# --- Paths
+# --- API Keys ---
+GOOGLE_API_KEY = "AIzaSyBxHq5cPvm-0GGo8fHtPLDNDihB9X_oUlM"
+genai_client = genai.Client(api_key=GOOGLE_API_KEY)
+
+# --- Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
@@ -62,6 +67,104 @@ def hlog(logtxt: str):
     print(logtxt)
 
 
+# -----------------------------
+# LLM Backends
+# -----------------------------
+
+
+class LLMBackend:
+    """Base class for LLM backends"""
+
+    def generate(self, system_prompt: str, user_prompt: str) -> str:
+        raise NotImplementedError
+
+
+class GoogleLLMBackend(LLMBackend):
+    """Google Gemini LLM"""
+
+    def __init__(self, model: str = "gemini-2.0-flash"):
+        self.model = model
+
+    def generate(self, system_prompt: str, user_prompt: str) -> str:
+        response = genai_client.models.generate_content(
+            model=self.model,
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=0.3,
+                max_output_tokens=2048,
+            ),
+        )
+        return response.text
+
+
+class OpenAILLMBackend(LLMBackend):
+    """OpenAI GPT"""
+
+    def __init__(self, model: str = "gpt-4o-mini"):
+        from openai import OpenAI
+
+        self.client = OpenAI()
+        self.model = model
+
+    def generate(self, system_prompt: str, user_prompt: str) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.3,
+            max_tokens=2048,
+        )
+        return response.choices[0].message.content
+
+
+class OllamaLLMBackend(LLMBackend):
+    """Ollama local LLM"""
+
+    def __init__(self, model: str = "llama3.2", host: str = "http://localhost:11434"):
+        self.model = model
+        self.host = host.rstrip("/")
+
+    def generate(self, system_prompt: str, user_prompt: str) -> str:
+        r = requests.post(
+            f"{self.host}/api/generate",
+            json={
+                "model": self.model,
+                "prompt": user_prompt,
+                "system": system_prompt,
+                "stream": False,
+            },
+        )
+        r.raise_for_status()
+        return r.json()["response"]
+
+
+def get_llm_backend(kind: Optional[str] = None) -> LLMBackend:
+    backend = (kind or "google").lower()
+    if backend == "openai":
+        return OpenAILLMBackend()
+    if backend == "ollama":
+        return OllamaLLMBackend()
+    return GoogleLLMBackend()
+
+
+DEFAULT_SYSTEM_PROMPT = """Du är en hjälpsam assistent som svarar på frågor baserat på den kontext som ges.
+
+VIKTIGA REGLER:
+- Svara ENDAST baserat på informationen i kontexten nedan
+- Om kontexten inte innehåller tillräcklig information för att svara, säg "Det finns inte tillräckligt med information i dokumentet för att svara på den frågan."
+- Gissa inte eller hitta på information
+- Formulera dig tydligt och dela upp svaret i läsbara stycken
+- Var koncis men informativ
+- Om du citerar från kontexten, var tydlig med det"""
+
+
+# -----------------------------
+# FastAPI App
+# -----------------------------
+
 app = FastAPI(title="PDF → JSON Extractor + RAG Search")
 
 # CORS
@@ -87,6 +190,8 @@ except Exception:
 # -----------------------------
 # Helpers
 # -----------------------------
+
+
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -163,12 +268,10 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """Extract full text from PDF"""
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     full_text = []
-
     for page in doc:
         text = page.get_text()
         if text.strip():
             full_text.append(text)
-
     doc.close()
     return "\n\n".join(full_text)
 
@@ -179,10 +282,6 @@ def process_pdf_for_rag(
     max_tokens_per_chunk: int = 512,
     embed_backend: Optional[str] = None,
 ) -> Dict:
-    """
-    Process PDF and create embeddings for semantic search
-    Similar to process_url_for_rag but for PDFs
-    """
     from rag_pipeline import (
         Block,
         split_markdown_into_blocks,
@@ -192,40 +291,29 @@ def process_pdf_for_rag(
         FAISSVectorStore,
     )
 
-    # Extract full text
     full_text = extract_text_from_pdf(pdf_bytes)
-
-    # Normalize text
     full_text = _normalize_text(full_text)
-
-    # Split into blocks (treat each major section as a block)
-    # For PDFs without markdown structure, we'll create simple blocks
     paragraphs = re.split(r"\n\s*\n", full_text)
 
     blocks = []
     for i, para in enumerate(paragraphs):
         if para.strip():
-            # Try to detect if first line is a heading (short line in caps or with numbers)
             lines = para.split("\n", 1)
             first_line = lines[0].strip()
-
             is_heading = len(first_line) < 80 and (
                 first_line.isupper() or re.match(r"^\d+[\.\)]\s+", first_line)
             )
-
             if is_heading and len(lines) > 1:
                 heading = first_line
                 content = lines[1]
             else:
                 heading = f"Section {i+1}"
                 content = para
-
             blocks.append(Block(level=1, heading=heading, content=content))
 
     if not blocks:
         blocks = [Block(level=1, heading="Document Content", content=full_text)]
 
-    # Build records with chunks
     title = os.path.splitext(filename)[0]
     records = build_records(
         url=f"pdf://{filename}",
@@ -234,11 +322,9 @@ def process_pdf_for_rag(
         max_tokens_per_chunk=max_tokens_per_chunk,
     )
 
-    # Create embeddings
     backend = get_backend(embed_backend)
     embed_records(records, backend=backend)
 
-    # Create vector store
     dimension = backend.get_dimension()
     vector_store = FAISSVectorStore(dimension=dimension)
     vector_store.add_records(records)
@@ -262,14 +348,6 @@ async def upload_pdf(
     embed_backend: str = "google",
     max_tokens_per_chunk: int = 512,
 ):
-    """
-    Upload PDF and create embeddings for semantic search
-    Now works just like URL extraction with configurable parameters!
-
-    Query params:
-    - embed_backend: google|openai|sbert|ollama (default: google)
-    - max_tokens_per_chunk: 256|512|1024|2048 (default: 512)
-    """
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a .pdf file")
 
@@ -281,7 +359,6 @@ async def upload_pdf(
         out.write(pdf_bytes)
 
     try:
-        # Process with RAG pipeline using provided parameters
         pkg = process_pdf_for_rag(
             pdf_bytes,
             filename=file.filename,
@@ -291,10 +368,8 @@ async def upload_pdf(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
 
-    # Generate collection name
     collection_name = sanitize_basename(file.filename)
 
-    # Prepare output data
     records_slim = []
     embeddings = []
     all_text = []
@@ -303,7 +378,6 @@ async def upload_pdf(
         slim = {k: v for k, v in r.items() if k != "embedding"}
         records_slim.append(slim)
         embeddings.append({"id": r["id"], "embedding": r["embedding"]})
-
         h = r.get("heading") or ""
         body = r.get("markdown", "")
         if h:
@@ -324,7 +398,6 @@ async def upload_pdf(
         "type": "pdf",
     }
 
-    # Save output files
     Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
     stem = collection_name
 
@@ -344,14 +417,11 @@ async def upload_pdf(
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(all_text_str)
 
-    # Save vector store
     vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
     pkg["vector_store"].save(str(vector_store_path))
     vector_stores[collection_name] = pkg["vector_store"]
 
-    hlog(
-        f"✓ PDF '{file.filename}' processed with {embed_backend}: {len(pkg['records'])} chunks ({max_tokens_per_chunk} tokens/chunk)"
-    )
+    hlog(f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks")
 
     return JSONResponse(
         content={
@@ -408,17 +478,6 @@ def index_alias():
 
 @app.post("/api/fetch_url")
 async def api_fetch_url(payload: dict = Body(...)):
-    """
-    Process URL and create vector store for semantic search
-
-    Body:
-    {
-      "url": "https://example.com/page",
-      "max_tokens_per_chunk": 512,
-      "embed_backend": "google|openai|sbert|ollama",
-      "collection_name": "my_collection"  # optional, will be auto-generated if not provided
-    }
-    """
     url = (payload.get("url") or "").strip()
     if not url or not url.lower().startswith(("http://", "https://")):
         raise HTTPException(status_code=400, detail="Provide a valid http(s) URL")
@@ -437,7 +496,6 @@ async def api_fetch_url(payload: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Pipeline failed: {e!s}")
 
-    # Generate collection name if not provided
     if not collection_name:
         base = (
             re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60]
@@ -447,7 +505,6 @@ async def api_fetch_url(payload: dict = Body(...)):
 
     collection_name = sanitize_basename(collection_name)
 
-    # Prepare output files
     stem = collection_name
     records_slim = []
     embeddings = []
@@ -461,7 +518,6 @@ async def api_fetch_url(payload: dict = Body(...)):
             all_markdown.append(f"# {h}\n{body}\n")
         else:
             all_markdown.append(f"{body}\n")
-
         records_slim.append(slim)
         embeddings.append({"id": r["id"], "embedding": r["embedding"]})
 
@@ -482,7 +538,6 @@ async def api_fetch_url(payload: dict = Body(...)):
     emb_path = Path(OUTPUT_DIR) / f"{stem}.embeddings.jsonl"
     txt_path = Path(OUTPUT_DIR) / f"{stem}.txt"
 
-    # Save files
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(
             {"meta": meta, "records": records_slim}, f, ensure_ascii=False, indent=2
@@ -495,13 +550,12 @@ async def api_fetch_url(payload: dict = Body(...)):
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(all_md)
 
-    # Save vector store to disk and load into memory
     if "vector_store" in pkg:
         vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
         pkg["vector_store"].save(str(vector_store_path))
         vector_stores[collection_name] = pkg["vector_store"]
         hlog(
-            f"✓ Vector store '{collection_name}' created and loaded with {len(pkg['records'])} vectors"
+            f"✓ Vector store '{collection_name}' created with {len(pkg['records'])} vectors"
         )
 
     return JSONResponse(
@@ -532,17 +586,6 @@ async def api_fetch_url(payload: dict = Body(...)):
 
 @app.post("/api/search")
 async def api_search(payload: dict = Body(...)):
-    """
-    Semantic search in a vector store collection
-
-    Body:
-    {
-      "query": "what are you looking for?",
-      "collection": "collection_name",
-      "k": 5,
-      "embed_backend": "google|openai|sbert|ollama"  # optional, must match collection's backend
-    }
-    """
     query = payload.get("query", "").strip()
     collection = payload.get("collection", "").strip()
     k = int(payload.get("k", 5))
@@ -550,20 +593,16 @@ async def api_search(payload: dict = Body(...)):
 
     if not query:
         raise HTTPException(status_code=400, detail="Missing 'query' parameter")
-
     if not collection:
         raise HTTPException(status_code=400, detail="Missing 'collection' parameter")
 
-    # Load vector store if not in memory
     if collection not in vector_stores:
         vector_store_path = Path(VECTOR_STORE_DIR) / collection
-        if not (vector_store_path.with_suffix(".faiss").exists()):
+        if not vector_store_path.with_suffix(".faiss").exists():
             raise HTTPException(
                 status_code=404,
                 detail=f"Collection '{collection}' not found. Available: {list(vector_stores.keys())}",
             )
-
-        # Load from disk
         try:
             store = FAISSVectorStore()
             store.load(str(vector_store_path))
@@ -582,7 +621,6 @@ async def api_search(payload: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {e}")
 
-    # Format results for frontend
     formatted_results = []
     for res in results:
         rec = res["record"]
@@ -618,20 +656,130 @@ async def api_search(payload: dict = Body(...)):
     )
 
 
+@app.post("/api/ask")
+async def api_ask(payload: dict = Body(...)):
+    """
+    RAG-baserad fråga-svar med LLM
+    """
+    query = payload.get("query", "").strip()
+    collection = payload.get("collection", "").strip()
+    k = int(payload.get("k", 5))
+    llm_backend_name = payload.get("llm_backend", "google")
+    embed_backend_name = payload.get("embed_backend")
+    custom_system_prompt = payload.get("system_prompt")
+
+    if not query:
+        raise HTTPException(status_code=400, detail="Missing 'query' parameter")
+    if not collection:
+        raise HTTPException(status_code=400, detail="Missing 'collection' parameter")
+
+    # 1. Ladda vector store
+    if collection not in vector_stores:
+        vector_store_path = Path(VECTOR_STORE_DIR) / collection
+        if not vector_store_path.with_suffix(".faiss").exists():
+            raise HTTPException(
+                status_code=404, detail=f"Collection '{collection}' not found"
+            )
+        try:
+            store = FAISSVectorStore()
+            store.load(str(vector_store_path))
+            vector_stores[collection] = store
+            hlog(f"✓ Loaded vector store '{collection}' from disk")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load: {e}")
+
+    store = vector_stores[collection]
+
+    # 2. Semantisk sökning
+    try:
+        embed_backend = get_backend(embed_backend_name)
+        search_results = store.search_with_text(query, k=k, backend=embed_backend)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
+
+    if not search_results:
+        return JSONResponse(
+            content={
+                "query": query,
+                "answer": "Inga relevanta dokument hittades för att svara på frågan.",
+                "sources": [],
+                "context_used": "",
+            }
+        )
+
+    # 3. Bygg kontext
+    context_parts = []
+    sources = []
+
+    for i, res in enumerate(search_results, 1):
+        rec = res["record"]
+        heading = rec.get("heading", "")
+        text = rec.get("markdown", "")
+        score = res["score"]
+
+        if heading:
+            context_parts.append(f"[Källa {i}: {heading}]\n{text}")
+        else:
+            context_parts.append(f"[Källa {i}]\n{text}")
+
+        sources.append(
+            {
+                "rank": i,
+                "score": round(score, 4),
+                "heading": heading,
+                "preview": text[:200] + "..." if len(text) > 200 else text,
+                "url": rec.get("url"),
+                "anchor": rec.get("anchor"),
+            }
+        )
+
+    context = "\n\n---\n\n".join(context_parts)
+
+    # 4. Bygg user prompt
+    user_prompt = f"""KONTEXT:
+{context}
+
+---
+
+FRÅGA: {query}
+
+Svara på frågan baserat på kontexten ovan."""
+
+    # 5. System prompt
+    system_prompt = custom_system_prompt or DEFAULT_SYSTEM_PROMPT
+
+    # 6. Anropa LLM
+    try:
+        llm = get_llm_backend(llm_backend_name)
+        answer = llm.generate(system_prompt, user_prompt)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM generation failed: {e}")
+
+    hlog(f"✓ RAG answer generated for '{query[:50]}...' using {llm_backend_name}")
+
+    return JSONResponse(
+        content={
+            "query": query,
+            "answer": answer,
+            "sources": sources,
+            "context_used": context,
+            "params": {
+                "collection": collection,
+                "k": k,
+                "llm_backend": llm_backend_name,
+                "embed_backend": embed_backend_name or "google",
+            },
+        }
+    )
+
+
 @app.get("/api/collections")
 def list_collections():
-    """List all available vector store collections"""
     collections = []
-
-    # Check disk
     for item in Path(VECTOR_STORE_DIR).glob("*.faiss"):
         name = item.stem
         is_loaded = name in vector_stores
-
-        stats = None
-        if is_loaded:
-            stats = vector_stores[name].get_stats()
-
+        stats = vector_stores[name].get_stats() if is_loaded else None
         collections.append({"name": name, "loaded": is_loaded, "stats": stats})
 
     return JSONResponse(
@@ -645,14 +793,11 @@ def list_collections():
 
 @app.delete("/api/collection/{collection_name}")
 def delete_collection(collection_name: str):
-    """Delete a vector store collection"""
     collection_name = sanitize_basename(collection_name)
 
-    # Remove from memory
     if collection_name in vector_stores:
         del vector_stores[collection_name]
 
-    # Remove from disk
     vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
     deleted_files = []
 
