@@ -212,3 +212,4 @@ __marimo__/
 *.pdf
 outputs/
 vector_stores/
+*(kopia)*
