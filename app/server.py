@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 
 import os
 import io
@@ -34,7 +35,8 @@ from google import genai
 from google.genai import types
 
 # --- API Keys ---
-GOOGLE_API_KEY = "AIzaSyBxHq5cPvm-0GGo8fHtPLDNDihB9X_oUlM"
+load_dotenv()
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai_client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # --- Paths ---
@@ -66,10 +68,10 @@ vector_stores: Dict[str, FAISSVectorStore] = {}
 def hlog(logtxt: str):
     """
     Hjälpfunktion för loggning till konsol.
-    
+
     Args:
         logtxt (str): Texten som ska loggas
-    
+
     Returns:
         None
     """
@@ -90,11 +92,11 @@ class LLMBackend:
     def generate(self, system_prompt: str, user_prompt: str) -> str:
         """
         Generera text baserat på system- och user-prompt.
-        
+
         Args:
             system_prompt (str): Systeminstruktioner för modellen
             user_prompt (str): Användarens fråga/prompt
-        
+
         Returns:
             str: Genererad text från modellen
         """
@@ -110,7 +112,7 @@ class GoogleLLMBackend(LLMBackend):
     def __init__(self, model: str = "gemini-2.0-flash"):
         """
         Initiera Google LLM backend.
-        
+
         Args:
             model (str): Modellnamn (default: "gemini-2.0-flash")
         """
@@ -119,11 +121,11 @@ class GoogleLLMBackend(LLMBackend):
     def generate(self, system_prompt: str, user_prompt: str) -> str:
         """
         Generera text med Google Gemini.
-        
+
         Args:
             system_prompt (str): Systeminstruktioner
             user_prompt (str): Användarfråga
-        
+
         Returns:
             str: Genererad text
         """
@@ -148,7 +150,7 @@ class OpenAILLMBackend(LLMBackend):
     def __init__(self, model: str = "gpt-4o-mini"):
         """
         Initiera OpenAI backend.
-        
+
         Args:
             model (str): Modellnamn (default: "gpt-4o-mini")
         """
@@ -160,11 +162,11 @@ class OpenAILLMBackend(LLMBackend):
     def generate(self, system_prompt: str, user_prompt: str) -> str:
         """
         Generera text med OpenAI GPT.
-        
+
         Args:
             system_prompt (str): Systeminstruktioner
             user_prompt (str): Användarfråga
-        
+
         Returns:
             str: Genererad text
         """
@@ -189,7 +191,7 @@ class OllamaLLMBackend(LLMBackend):
     def __init__(self, model: str = "llama3.2", host: str = "http://localhost:11434"):
         """
         Initiera Ollama backend.
-        
+
         Args:
             model (str): Modellnamn (default: "llama3.2")
             host (str): Ollama server URL (default: "http://localhost:11434")
@@ -200,11 +202,11 @@ class OllamaLLMBackend(LLMBackend):
     def generate(self, system_prompt: str, user_prompt: str) -> str:
         """
         Generera text med Ollama.
-        
+
         Args:
             system_prompt (str): Systeminstruktioner
             user_prompt (str): Användarfråga
-        
+
         Returns:
             str: Genererad text
         """
@@ -224,10 +226,10 @@ class OllamaLLMBackend(LLMBackend):
 def get_llm_backend(kind: Optional[str] = None) -> LLMBackend:
     """
     Hämta rätt LLM backend baserat på namn.
-    
+
     Args:
         kind (Optional[str]): Backend-typ ("google", "openai", "ollama")
-    
+
     Returns:
         LLMBackend: Instans av vald backend
     """
@@ -284,7 +286,7 @@ except Exception:
 def utc_timestamp() -> str:
     """
     Generera UTC timestamp i ISO-format.
-    
+
     Returns:
         str: UTC timestamp (t.ex. "2025-01-15T10:30:00Z")
     """
@@ -294,10 +296,10 @@ def utc_timestamp() -> str:
 def _html_to_text(html: str) -> str:
     """
     Konvertera HTML till ren text.
-    
+
     Args:
         html (str): HTML-sträng
-    
+
     Returns:
         str: Rengjord text utan HTML-taggar
     """
@@ -313,10 +315,10 @@ def _html_to_text(html: str) -> str:
 def _build_txt_filename_from_url(url: str) -> str:
     """
     Skapa filnamn baserat på URL.
-    
+
     Args:
         url (str): URL att konvertera
-    
+
     Returns:
         str: Säkert filnamn med .txt extension
     """
@@ -330,10 +332,10 @@ def _build_txt_filename_from_url(url: str) -> str:
 def _normalize_text(s: str) -> str:
     """
     Normalisera text genom att ersätta ligaturer och fixa radbrytningar.
-    
+
     Args:
         s (str): Text att normalisera
-    
+
     Returns:
         str: Normaliserad text
     """
@@ -348,10 +350,10 @@ def _normalize_text(s: str) -> str:
 def sanitize_basename(name: str) -> str:
     """
     Sanera filnamn genom att ta bort ogiltiga tecken.
-    
+
     Args:
         name (str): Filnamn att sanera
-    
+
     Returns:
         str: Sanerat filnamn (endast A-Z, a-z, 0-9, ., _, -)
     """
@@ -363,10 +365,10 @@ def sanitize_basename(name: str) -> str:
 def _split_paragraphs(block_text: str) -> list[str]:
     """
     Dela upp text i paragrafer.
-    
+
     Args:
         block_text (str): Text att dela upp
-    
+
     Returns:
         list[str]: Lista med paragrafer
     """
@@ -382,10 +384,10 @@ def _split_paragraphs(block_text: str) -> list[str]:
 def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
     """
     Extrahera paragrafer från PDF med sidnummer.
-    
+
     Args:
         pdf_bytes (bytes): PDF-fil som bytes
-    
+
     Returns:
         tuple: (list[dict], int) - Lista med paragrafer och antal sidor
                Varje dict innehåller: paragraph_id, page_num, paragraph_text
@@ -417,10 +419,10 @@ def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """
     Extrahera all text från PDF.
-    
+
     Args:
         pdf_bytes (bytes): PDF-fil som bytes
-    
+
     Returns:
         str: All text från PDF:en
     """
@@ -443,13 +445,13 @@ def process_pdf_for_rag(
     """
     Processa PDF för RAG (Retrieval Augmented Generation).
     Extraherar text, skapar chunks, genererar embeddings och bygger vector store.
-    
+
     Args:
         pdf_bytes (bytes): PDF-fil som bytes
         filename (str): Filnamn
         max_tokens_per_chunk (int): Max antal tokens per chunk (default: 512)
         embed_backend (Optional[str]): Embedding backend att använda
-    
+
     Returns:
         Dict: Dictionary med source_file, title, records, vector_store
     """
@@ -521,12 +523,12 @@ async def upload_pdf(
 ):
     """
     API endpoint för att ladda upp och processa PDF-filer.
-    
+
     Args:
         file (UploadFile): PDF-fil att ladda upp
         embed_backend (str): Embedding backend ("google", "openai", "ollama")
         max_tokens_per_chunk (int): Max tokens per chunk
-    
+
     Returns:
         JSONResponse: Status och information om processad PDF
     """
@@ -634,10 +636,10 @@ async def upload_pdf(
 def download_json(basename: str):
     """
     Ladda ner JSON-fil från outputs.
-    
+
     Args:
         basename (str): Filnamn utan extension
-    
+
     Returns:
         FileResponse: JSON-fil
     """
@@ -652,7 +654,7 @@ def download_json(basename: str):
 def health():
     """
     Health check endpoint.
-    
+
     Returns:
         dict: Status OK
     """
@@ -663,7 +665,7 @@ def health():
 def root_index():
     """
     Serve index.html på root path.
-    
+
     Returns:
         HTMLResponse: index.html
     """
@@ -676,7 +678,7 @@ def root_index():
 def index_alias():
     """
     Serve index.html på /index.html path.
-    
+
     Returns:
         HTMLResponse: index.html
     """
@@ -689,10 +691,10 @@ def index_alias():
 async def api_fetch_url(payload: dict = Body(...)):
     """
     Hämta och processa innehåll från URL för RAG.
-    
+
     Args:
         payload (dict): Request body med url, max_tokens_per_chunk, embed_backend, collection_name
-    
+
     Returns:
         JSONResponse: Status och information om processat innehåll
     """
@@ -806,10 +808,10 @@ async def api_fetch_url(payload: dict = Body(...)):
 async def api_search(payload: dict = Body(...)):
     """
     Sök i vector store med semantisk sökning.
-    
+
     Args:
         payload (dict): Request body med query, collection, k, embed_backend
-    
+
     Returns:
         JSONResponse: Sökresultat med rankade träffar
     """
@@ -886,16 +888,162 @@ async def api_search(payload: dict = Body(...)):
 @app.post("/api/ask")
 async def api_ask(payload: dict = Body(...)):
     """
-    RAG-baserad fråga-svar med LLM.
-    Söker först relevanta dokument, sedan genererar svar med LLM.
-    
-    Args:
-        payload (dict): Request body med query, collection, k, llm_backend, 
-                       embed_backend, system_prompt
-    
-    Returns:
-        JSONResponse: LLM-genererat svar med källor och kontext
+    RAG-baserad fråga-svar med LLM
     """
     query = payload.get("query", "").strip()
     collection = payload.get("collection", "").strip()
-    k =
+    k = int(payload.get("k", 5))
+    llm_backend_name = payload.get("llm_backend", "google")
+    embed_backend_name = payload.get("embed_backend")
+    custom_system_prompt = payload.get("system_prompt")
+
+    if not query:
+        raise HTTPException(status_code=400, detail="Missing 'query' parameter")
+    if not collection:
+        raise HTTPException(status_code=400, detail="Missing 'collection' parameter")
+
+    # 1. Ladda vector store
+    if collection not in vector_stores:
+        vector_store_path = Path(VECTOR_STORE_DIR) / collection
+        if not vector_store_path.with_suffix(".faiss").exists():
+            raise HTTPException(
+                status_code=404, detail=f"Collection '{collection}' not found"
+            )
+        try:
+            store = FAISSVectorStore()
+            store.load(str(vector_store_path))
+            vector_stores[collection] = store
+            hlog(f"✓ Loaded vector store '{collection}' from disk")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load: {e}")
+
+    store = vector_stores[collection]
+
+    # 2. Semantisk sökning
+    try:
+        embed_backend = get_backend(embed_backend_name)
+        search_results = store.search_with_text(query, k=k, backend=embed_backend)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
+
+    if not search_results:
+        return JSONResponse(
+            content={
+                "query": query,
+                "answer": "Inga relevanta dokument hittades för att svara på frågan.",
+                "sources": [],
+                "context_used": "",
+            }
+        )
+
+    # 3. Bygg kontext
+    context_parts = []
+    sources = []
+
+    for i, res in enumerate(search_results, 1):
+        rec = res["record"]
+        heading = rec.get("heading", "")
+        text = rec.get("markdown", "")
+        score = res["score"]
+
+        if heading:
+            context_parts.append(f"[Källa {i}: {heading}]\n{text}")
+        else:
+            context_parts.append(f"[Källa {i}]\n{text}")
+
+        sources.append(
+            {
+                "rank": i,
+                "score": round(score, 4),
+                "heading": heading,
+                "preview": text[:200] + "..." if len(text) > 200 else text,
+                "url": rec.get("url"),
+                "anchor": rec.get("anchor"),
+            }
+        )
+
+    context = "\n\n---\n\n".join(context_parts)
+
+    # 4. Bygg user prompt
+    user_prompt = f"""KONTEXT:
+{context}
+
+---
+
+FRÅGA: {query}
+
+Svara på frågan baserat på kontexten ovan."""
+
+    # 5. System prompt
+    system_prompt = custom_system_prompt or DEFAULT_SYSTEM_PROMPT
+
+    # 6. Anropa LLM
+    try:
+        llm = get_llm_backend(llm_backend_name)
+        answer = llm.generate(system_prompt, user_prompt)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM generation failed: {e}")
+
+    hlog(f"✓ RAG answer generated for '{query[:50]}...' using {llm_backend_name}")
+
+    return JSONResponse(
+        content={
+            "query": query,
+            "answer": answer,
+            "sources": sources,
+            "context_used": context,
+            "params": {
+                "collection": collection,
+                "k": k,
+                "llm_backend": llm_backend_name,
+                "embed_backend": embed_backend_name or "google",
+            },
+        }
+    )
+
+
+@app.get("/api/collections")
+def list_collections():
+    collections = []
+    for item in Path(VECTOR_STORE_DIR).glob("*.faiss"):
+        name = item.stem
+        is_loaded = name in vector_stores
+        stats = vector_stores[name].get_stats() if is_loaded else None
+        collections.append({"name": name, "loaded": is_loaded, "stats": stats})
+
+    return JSONResponse(
+        content={
+            "collections": collections,
+            "loaded_count": len(vector_stores),
+            "total_count": len(collections),
+        }
+    )
+
+
+@app.delete("/api/collection/{collection_name}")
+def delete_collection(collection_name: str):
+    collection_name = sanitize_basename(collection_name)
+
+    if collection_name in vector_stores:
+        del vector_stores[collection_name]
+
+    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+    deleted_files = []
+
+    for ext in [".faiss", ".pkl"]:
+        file_path = vector_store_path.with_suffix(ext)
+        if file_path.exists():
+            file_path.unlink()
+            deleted_files.append(str(file_path.name))
+
+    if not deleted_files:
+        raise HTTPException(
+            status_code=404, detail=f"Collection '{collection_name}' not found"
+        )
+
+    return JSONResponse(
+        content={
+            "message": f"Collection '{collection_name}' deleted",
+            "deleted_files": deleted_files,
+        }
+    )

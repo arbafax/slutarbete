@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
+from dotenv import load_dotenv
 
 import requests
 from bs4 import BeautifulSoup
@@ -31,8 +32,9 @@ except ImportError:
 
 
 ## create a genai client
-my_api_key = "AIzaSyBxHq5cPvm-0GGo8fHtPLDNDihB9X_oUlM"
-client = genai.Client(api_key=my_api_key)
+load_dotenv()
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+client = genai.Client(api_key=GOOGLE_API_KEY)
 
 
 # ---------------- Embeddings-backends ----------------
@@ -81,7 +83,9 @@ class OpenAIBackend(EmbeddingBackend):
         """
         from openai import OpenAI
 
-        self.client = OpenAI()
+        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+        self.client = OpenAI(api_key=OPENAI_API_KEY)
         self.model = model
         self._dimension = 3072 if "large" in model else 1536
 

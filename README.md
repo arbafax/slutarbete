@@ -186,11 +186,11 @@ Systemet:
 
 ### API-nycklar
 
-Lägg till dina API-nycklar i koden eller som environment variables:
+Lägg till dina API-nycklar i .env filen:
 
 ```bash
-export GOOGLE_API_KEY="din-google-api-nyckel"
-export OPENAI_API_KEY="din-openai-api-nyckel"
+GOOGLE_API_KEY=din-google-api-nyckel
+OPENAI_API_KEY=din-openai-api-nyckel
 ```
 
 ### Embedding backends
@@ -226,9 +226,3 @@ slutarbete/
 ## Anteckningar för utvecklingen
 
 ### Kommande förbättringar
-* ~~Skicka ett antal embeddings tillsammans med frågan till en LLM~~ ✓
-* ~~Sätta system-prompt~~ ✓
-* ~~Sätta fråge-prompt~~ ✓
-* Styla responsen
-* ~~Dokumentera koden~~ ✓
-* Skriva användarinstruktioner
