@@ -91,7 +91,12 @@
     <div class="wrap">
       <!-- PDF Upload -->
       <div class="card">
-        <h2>PDF med Semantisk Sökning</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0;">PDF med Semantisk Sökning</h2>
+          <button class="btn btn-outlined" id="clearPdfBtn" style="text-transform: none;">
+            <span class="material-icons">clear</span> Rensa
+          </button>
+        </div>
         <p class="text-muted">Ladda upp en PDF så skapas automatiskt embeddings för semantisk sökning.</p>
         
         <div style="margin-bottom: 16px;">
@@ -128,7 +133,12 @@
 
       <!-- URL Fetch -->
       <div class="card">
-        <h2>Extrahera från URL</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0;">Extrahera från URL</h2>
+          <button class="btn btn-outlined" id="clearUrlBtn" style="text-transform: none;">
+            <span class="material-icons">clear</span> Rensa
+          </button>
+        </div>
         <p class="text-muted">Hämta och indexera innehåll från en eller flera webbsidor.</p>
         
         <!-- Mode Selector -->
@@ -243,7 +253,12 @@
 
       <!-- Search -->
       <div class="card">
-        <h2>Semantisk Sökning</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0;">Semantisk Sökning</h2>
+          <button class="btn btn-outlined" id="clearSearchBtn" style="text-transform: none;">
+            <span class="material-icons">clear</span> Rensa
+          </button>
+        </div>
         <p class="text-muted">Sök i indexerat innehåll med naturligt språk.</p>
         <div class="input-group">
           <div style="flex: 1;"><label>Välj Samling</label><select id="searchCollection"><option value="">-- Välj --</option></select></div>
@@ -261,7 +276,12 @@
 
       <!-- ASK AI -->
       <div class="card">
-        <h2>Fråga AI</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0;">Fråga AI</h2>
+          <button class="btn btn-outlined" id="clearAskBtn" style="text-transform: none;">
+            <span class="material-icons">clear</span> Rensa
+          </button>
+        </div>
         <p class="text-muted">Ställ frågor på naturligt språk. AI:n söker i dina dokument och formulerar ett svar.</p>
         <div class="input-group">
           <div style="flex: 1;"><label>Välj Samling</label><select id="askCollection"><option value="">-- Välj --</option></select></div>
@@ -628,6 +648,51 @@
       });
 
       askEls.query.addEventListener('keypress', e => { if (e.key === 'Enter') askEls.btn.click(); });
+
+      // Clear buttons functionality
+      document.getElementById('clearPdfBtn').addEventListener('click', () => {
+        pdfCollectionNameInput.value = '';
+        fileInput.value = '';
+        result.classList.add('hidden');
+        result.innerHTML = '';
+      });
+
+      document.getElementById('clearUrlBtn').addEventListener('click', () => {
+        // Single mode
+        urlEls.input.value = '';
+        urlEls.collectionNameInput.value = '';
+        
+        // Multiple mode
+        document.getElementById('multiUrlInput').value = '';
+        document.getElementById('multiUrlCollectionName').value = '';
+        document.getElementById('multiProgress').style.display = 'none';
+        document.getElementById('multiProgressBar').style.width = '0%';
+        document.getElementById('multiProgressText').textContent = '0 / 0';
+        
+        // Add to existing mode
+        document.getElementById('addUrlInput').value = '';
+        document.getElementById('existingCollectionSelect').value = '';
+        
+        // Hide results
+        urlEls.panel.style.display = 'none';
+        document.getElementById('urlListContainer').classList.add('hidden');
+        document.getElementById('urlListDisplay').innerHTML = '';
+      });
+
+      document.getElementById('clearSearchBtn').addEventListener('click', () => {
+        searchEls.collection.value = '';
+        searchEls.query.value = '';
+        searchEls.results.innerHTML = '';
+      });
+
+      document.getElementById('clearAskBtn').addEventListener('click', () => {
+        askEls.collection.value = '';
+        askEls.query.value = '';
+        askEls.answer.style.display = 'none';
+        askEls.loading.style.display = 'none';
+        askEls.answerText.textContent = '';
+        askEls.sources.innerHTML = '';
+      });
 
       refreshAllCollections();
     </script>
