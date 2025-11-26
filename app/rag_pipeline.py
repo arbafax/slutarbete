@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
-from dotenv import load_dotenv
 
 import requests
 from bs4 import BeautifulSoup
@@ -22,7 +21,7 @@ from markdownify import markdownify as md
 from google import genai
 from google.genai import types
 
-from helpers import extract_text_from_pdf, normalize_text
+from helpers import extract_text_from_pdf, normalize_text, getApiKey
 
 try:
     import faiss
@@ -33,11 +32,7 @@ except ImportError:
     print("WARNING: faiss not installed. Run: pip install faiss-cpu")
 
 
-## create a genai client
-load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-client = genai.Client(api_key=GOOGLE_API_KEY)
-
+client = genai.Client(api_key=getApiKey("GOOGLE_API_KEY"))
 
 # ---------------- Embeddings-backends ----------------
 
@@ -85,9 +80,9 @@ class OpenAIBackend(EmbeddingBackend):
         """
         from openai import OpenAI
 
-        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+        # OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-        self.client = OpenAI(api_key=OPENAI_API_KEY)
+        self.client = OpenAI(api_key=getApiKey("OPENAI_API_KEY"))
         self.model = model
         self._dimension = 3072 if "large" in model else 1536
 
@@ -504,55 +499,6 @@ def slugify(s: str) -> str:
     return s[:80] or "chunk"
 
 
-# def is_probably_nav_or_footer(tag) -> bool:
-#     """
-#     Kontrollera om HTML-tag troligen är navigering eller footer.
-#     Använder ordgränser för att undvika false positives.
-
-#     Args:
-#         tag: BeautifulSoup tag-objekt
-
-#     Returns:
-#         bool: True om tag är nav/footer
-#     """
-#     classes = " ".join(tag.get("class", [])).lower()
-#     id_ = (tag.get("id") or "").lower()
-#     tag_name = tag.name.lower()
-
-#     # Ta bort nav/footer tags direkt
-#     if tag_name in ("nav", "footer", "header"):
-#         return True
-
-#     # Lista med ord att filtrera (med ordgränser)
-#     bad_patterns = [
-#         r"\bcookie\b",
-#         r"\bgdpr\b",
-#         r"\bconsent\b",
-#         r"\bbanner\b",
-#         r"\bnavbar\b",
-#         r"\bnavigation\b",
-#         r"\bmain-nav\b",
-#         r"\bside-nav\b",
-#         r"\btop-nav\b",
-#         r"\bfooter\b",
-#         r"\bsubscribe\b",
-#         r"\bnewsletter\b",
-#         r"\bshare-buttons\b",
-#         r"\bsocial-share\b",
-#         r"\bsocial-media\b",
-#         r"\bads\b",
-#         r"\badvertisement\b",
-#     ]
-
-#     text_to_check = f"{classes} {id_}"
-
-#     for pattern in bad_patterns:
-#         if re.search(pattern, text_to_check):
-#             return True
-
-#     return False
-
-
 # ---------------- Steps ----------------
 
 
@@ -675,28 +621,6 @@ def clean_html(raw_html: str) -> str:  ## NEW VERSION
         str: Rengjord HTML
     """
     return extract_main_content(raw_html)
-
-
-# def clean_html_OLD(raw_html: str) -> str:
-#     """
-#     Rensa HTML från script, style och onödig navigation.
-
-#     Args:
-#         raw_html (str): Rå HTML-kod
-
-#     Returns:
-#         str: Rengjord HTML
-#     """
-#     soup = BeautifulSoup(raw_html, "html.parser")
-#     for tag in soup(["script", "style", "noscript", "template", "svg"]):
-#         tag.decompose()
-#     for tag in list(soup.find_all(True)):
-#         try:
-#             if is_probably_nav_or_footer(tag):
-#                 tag.decompose()
-#         except Exception:
-#             pass
-#     return html.unescape(str(soup))
 
 
 def normalize_html(cleaned_html: str) -> BeautifulSoup:

@@ -11,6 +11,7 @@ import re
 import fitz
 
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 
 # --- Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +26,8 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
+
+load_dotenv()
 
 
 def utc_timestamp() -> str:
@@ -51,7 +54,14 @@ def hlog(logtxt: str):
 
 
 # -----------------------------
-# Filnamn / text-normalisering
+# API-keys management
+# -----------------------------
+def getApiKey(apiKey: str) -> str:
+    return os.getenv("apiKey")
+
+
+# -----------------------------
+# File namne and text normalizing
 # -----------------------------
 
 LIGATURE_MAP = {
@@ -94,95 +104,6 @@ def sanitize_basename(name: str) -> str:
     base = os.path.splitext(os.path.basename(name))[0]
     base = re.sub(r"[^A-Za-z0-9._-]", "_", base)
     return base or "pdf"
-
-
-# def _build_txt_filename_from_url(url: str) -> str:
-#     """
-#     Skapa filnamn baserat på URL.
-
-#     Args:
-#         url (str): URL att konvertera
-
-#     Returns:
-#         str: Säkert filnamn med .txt extension
-#     """
-#     p = urlparse(url)
-#     host = p.netloc or "unknown"
-#     path = p.path.strip("/").replace("/", "_")
-#     base = sanitize_basename(f"{host}_{path or 'index'}")
-#     return f"{base}.txt"
-
-
-# def split_paragraphs(block_text: str) -> list[str]:
-#     """
-#     Dela upp text i paragrafer.
-
-#     Args:
-#         block_text (str): Text att dela upp
-
-#     Returns:
-#         list[str]: Lista med paragrafer
-#     """
-#     parts = re.split(r"\n\s*\n", block_text.strip())
-#     paras = []
-#     for p in parts:
-#         p = normalize_text(p)
-#         if p:
-#             paras.append(p)
-#     return paras
-
-
-# def _html_to_text(html: str) -> str:
-#     """
-#     Konvertera HTML till ren text.
-
-#     Args:
-#         html (str): HTML-sträng
-
-#     Returns:
-#         str: Rengjord text utan HTML-taggar
-#     """
-#     soup = BeautifulSoup(html, "lxml")
-#     for tag in soup(["script", "style", "noscript"]):
-#         tag.decompose()
-#     text = soup.get_text(separator="\n")
-#     lines = [ln.strip() for ln in text.splitlines()]
-#     text = "\n".join(ln for ln in lines if ln)
-#     return text
-
-# def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
-#     """
-#     Extrahera paragrafer från PDF med sidnummer.
-
-#     Args:
-#         pdf_bytes (bytes): PDF-fil som bytes
-
-#     Returns:
-#         tuple: (list[dict], int) - Lista med paragrafer och antal sidor
-#                Varje dict innehåller: paragraph_id, page_num, paragraph_text
-#     """
-#     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-#     page_count = doc.page_count
-#     out = []
-#     pid = 1
-#     for page_index, page in enumerate(doc, start=1):
-#         blocks = page.get_text("blocks")
-#         blocks.sort(key=lambda b: (round(b[1], 1), round(b[0], 1)))
-#         for b in blocks:
-#             text = b[4]
-#             if not text or not text.strip():
-#                 continue
-#             for para in split_paragraphs(text):
-#                 out.append(
-#                     {
-#                         "paragraph_id": pid,
-#                         "page_num": page_index,
-#                         "paragraph_text": para,
-#                     }
-#                 )
-#                 pid += 1
-#     doc.close()
-#     return out, page_count
 
 
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:

@@ -40,6 +40,7 @@ from helpers import (
     utc_timestamp,
     hlog,
     sanitize_basename,
+    getApiKey,
     STATIC_DIR,
     UPLOAD_DIR,
     OUTPUT_DIR,
@@ -49,11 +50,7 @@ from helpers import (
 from google import genai
 from google.genai import types
 
-# --- API Keys ---
-load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-genai_client = genai.Client(api_key=GOOGLE_API_KEY)
-
+genai_client = genai.Client(api_key=getApiKey("GOOGLE_API_KEY"))
 
 # Global registry for loaded vector stores
 vector_stores: Dict[str, FAISSVectorStore] = {}
@@ -225,7 +222,7 @@ def get_llm_backend(kind: Optional[str] = None) -> LLMBackend:
 DEFAULT_SYSTEM_PROMPT = """Du är en hjälpsam assistent som svarar på frågor baserat på den kontext som ges.
 
 VIKTIGA REGLER:
-- Svara ENDAST baserat på informationen i kontexten nedan
+- Svara ENDAST baserat på informationen i den bifogade kontexten
 - Om kontexten inte innehåller tillräcklig information för att svara, säg "Det finns inte tillräckligt med information i dokumentet för att svara på den frågan."
 - Gissa inte eller hitta på information
 - Formulera dig tydligt och dela upp svaret i läsbara stycken
@@ -737,6 +734,7 @@ Svara på frågan baserat på kontexten ovan."""
     # 6. Anropa LLM
     try:
         llm = get_llm_backend(llm_backend_name)
+        hlog(f"✓ Sending to LLM backend USER_PROMPT: {user_prompt}")
         answer = llm.generate(system_prompt, user_prompt)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM generation failed: {e}")
