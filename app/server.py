@@ -20,7 +20,6 @@ import io
 import time
 import json
 import re
-import fitz  # pymupdf
 import httpx
 import requests
 
@@ -29,7 +28,21 @@ from urllib.parse import urlparse
 from typing import List, Dict, Optional
 
 from pathlib import Path
-from rag_pipeline import process_url_for_rag, FAISSVectorStore, get_backend
+from rag_pipeline import (
+    process_url_for_rag,
+    process_pdf_for_rag,
+    FAISSVectorStore,
+    get_backend,
+)
+from helpers import (
+    utc_timestamp,
+    hlog,
+    sanitize_basename,
+    STATIC_DIR,
+    UPLOAD_DIR,
+    OUTPUT_DIR,
+    VECTOR_STORE_DIR,
+)
 
 from google import genai
 from google.genai import types
@@ -39,43 +52,9 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai_client = genai.Client(api_key=GOOGLE_API_KEY)
 
-# --- Paths ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-STATIC_DIR = os.path.join(BASE_DIR, "static")
-VECTOR_STORE_DIR = os.path.join(BASE_DIR, "vector_stores")
-
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(STATIC_DIR, exist_ok=True)
-os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
-
-LIGATURE_MAP = {
-    "\ufb00": "ff",
-    "\ufb01": "fi",
-    "\ufb02": "fl",
-    "\ufb03": "ffi",
-    "\ufb04": "ffl",
-}
 
 # Global registry for loaded vector stores
 vector_stores: Dict[str, FAISSVectorStore] = {}
-
-
-def hlog(logtxt: str):
-    """
-    Hjälpfunktion för loggning till konsol.
-
-    Args:
-        logtxt (str): Texten som ska loggas
-
-    Returns:
-        None
-    """
-    print(logtxt)
 
 
 # -----------------------------
@@ -283,233 +262,6 @@ except Exception:
 # -----------------------------
 
 
-def utc_timestamp() -> str:
-    """
-    Generera UTC timestamp i ISO-format.
-
-    Returns:
-        str: UTC timestamp (t.ex. "2025-01-15T10:30:00Z")
-    """
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _html_to_text(html: str) -> str:
-    """
-    Konvertera HTML till ren text.
-
-    Args:
-        html (str): HTML-sträng
-
-    Returns:
-        str: Rengjord text utan HTML-taggar
-    """
-    soup = BeautifulSoup(html, "lxml")
-    for tag in soup(["script", "style", "noscript"]):
-        tag.decompose()
-    text = soup.get_text(separator="\n")
-    lines = [ln.strip() for ln in text.splitlines()]
-    text = "\n".join(ln for ln in lines if ln)
-    return text
-
-
-def _build_txt_filename_from_url(url: str) -> str:
-    """
-    Skapa filnamn baserat på URL.
-
-    Args:
-        url (str): URL att konvertera
-
-    Returns:
-        str: Säkert filnamn med .txt extension
-    """
-    p = urlparse(url)
-    host = p.netloc or "unknown"
-    path = p.path.strip("/").replace("/", "_")
-    base = sanitize_basename(f"{host}_{path or 'index'}")
-    return f"{base}.txt"
-
-
-def _normalize_text(s: str) -> str:
-    """
-    Normalisera text genom att ersätta ligaturer och fixa radbrytningar.
-
-    Args:
-        s (str): Text att normalisera
-
-    Returns:
-        str: Normaliserad text
-    """
-    for k, v in LIGATURE_MAP.items():
-        s = s.replace(k, v)
-    s = s.replace("\r\n", "\n").replace("\r", "\n")
-    s = re.sub(r"(?<![\.!?:;])\n(?!\n)", " ", s)
-    s = re.sub(r"[ \t]{2,}", " ", s)
-    return s.strip()
-
-
-def sanitize_basename(name: str) -> str:
-    """
-    Sanera filnamn genom att ta bort ogiltiga tecken.
-
-    Args:
-        name (str): Filnamn att sanera
-
-    Returns:
-        str: Sanerat filnamn (endast A-Z, a-z, 0-9, ., _, -)
-    """
-    base = os.path.splitext(os.path.basename(name))[0]
-    base = re.sub(r"[^A-Za-z0-9._-]", "_", base)
-    return base or "pdf"
-
-
-def _split_paragraphs(block_text: str) -> list[str]:
-    """
-    Dela upp text i paragrafer.
-
-    Args:
-        block_text (str): Text att dela upp
-
-    Returns:
-        list[str]: Lista med paragrafer
-    """
-    parts = re.split(r"\n\s*\n", block_text.strip())
-    paras = []
-    for p in parts:
-        p = _normalize_text(p)
-        if p:
-            paras.append(p)
-    return paras
-
-
-def extract_paragraphs_pymupdf_with_pages(pdf_bytes: bytes) -> list[dict]:
-    """
-    Extrahera paragrafer från PDF med sidnummer.
-
-    Args:
-        pdf_bytes (bytes): PDF-fil som bytes
-
-    Returns:
-        tuple: (list[dict], int) - Lista med paragrafer och antal sidor
-               Varje dict innehåller: paragraph_id, page_num, paragraph_text
-    """
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    page_count = doc.page_count
-    out = []
-    pid = 1
-    for page_index, page in enumerate(doc, start=1):
-        blocks = page.get_text("blocks")
-        blocks.sort(key=lambda b: (round(b[1], 1), round(b[0], 1)))
-        for b in blocks:
-            text = b[4]
-            if not text or not text.strip():
-                continue
-            for para in _split_paragraphs(text):
-                out.append(
-                    {
-                        "paragraph_id": pid,
-                        "page_num": page_index,
-                        "paragraph_text": para,
-                    }
-                )
-                pid += 1
-    doc.close()
-    return out, page_count
-
-
-def extract_text_from_pdf(pdf_bytes: bytes) -> str:
-    """
-    Extrahera all text från PDF.
-
-    Args:
-        pdf_bytes (bytes): PDF-fil som bytes
-
-    Returns:
-        str: All text från PDF:en
-    """
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    full_text = []
-    for page in doc:
-        text = page.get_text()
-        if text.strip():
-            full_text.append(text)
-    doc.close()
-    return "\n\n".join(full_text)
-
-
-def process_pdf_for_rag(
-    pdf_bytes: bytes,
-    filename: str,
-    max_tokens_per_chunk: int = 512,
-    embed_backend: Optional[str] = None,
-) -> Dict:
-    """
-    Processa PDF för RAG (Retrieval Augmented Generation).
-    Extraherar text, skapar chunks, genererar embeddings och bygger vector store.
-
-    Args:
-        pdf_bytes (bytes): PDF-fil som bytes
-        filename (str): Filnamn
-        max_tokens_per_chunk (int): Max antal tokens per chunk (default: 512)
-        embed_backend (Optional[str]): Embedding backend att använda
-
-    Returns:
-        Dict: Dictionary med source_file, title, records, vector_store
-    """
-    from rag_pipeline import (
-        Block,
-        split_markdown_into_blocks,
-        build_records,
-        embed_records,
-        get_backend,
-        FAISSVectorStore,
-    )
-
-    full_text = extract_text_from_pdf(pdf_bytes)
-    full_text = _normalize_text(full_text)
-    paragraphs = re.split(r"\n\s*\n", full_text)
-
-    blocks = []
-    for i, para in enumerate(paragraphs):
-        if para.strip():
-            lines = para.split("\n", 1)
-            first_line = lines[0].strip()
-            is_heading = len(first_line) < 80 and (
-                first_line.isupper() or re.match(r"^\d+[\.\)]\s+", first_line)
-            )
-            if is_heading and len(lines) > 1:
-                heading = first_line
-                content = lines[1]
-            else:
-                heading = f"Section {i+1}"
-                content = para
-            blocks.append(Block(level=1, heading=heading, content=content))
-
-    if not blocks:
-        blocks = [Block(level=1, heading="Document Content", content=full_text)]
-
-    title = os.path.splitext(filename)[0]
-    records = build_records(
-        url=f"pdf://{filename}",
-        title=title,
-        blocks=blocks,
-        max_tokens_per_chunk=max_tokens_per_chunk,
-    )
-
-    backend = get_backend(embed_backend)
-    embed_records(records, backend=backend)
-
-    dimension = backend.get_dimension()
-    vector_store = FAISSVectorStore(dimension=dimension)
-    vector_store.add_records(records)
-
-    return {
-        "source_file": filename,
-        "title": title,
-        "records": records,
-        "vector_store": vector_store,
-    }
-
-
 # -----------------------------
 # API Endpoints
 # -----------------------------
@@ -606,6 +358,7 @@ async def upload_pdf(
     vector_stores[collection_name] = pkg["vector_store"]
 
     hlog(f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks")
+    hlog(f"/outputs/{meta_path.name}")
 
     return JSONResponse(
         content={
@@ -778,12 +531,14 @@ async def api_fetch_url(payload: dict = Body(...)):
             f"✓ Vector store '{collection_name}' created with {len(pkg['records'])} vectors"
         )
 
+    hlog(f"URL:  -->   /outputs/{meta_path.name}")
+
     return JSONResponse(
         content={
             "message": "OK",
             "source_url": pkg["source_url"],
             "title": pkg["title"],
-            "collection_name": collection_name,
+            "collection_name": pkg["title"],  ## collection_name,
             "record_count": meta["record_count"],
             "outputs": {
                 "records_json": f"/outputs/{meta_path.name}",

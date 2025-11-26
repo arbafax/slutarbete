@@ -22,6 +22,8 @@ from markdownify import markdownify as md
 from google import genai
 from google.genai import types
 
+from helpers import extract_text_from_pdf, normalize_text
+
 try:
     import faiss
 
@@ -903,6 +905,80 @@ def process_url_for_rag(
         result["vector_store"] = vector_store
 
     return result
+
+
+def process_pdf_for_rag(
+    pdf_bytes: bytes,
+    filename: str,
+    max_tokens_per_chunk: int = 512,
+    embed_backend: Optional[str] = None,
+) -> Dict:
+    """
+    Processa PDF för RAG (Retrieval Augmented Generation).
+    Extraherar text, skapar chunks, genererar embeddings och bygger vector store.
+
+    Args:
+        pdf_bytes (bytes): PDF-fil som bytes
+        filename (str): Filnamn
+        max_tokens_per_chunk (int): Max antal tokens per chunk (default: 512)
+        embed_backend (Optional[str]): Embedding backend att använda
+
+    Returns:
+        Dict: Dictionary med source_file, title, records, vector_store
+    """
+    from rag_pipeline import (
+        Block,
+        split_markdown_into_blocks,
+        build_records,
+        embed_records,
+        get_backend,
+        FAISSVectorStore,
+    )
+
+    full_text = extract_text_from_pdf(pdf_bytes)
+    full_text = normalize_text(full_text)
+    paragraphs = re.split(r"\n\s*\n", full_text)
+
+    blocks = []
+    for i, para in enumerate(paragraphs):
+        if para.strip():
+            lines = para.split("\n", 1)
+            first_line = lines[0].strip()
+            is_heading = len(first_line) < 80 and (
+                first_line.isupper() or re.match(r"^\d+[\.\)]\s+", first_line)
+            )
+            if is_heading and len(lines) > 1:
+                heading = first_line
+                content = lines[1]
+            else:
+                heading = f"Section {i+1}"
+                content = para
+            blocks.append(Block(level=1, heading=heading, content=content))
+
+    if not blocks:
+        blocks = [Block(level=1, heading="Document Content", content=full_text)]
+
+    title = os.path.splitext(filename)[0]
+    records = build_records(
+        url=f"pdf://{filename}",
+        title=title,
+        blocks=blocks,
+        max_tokens_per_chunk=max_tokens_per_chunk,
+    )
+
+    backend = get_backend(embed_backend)
+    embed_records(records, backend=backend)
+
+    dimension = backend.get_dimension()
+    vector_store = FAISSVectorStore(dimension=dimension)
+    vector_store.add_records(records)
+
+    return {
+        "source_file": filename,
+        "title": title,
+        "records": records,
+        "vector_store": vector_store,
+    }
 
 
 # Keep old functions for backwards compatibility
