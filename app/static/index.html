@@ -82,6 +82,12 @@
       <div class="card">
         <h2>PDF med Semantisk Sökning</h2>
         <p class="text-muted">Ladda upp en PDF så skapas automatiskt embeddings för semantisk sökning.</p>
+        
+        <div style="margin-bottom: 16px;">
+          <label>Samlingens namn (valfritt)</label>
+          <input id="pdfCollectionName" type="text" placeholder="T.ex. 'Årsredovisning 2024' eller lämna tomt för automatiskt namn" />
+        </div>
+        
         <div class="input-group" style="margin-bottom: 16px;">
           <div style="flex: 1;"><label>Embedding Model</label>
             <select id="pdfEmbedBackend">
@@ -113,6 +119,12 @@
       <div class="card">
         <h2>Extrahera från URL</h2>
         <p class="text-muted">Hämta och indexera innehåll från en webbsida.</p>
+        
+        <div style="margin-bottom: 16px;">
+          <label>Samlingens namn (valfritt)</label>
+          <input id="urlCollectionName" type="text" placeholder="T.ex. 'Wikipedia AI' eller lämna tomt för automatiskt namn" />
+        </div>
+        
         <div class="input-group">
           <div style="flex: 1;"><label>Webbadress</label><input id="urlInput" type="url" placeholder="https://exempel.se/sida" /></div>
           <div style="width: 200px;"><label>Embedding Model</label>
@@ -202,10 +214,10 @@
     </div>
 
     <script>
-      // PDF Upload
       const drop = document.getElementById('dropzone');
       const fileInput = document.getElementById('file');
       const result = document.getElementById('result');
+      const pdfCollectionNameInput = document.getElementById('pdfCollectionName');
 
       function show(html) { result.classList.remove('hidden'); result.innerHTML = html; }
 
@@ -220,10 +232,18 @@
           form.append('file', file);
           const backend = document.getElementById('pdfEmbedBackend').value;
           const chunk = document.getElementById('pdfChunkSize').value;
-          const res = await fetch('/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk, { method: 'POST', body: form });
+          const collectionName = pdfCollectionNameInput.value.trim();
+          
+          let url = '/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk;
+          if (collectionName) {
+            url += '&collection_name=' + encodeURIComponent(collectionName);
+          }
+          
+          const res = await fetch(url, { method: 'POST', body: form });
           const data = await res.json();
           if (!res.ok) throw new Error(data?.detail || 'Fel');
           show('<p style="color:var(--secondary);"><span class="material-icons" style="vertical-align:middle;">check_circle</span> Klart! Samling: <strong>' + data.collection_name + '</strong> (' + data.record_count + ' chunkar)</p>');
+          pdfCollectionNameInput.value = '';
           refreshAllCollections();
         } catch (e) { show('<p style="color:var(--error);">Fel: ' + e.message + '</p>'); }
       }
@@ -233,7 +253,6 @@
       drop.addEventListener('drop', e => handleFile(e.dataTransfer.files?.[0]));
       fileInput.addEventListener('change', e => handleFile(e.target.files?.[0]));
 
-      // URL Fetch
       const urlEls = {
         input: document.getElementById('urlInput'),
         backend: document.getElementById('embedBackend'),
@@ -245,18 +264,29 @@
         recordsJson: document.getElementById('recordsJson'),
         embJsonl: document.getElementById('embJsonl'),
         markdownTxt: document.getElementById('markdownTxt'),
+        collectionNameInput: document.getElementById('urlCollectionName'),
       };
 
       urlEls.btn.addEventListener('click', async () => {
         const url = urlEls.input.value.trim();
         if (!url) { alert('Ange en URL.'); return; }
+        const collectionName = urlEls.collectionNameInput.value.trim();
+        
         urlEls.btn.disabled = true;
         urlEls.btn.innerHTML = '<span class="spinner"></span> Hämtar...';
         try {
+          const payload = { 
+            url, 
+            embed_backend: urlEls.backend.value 
+          };
+          if (collectionName) {
+            payload.collection_name = collectionName;
+          }
+          
           const res = await fetch('/api/fetch_url', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, embed_backend: urlEls.backend.value })
+            body: JSON.stringify(payload)
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data?.detail || 'Fel');
@@ -267,13 +297,13 @@
           urlEls.embJsonl.href = data.outputs?.embeddings_jsonl || '#';
           urlEls.markdownTxt.href = data.outputs?.markdown_txt || '#';
           urlEls.panel.style.display = 'block';
+          urlEls.collectionNameInput.value = '';
           refreshAllCollections();
         } catch (e) { alert('Fel: ' + e.message); }
         urlEls.btn.disabled = false;
         urlEls.btn.innerHTML = '<span class="material-icons">download</span> Hämta';
       });
 
-      // Search
       const searchEls = {
         collection: document.getElementById('searchCollection'),
         query: document.getElementById('searchQuery'),
@@ -283,7 +313,6 @@
         refresh: document.getElementById('refreshCollections'),
       };
 
-      // Ask AI
       const askEls = {
         collection: document.getElementById('askCollection'),
         query: document.getElementById('askQuery'),
@@ -379,7 +408,6 @@
 
       askEls.query.addEventListener('keypress', e => { if (e.key === 'Enter') askEls.btn.click(); });
 
-      // Init
       refreshAllCollections();
     </script>
   </body>

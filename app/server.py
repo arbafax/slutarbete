@@ -16,19 +16,12 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 import os
-
-# import io
 import time
 import json
 import re
-
-# import httpx
 import requests
 
-# from bs4 import BeautifulSoup
-# from urllib.parse import urlparse
 from typing import Dict, Optional
-
 from pathlib import Path
 from rag_pipeline import (
     process_url_for_rag,
@@ -257,11 +250,6 @@ except Exception:
 
 
 # -----------------------------
-# Helpers
-# -----------------------------
-
-
-# -----------------------------
 # API Endpoints
 # -----------------------------
 
@@ -271,6 +259,7 @@ async def upload_pdf(
     file: UploadFile = File(...),
     embed_backend: str = "google",
     max_tokens_per_chunk: int = 512,
+    collection_name: Optional[str] = None,  # NEW: Optional collection name
 ):
     """
     API endpoint för att ladda upp och processa PDF-filer.
@@ -279,6 +268,7 @@ async def upload_pdf(
         file (UploadFile): PDF-fil att ladda upp
         embed_backend (str): Embedding backend ("google", "openai", "ollama")
         max_tokens_per_chunk (int): Max tokens per chunk
+        collection_name (Optional[str]): Anpassat namn för samlingen
 
     Returns:
         JSONResponse: Status och information om processad PDF
@@ -303,7 +293,11 @@ async def upload_pdf(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
 
-    collection_name = sanitize_basename(file.filename)
+    # NEW: Use custom collection name if provided, otherwise use filename
+    if collection_name and collection_name.strip():
+        collection_name = sanitize_basename(collection_name.strip())
+    else:
+        collection_name = sanitize_basename(file.filename)
 
     records_slim = []
     embeddings = []
@@ -356,7 +350,9 @@ async def upload_pdf(
     pkg["vector_store"].save(str(vector_store_path))
     vector_stores[collection_name] = pkg["vector_store"]
 
-    hlog(f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks")
+    hlog(
+        f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks as '{collection_name}'"
+    )
     hlog(f"/outputs/{meta_path.name}")
 
     return JSONResponse(
@@ -456,7 +452,7 @@ async def api_fetch_url(payload: dict = Body(...)):
 
     max_tokens = int(payload.get("max_tokens_per_chunk") or 512)
     embed_backend = payload.get("embed_backend")
-    collection_name = payload.get("collection_name")
+    collection_name = payload.get("collection_name")  # NEW: Get custom name
 
     try:
         pkg = process_url_for_rag(
@@ -468,7 +464,11 @@ async def api_fetch_url(payload: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Pipeline failed: {e!s}")
 
-    if not collection_name:
+    # NEW: Use custom collection name if provided
+    if collection_name and collection_name.strip():
+        collection_name = sanitize_basename(collection_name.strip())
+    else:
+        # Generate automatic name from title
         base = (
             re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60]
             or "document"
@@ -537,7 +537,7 @@ async def api_fetch_url(payload: dict = Body(...)):
             "message": "OK",
             "source_url": pkg["source_url"],
             "title": pkg["title"],
-            "collection_name": pkg["title"],  ## collection_name,
+            "collection_name": collection_name,  # FIXED: Return actual collection name
             "record_count": meta["record_count"],
             "outputs": {
                 "records_json": f"/outputs/{meta_path.name}",
