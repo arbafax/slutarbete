@@ -2,7 +2,7 @@
 #
 #   file: server.py
 #
-#   Holds the API endpoints.
+#   Holds the API endpoints with multi-URL support
 #   Read and write towards the file system
 #   Uses rag_pipeline.py
 #
@@ -21,7 +21,7 @@ import json
 import re
 import requests
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from pathlib import Path
 from rag_pipeline import (
     process_url_for_rag,
@@ -48,6 +48,9 @@ genai_client = genai.Client(api_key=getApiKey("GOOGLE_API_KEY"))
 # Global registry for loaded vector stores
 vector_stores: Dict[str, FAISSVectorStore] = {}
 
+# Track URLs per collection
+collection_metadata: Dict[str, Dict] = {}
+
 
 # -----------------------------
 # LLM Backends
@@ -55,51 +58,15 @@ vector_stores: Dict[str, FAISSVectorStore] = {}
 
 
 class LLMBackend:
-    """
-    Basklass för LLM backends.
-    Definierar interface för olika språkmodeller.
-    """
-
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        """
-        Generera text baserat på system- och user-prompt.
-
-        Args:
-            system_prompt (str): Systeminstruktioner för modellen
-            user_prompt (str): Användarens fråga/prompt
-
-        Returns:
-            str: Genererad text från modellen
-        """
         raise NotImplementedError
 
 
 class GoogleLLMBackend(LLMBackend):
-    """
-    Google Gemini LLM backend.
-    Använder Google Gemini API för textgenerering.
-    """
-
     def __init__(self, model: str = "gemini-2.0-flash"):
-        """
-        Initiera Google LLM backend.
-
-        Args:
-            model (str): Modellnamn (default: "gemini-2.0-flash")
-        """
         self.model = model
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        """
-        Generera text med Google Gemini.
-
-        Args:
-            system_prompt (str): Systeminstruktioner
-            user_prompt (str): Användarfråga
-
-        Returns:
-            str: Genererad text
-        """
         response = genai_client.models.generate_content(
             model=self.model,
             contents=user_prompt,
@@ -113,34 +80,13 @@ class GoogleLLMBackend(LLMBackend):
 
 
 class OpenAILLMBackend(LLMBackend):
-    """
-    OpenAI GPT backend.
-    Använder OpenAI API för textgenerering.
-    """
-
     def __init__(self, model: str = "gpt-4o-mini"):
-        """
-        Initiera OpenAI backend.
-
-        Args:
-            model (str): Modellnamn (default: "gpt-4o-mini")
-        """
         from openai import OpenAI
 
         self.client = OpenAI()
         self.model = model
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        """
-        Generera text med OpenAI GPT.
-
-        Args:
-            system_prompt (str): Systeminstruktioner
-            user_prompt (str): Användarfråga
-
-        Returns:
-            str: Genererad text
-        """
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -154,33 +100,11 @@ class OpenAILLMBackend(LLMBackend):
 
 
 class OllamaLLMBackend(LLMBackend):
-    """
-    Ollama lokal LLM backend.
-    Använder lokalt installerad Ollama för textgenerering.
-    """
-
     def __init__(self, model: str = "llama3.2", host: str = "http://localhost:11434"):
-        """
-        Initiera Ollama backend.
-
-        Args:
-            model (str): Modellnamn (default: "llama3.2")
-            host (str): Ollama server URL (default: "http://localhost:11434")
-        """
         self.model = model
         self.host = host.rstrip("/")
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        """
-        Generera text med Ollama.
-
-        Args:
-            system_prompt (str): Systeminstruktioner
-            user_prompt (str): Användarfråga
-
-        Returns:
-            str: Genererad text
-        """
         r = requests.post(
             f"{self.host}/api/generate",
             json={
@@ -195,15 +119,6 @@ class OllamaLLMBackend(LLMBackend):
 
 
 def get_llm_backend(kind: Optional[str] = None) -> LLMBackend:
-    """
-    Hämta rätt LLM backend baserat på namn.
-
-    Args:
-        kind (Optional[str]): Backend-typ ("google", "openai", "ollama")
-
-    Returns:
-        LLMBackend: Instans av vald backend
-    """
     backend = (kind or "google").lower()
     if backend == "openai":
         return OpenAILLMBackend()
@@ -229,7 +144,6 @@ VIKTIGA REGLER:
 
 app = FastAPI(title="PDF → JSON Extractor + RAG Search")
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -238,7 +152,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve frontend
 try:
     app.mount("/static", StaticFiles(directory=STATIC_DIR, html=False), name="static")
     app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
@@ -247,6 +160,27 @@ try:
     )
 except Exception:
     pass
+
+
+# -----------------------------
+# Helper Functions
+# -----------------------------
+
+
+def load_collection_metadata(collection_name: str) -> Dict:
+    """Load metadata for a collection"""
+    meta_path = Path(OUTPUT_DIR) / f"{collection_name}.meta.json"
+    if meta_path.exists():
+        with open(meta_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"indexed_urls": [], "total_records": 0}
+
+
+def save_collection_metadata(collection_name: str, metadata: Dict):
+    """Save metadata for a collection"""
+    meta_path = Path(OUTPUT_DIR) / f"{collection_name}.meta.json"
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
 
 
 # -----------------------------
@@ -259,20 +193,8 @@ async def upload_pdf(
     file: UploadFile = File(...),
     embed_backend: str = "google",
     max_tokens_per_chunk: int = 512,
-    collection_name: Optional[str] = None,  # NEW: Optional collection name
+    collection_name: Optional[str] = None,
 ):
-    """
-    API endpoint för att ladda upp och processa PDF-filer.
-
-    Args:
-        file (UploadFile): PDF-fil att ladda upp
-        embed_backend (str): Embedding backend ("google", "openai", "ollama")
-        max_tokens_per_chunk (int): Max tokens per chunk
-        collection_name (Optional[str]): Anpassat namn för samlingen
-
-    Returns:
-        JSONResponse: Status och information om processad PDF
-    """
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a .pdf file")
 
@@ -293,7 +215,6 @@ async def upload_pdf(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
 
-    # NEW: Use custom collection name if provided, otherwise use filename
     if collection_name and collection_name.strip():
         collection_name = sanitize_basename(collection_name.strip())
     else:
@@ -353,7 +274,6 @@ async def upload_pdf(
     hlog(
         f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks as '{collection_name}'"
     )
-    hlog(f"/outputs/{meta_path.name}")
 
     return JSONResponse(
         content={
@@ -380,71 +300,10 @@ async def upload_pdf(
     )
 
 
-@app.get("/api/download/{basename}")
-def download_json(basename: str):
-    """
-    Ladda ner JSON-fil från outputs.
-
-    Args:
-        basename (str): Filnamn utan extension
-
-    Returns:
-        FileResponse: JSON-fil
-    """
-    safe = sanitize_basename(basename)
-    path = os.path.join(OUTPUT_DIR, f"{safe}.json")
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path, media_type="application/json", filename=f"{safe}.json")
-
-
-@app.get("/api/health")
-def health():
-    """
-    Health check endpoint.
-
-    Returns:
-        dict: Status OK
-    """
-    return {"status": "ok"}
-
-
-@app.get("/")
-def root_index():
-    """
-    Serve index.html på root path.
-
-    Returns:
-        HTMLResponse: index.html
-    """
-    return HTMLResponse(
-        open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
-    )
-
-
-@app.get("/index.html")
-def index_alias():
-    """
-    Serve index.html på /index.html path.
-
-    Returns:
-        HTMLResponse: index.html
-    """
-    return HTMLResponse(
-        open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
-    )
-
-
 @app.post("/api/fetch_url")
 async def api_fetch_url(payload: dict = Body(...)):
     """
-    Hämta och processa innehåll från URL för RAG.
-
-    Args:
-        payload (dict): Request body med url, max_tokens_per_chunk, embed_backend, collection_name
-
-    Returns:
-        JSONResponse: Status och information om processat innehåll
+    Fetch and process URL for RAG. Supports adding to existing collections.
     """
     url = (payload.get("url") or "").strip()
     if not url or not url.lower().startswith(("http://", "https://")):
@@ -452,107 +311,140 @@ async def api_fetch_url(payload: dict = Body(...)):
 
     max_tokens = int(payload.get("max_tokens_per_chunk") or 512)
     embed_backend = payload.get("embed_backend")
-    collection_name = payload.get("collection_name")  # NEW: Get custom name
+    collection_name = payload.get("collection_name")
 
     try:
         pkg = process_url_for_rag(
             url,
             max_tokens_per_chunk=max_tokens,
             embed_backend=embed_backend,
-            create_vector_store=True,
+            create_vector_store=False,  # We'll handle this manually
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Pipeline failed: {e!s}")
 
-    # NEW: Use custom collection name if provided
+    # Determine collection name
+    is_new_collection = False
     if collection_name and collection_name.strip():
         collection_name = sanitize_basename(collection_name.strip())
     else:
-        # Generate automatic name from title
         base = (
             re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60]
             or "document"
         )
         collection_name = f"{base}_{int(time.time())}"
+        is_new_collection = True
 
     collection_name = sanitize_basename(collection_name)
 
-    stem = collection_name
-    records_slim = []
-    embeddings = []
-    all_markdown = []
+    # Load or create vector store
+    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+    backend_obj = get_backend(embed_backend)
+    dimension = backend_obj.get_dimension()
 
+    if vector_store_path.with_suffix(".faiss").exists() and not is_new_collection:
+        # Load existing vector store
+        if collection_name not in vector_stores:
+            store = FAISSVectorStore(dimension=dimension)
+            store.load(str(vector_store_path))
+            vector_stores[collection_name] = store
+            hlog(f"✓ Loaded existing vector store '{collection_name}'")
+        else:
+            store = vector_stores[collection_name]
+
+        # Add new records to existing store
+        store.add_records(pkg["records"])
+        store.save(str(vector_store_path))
+        hlog(f"✓ Added {len(pkg['records'])} new records to '{collection_name}'")
+    else:
+        # Create new vector store
+        store = FAISSVectorStore(dimension=dimension)
+        store.add_records(pkg["records"])
+        store.save(str(vector_store_path))
+        vector_stores[collection_name] = store
+        hlog(
+            f"✓ Created new vector store '{collection_name}' with {len(pkg['records'])} vectors"
+        )
+
+    # Update metadata
+    metadata = load_collection_metadata(collection_name)
+    if url not in metadata.get("indexed_urls", []):
+        metadata.setdefault("indexed_urls", []).append(url)
+    metadata["total_records"] = store.get_stats()["total_vectors"]
+    metadata["last_updated"] = utc_timestamp()
+    metadata["embed_backend"] = embed_backend or "google"
+    save_collection_metadata(collection_name, metadata)
+
+    # Save individual URL data
+    stem = f"{collection_name}_{int(time.time())}"
+    records_slim = []
     for r in pkg["records"]:
         slim = {k: v for k, v in r.items() if k != "embedding"}
-        h = r.get("heading") or ""
-        body = r.get("markdown", "")
-        if h:
-            all_markdown.append(f"# {h}\n{body}\n")
-        else:
-            all_markdown.append(f"{body}\n")
         records_slim.append(slim)
-        embeddings.append({"id": r["id"], "embedding": r["embedding"]})
 
-    all_md = "\n".join(all_markdown).strip()
-
-    meta = {
-        "source_url": pkg["source_url"],
-        "title": pkg["title"],
-        "collection_name": collection_name,
-        "created_at": utc_timestamp(),
-        "record_count": len(pkg["records"]),
-        "max_tokens_per_chunk": max_tokens,
-        "embed_backend": embed_backend or os.getenv("EMBED_BACKEND") or "google",
-    }
-
-    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
     meta_path = Path(OUTPUT_DIR) / f"{stem}.json"
-    emb_path = Path(OUTPUT_DIR) / f"{stem}.embeddings.jsonl"
-    txt_path = Path(OUTPUT_DIR) / f"{stem}.txt"
-
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(
-            {"meta": meta, "records": records_slim}, f, ensure_ascii=False, indent=2
+            {"url": pkg["source_url"], "title": pkg["title"], "records": records_slim},
+            f,
+            ensure_ascii=False,
+            indent=2,
         )
-
-    with open(emb_path, "w", encoding="utf-8") as f:
-        for row in embeddings:
-            f.write(json.dumps(row) + "\n")
-
-    with open(txt_path, "w", encoding="utf-8") as f:
-        f.write(all_md)
-
-    if "vector_store" in pkg:
-        vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
-        pkg["vector_store"].save(str(vector_store_path))
-        vector_stores[collection_name] = pkg["vector_store"]
-        hlog(
-            f"✓ Vector store '{collection_name}' created with {len(pkg['records'])} vectors"
-        )
-
-    hlog(f"URL:  -->   /outputs/{meta_path.name}")
 
     return JSONResponse(
         content={
             "message": "OK",
             "source_url": pkg["source_url"],
             "title": pkg["title"],
-            "collection_name": collection_name,  # FIXED: Return actual collection name
-            "record_count": meta["record_count"],
-            "outputs": {
-                "records_json": f"/outputs/{meta_path.name}",
-                "embeddings_jsonl": f"/outputs/{emb_path.name}",
-                "markdown_txt": f"/outputs/{txt_path.name}",
-            },
+            "collection_name": collection_name,
+            "record_count": len(pkg["records"]),
+            "total_records": metadata["total_records"],
+            "total_vectors": store.get_stats()["total_vectors"],
+            "indexed_urls": metadata["indexed_urls"],
             "vector_store": {
                 "available": True,
-                "stats": (
-                    pkg["vector_store"].get_stats() if "vector_store" in pkg else None
-                ),
+                "stats": store.get_stats(),
             },
             "params": {
                 "max_tokens_per_chunk": max_tokens,
-                "embed_backend": meta["embed_backend"],
+                "embed_backend": embed_backend or "google",
+            },
+        }
+    )
+
+
+@app.get("/api/collection_info/{collection_name}")
+def get_collection_info(collection_name: str):
+    """Get information about a collection including all indexed URLs"""
+    collection_name = sanitize_basename(collection_name)
+
+    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+    if not vector_store_path.with_suffix(".faiss").exists():
+        raise HTTPException(
+            status_code=404, detail=f"Collection '{collection_name}' not found"
+        )
+
+    metadata = load_collection_metadata(collection_name)
+
+    # Load vector store stats if not already loaded
+    if collection_name not in vector_stores:
+        store = FAISSVectorStore()
+        store.load(str(vector_store_path))
+        vector_stores[collection_name] = store
+
+    stats = vector_stores[collection_name].get_stats()
+
+    return JSONResponse(
+        content={
+            "collection_name": collection_name,
+            "indexed_urls": metadata.get("indexed_urls", []),
+            "total_records": metadata.get("total_records", stats["total_vectors"]),
+            "total_vectors": stats["total_vectors"],
+            "last_updated": metadata.get("last_updated"),
+            "embed_backend": metadata.get("embed_backend", "unknown"),
+            "vector_store": {
+                "available": True,
+                "stats": stats,
             },
         }
     )
@@ -560,15 +452,6 @@ async def api_fetch_url(payload: dict = Body(...)):
 
 @app.post("/api/search")
 async def api_search(payload: dict = Body(...)):
-    """
-    Sök i vector store med semantisk sökning.
-
-    Args:
-        payload (dict): Request body med query, collection, k, embed_backend
-
-    Returns:
-        JSONResponse: Sökresultat med rankade träffar
-    """
     query = payload.get("query", "").strip()
     collection = payload.get("collection", "").strip()
     k = int(payload.get("k", 5))
@@ -584,7 +467,7 @@ async def api_search(payload: dict = Body(...)):
         if not vector_store_path.with_suffix(".faiss").exists():
             raise HTTPException(
                 status_code=404,
-                detail=f"Collection '{collection}' not found. Available: {list(vector_stores.keys())}",
+                detail=f"Collection '{collection}' not found",
             )
         try:
             store = FAISSVectorStore()
@@ -592,9 +475,7 @@ async def api_search(payload: dict = Body(...)):
             vector_stores[collection] = store
             hlog(f"✓ Loaded vector store '{collection}' from disk")
         except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Failed to load collection: {e}"
-            )
+            raise HTTPException(status_code=500, detail=f"Failed to load: {e}")
 
     store = vector_stores[collection]
 
@@ -641,9 +522,6 @@ async def api_search(payload: dict = Body(...)):
 
 @app.post("/api/ask")
 async def api_ask(payload: dict = Body(...)):
-    """
-    RAG-baserad fråga-svar med LLM
-    """
     query = payload.get("query", "").strip()
     collection = payload.get("collection", "").strip()
     k = int(payload.get("k", 5))
@@ -656,24 +534,19 @@ async def api_ask(payload: dict = Body(...)):
     if not collection:
         raise HTTPException(status_code=400, detail="Missing 'collection' parameter")
 
-    # 1. Ladda vector store
     if collection not in vector_stores:
         vector_store_path = Path(VECTOR_STORE_DIR) / collection
         if not vector_store_path.with_suffix(".faiss").exists():
-            raise HTTPException(
-                status_code=404, detail=f"Collection '{collection}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Collection not found")
         try:
             store = FAISSVectorStore()
             store.load(str(vector_store_path))
             vector_stores[collection] = store
-            hlog(f"✓ Loaded vector store '{collection}' from disk")
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to load: {e}")
 
     store = vector_stores[collection]
 
-    # 2. Semantisk sökning
     try:
         embed_backend = get_backend(embed_backend_name)
         search_results = store.search_with_text(query, k=k, backend=embed_backend)
@@ -684,13 +557,12 @@ async def api_ask(payload: dict = Body(...)):
         return JSONResponse(
             content={
                 "query": query,
-                "answer": "Inga relevanta dokument hittades för att svara på frågan.",
+                "answer": "Inga relevanta dokument hittades.",
                 "sources": [],
                 "context_used": "",
             }
         )
 
-    # 3. Bygg kontext
     context_parts = []
     sources = []
 
@@ -718,7 +590,6 @@ async def api_ask(payload: dict = Body(...)):
 
     context = "\n\n---\n\n".join(context_parts)
 
-    # 4. Bygg user prompt
     user_prompt = f"""KONTEXT:
 {context}
 
@@ -728,18 +599,13 @@ FRÅGA: {query}
 
 Svara på frågan baserat på kontexten ovan."""
 
-    # 5. System prompt
     system_prompt = custom_system_prompt or DEFAULT_SYSTEM_PROMPT
 
-    # 6. Anropa LLM
     try:
         llm = get_llm_backend(llm_backend_name)
-        hlog(f"✓ Sending to LLM backend USER_PROMPT: {user_prompt}")
         answer = llm.generate(system_prompt, user_prompt)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM generation failed: {e}")
-
-    hlog(f"✓ RAG answer generated for '{query[:50]}...' using {llm_backend_name}")
+        raise HTTPException(status_code=500, detail=f"LLM failed: {e}")
 
     return JSONResponse(
         content={
@@ -764,7 +630,19 @@ def list_collections():
         name = item.stem
         is_loaded = name in vector_stores
         stats = vector_stores[name].get_stats() if is_loaded else None
-        collections.append({"name": name, "loaded": is_loaded, "stats": stats})
+
+        # Load metadata to get URL count
+        metadata = load_collection_metadata(name)
+        url_count = len(metadata.get("indexed_urls", []))
+
+        collections.append(
+            {
+                "name": name,
+                "loaded": is_loaded,
+                "stats": stats,
+                "url_count": url_count,
+            }
+        )
 
     return JSONResponse(
         content={
@@ -791,14 +669,46 @@ def delete_collection(collection_name: str):
             file_path.unlink()
             deleted_files.append(str(file_path.name))
 
+    # Delete metadata
+    meta_path = Path(OUTPUT_DIR) / f"{collection_name}.meta.json"
+    if meta_path.exists():
+        meta_path.unlink()
+        deleted_files.append(str(meta_path.name))
+
     if not deleted_files:
-        raise HTTPException(
-            status_code=404, detail=f"Collection '{collection_name}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Collection not found")
 
     return JSONResponse(
         content={
             "message": f"Collection '{collection_name}' deleted",
             "deleted_files": deleted_files,
         }
+    )
+
+
+@app.get("/api/download/{basename}")
+def download_json(basename: str):
+    safe = sanitize_basename(basename)
+    path = os.path.join(OUTPUT_DIR, f"{safe}.json")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path, media_type="application/json", filename=f"{safe}.json")
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.get("/")
+def root_index():
+    return HTMLResponse(
+        open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
+    )
+
+
+@app.get("/index.html")
+def index_alias():
+    return HTMLResponse(
+        open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
     )

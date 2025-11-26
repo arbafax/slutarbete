@@ -42,8 +42,9 @@
       .hidden { display: none !important; }
       .result { margin-top: 16px; padding: 16px; background: #e8f5e9; border-left: 4px solid var(--secondary); border-radius: 4px; }
       code { background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px; font-size: 13px; }
-      input[type="text"], input[type="url"], select { width: 100%; padding: 12px 16px; border: 1px solid var(--divider); border-bottom: 2px solid var(--divider); border-radius: 4px 4px 0 0; font-size: 16px; font-family: 'Roboto', sans-serif; }
-      input:focus, select:focus { outline: none; border-bottom-color: var(--primary); }
+      input[type="text"], input[type="url"], select, textarea { width: 100%; padding: 12px 16px; border: 1px solid var(--divider); border-bottom: 2px solid var(--divider); border-radius: 4px 4px 0 0; font-size: 16px; font-family: 'Roboto', sans-serif; }
+      textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
+      input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: var(--primary); }
       .input-group { display: flex; gap: 12px; align-items: flex-end; margin-top: 16px; }
       .input-group input, .input-group select { flex: 1; }
       .search-result { background: var(--surface); border-radius: 4px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
@@ -66,9 +67,19 @@
       .empty-state { text-align: center; padding: 48px 24px; color: var(--on-surface-medium); }
       .empty-state .material-icons { font-size: 64px; color: var(--on-surface-disabled); margin-bottom: 16px; }
       label { display: block; font-size: 12px; color: var(--on-surface-medium); margin-bottom: 4px; font-weight: 500; }
-      .text-muted { color: var(--on-surface-medium); }
+      .text-muted { color: var(--on-surface-medium); font-size: 13px; }
       .ai-answer-box { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; padding: 20px; }
       .ai-answer-text { white-space: pre-wrap; line-height: 1.7; }
+      .mode-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+      .mode-btn { flex: 1; padding: 12px; border: 2px solid var(--divider); border-radius: 4px; background: white; cursor: pointer; text-align: center; font-weight: 500; transition: all 0.2s; }
+      .mode-btn:hover { background: #f5f5f5; }
+      .mode-btn.active { border-color: var(--primary); background: #e3f2fd; color: var(--primary); }
+      .url-list { background: #f5f5f5; border-radius: 4px; padding: 12px; margin-top: 12px; max-height: 200px; overflow-y: auto; }
+      .url-item { display: flex; align-items: center; gap: 8px; padding: 8px; background: white; border-radius: 4px; margin-bottom: 8px; font-size: 13px; }
+      .url-item:last-child { margin-bottom: 0; }
+      .url-item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .url-item-remove { color: var(--error); cursor: pointer; padding: 4px; }
+      .url-item-remove:hover { background: rgba(211, 47, 47, 0.1); border-radius: 50%; }
     </style>
   </head>
   <body>
@@ -118,37 +129,115 @@
       <!-- URL Fetch -->
       <div class="card">
         <h2>Extrahera från URL</h2>
-        <p class="text-muted">Hämta och indexera innehåll från en webbsida.</p>
+        <p class="text-muted">Hämta och indexera innehåll från en eller flera webbsidor.</p>
         
-        <div style="margin-bottom: 16px;">
-          <label>Samlingens namn (valfritt)</label>
-          <input id="urlCollectionName" type="text" placeholder="T.ex. 'Wikipedia AI' eller lämna tomt för automatiskt namn" />
+        <!-- Mode Selector -->
+        <div class="mode-selector">
+          <div class="mode-btn active" id="modeSingle">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">link</span>
+            En URL
+          </div>
+          <div class="mode-btn" id="modeMultiple">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">link_off</span>
+            Flera URLs
+          </div>
+          <div class="mode-btn" id="modeAddToExisting">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add_link</span>
+            Lägg till i befintlig
+          </div>
         </div>
-        
-        <div class="input-group">
-          <div style="flex: 1;"><label>Webbadress</label><input id="urlInput" type="url" placeholder="https://exempel.se/sida" /></div>
-          <div style="width: 200px;"><label>Embedding Model</label>
-            <select id="embedBackend">
-              <option value="google">Google</option>
-              <option value="openai">OpenAI</option>
-              <option value="sbert">SBERT</option>
-              <option value="ollama">Ollama</option>
+
+        <!-- Single URL Mode -->
+        <div id="singleUrlMode">
+          <div style="margin-bottom: 16px;">
+            <label>Samlingens namn (valfritt)</label>
+            <input id="urlCollectionName" type="text" placeholder="T.ex. 'Wikipedia AI' eller lämna tomt för automatiskt namn" />
+          </div>
+          
+          <div class="input-group">
+            <div style="flex: 1;"><label>Webbadress</label><input id="urlInput" type="url" placeholder="https://exempel.se/sida" /></div>
+            <div style="width: 200px;"><label>Embedding Model</label>
+              <select id="embedBackend">
+                <option value="google">Google</option>
+                <option value="openai">OpenAI</option>
+                <option value="sbert">SBERT</option>
+                <option value="ollama">Ollama</option>
+              </select>
+            </div>
+            <button class="btn btn-raised" id="fetchBtn"><span class="material-icons">download</span> Hämta</button>
+          </div>
+        </div>
+
+        <!-- Multiple URLs Mode -->
+        <div id="multipleUrlsMode" class="hidden">
+          <div style="margin-bottom: 16px;">
+            <label>Samlingens namn (obligatoriskt)</label>
+            <input id="multiUrlCollectionName" type="text" placeholder="T.ex. 'AI Research Articles'" />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label>URLs (en per rad)</label>
+            <textarea id="multiUrlInput" placeholder="https://exempel.se/sida1&#10;https://exempel.se/sida2&#10;https://exempel.se/sida3"></textarea>
+            <p class="text-muted" style="margin-top: 4px;">Ange en URL per rad. Alla kommer att indexeras till samma samling.</p>
+          </div>
+
+          <div class="input-group">
+            <div style="flex: 1;"><label>Embedding Model</label>
+              <select id="multiEmbedBackend">
+                <option value="google">Google</option>
+                <option value="openai">OpenAI</option>
+                <option value="sbert">SBERT</option>
+                <option value="ollama">Ollama</option>
+              </select>
+            </div>
+            <button class="btn btn-raised" id="multiFetchBtn"><span class="material-icons">download</span> Hämta alla</button>
+          </div>
+
+          <div id="multiProgress" style="display: none; margin-top: 16px;">
+            <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+              <div id="multiProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+            </div>
+            <p id="multiProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
+          </div>
+        </div>
+
+        <!-- Add to Existing Mode -->
+        <div id="addToExistingMode" class="hidden">
+          <div style="margin-bottom: 16px;">
+            <label>Välj befintlig samling</label>
+            <select id="existingCollectionSelect">
+              <option value="">-- Välj samling --</option>
             </select>
           </div>
-          <button class="btn btn-raised" id="fetchBtn"><span class="material-icons">download</span> Hämta</button>
+
+          <div style="margin-bottom: 16px;">
+            <label>URL att lägga till</label>
+            <input id="addUrlInput" type="url" placeholder="https://exempel.se/ny-sida" />
+          </div>
+
+          <div class="input-group">
+            <div style="flex: 1;"><label>Embedding Model</label>
+              <select id="addEmbedBackend">
+                <option value="google">Google</option>
+                <option value="openai">OpenAI</option>
+                <option value="sbert">SBERT</option>
+                <option value="ollama">Ollama</option>
+              </select>
+            </div>
+            <button class="btn btn-raised" id="addFetchBtn"><span class="material-icons">add</span> Lägg till</button>
+          </div>
         </div>
+
         <div id="urlResult" style="display:none; margin-top:20px">
           <div class="stats">
             <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="collectionName">-</div></div>
-            <div class="stat-card"><div class="stat-label">Chunkar</div><div class="stat-value" id="recordCount">-</div></div>
-            <div class="stat-card"><div class="stat-label">Vektorer</div><div class="stat-value" id="vectorCount">-</div></div>
+            <div class="stat-card"><div class="stat-label">Totalt chunkar</div><div class="stat-value" id="recordCount">-</div></div>
+            <div class="stat-card"><div class="stat-label">Totalt vektorer</div><div class="stat-value" id="vectorCount">-</div></div>
           </div>
-          <h3><span class="material-icons">file_download</span> Nedladdningar</h3>
-          <ul>
-            <li><a id="recordsJson" href="#" target="_blank">Records (JSON)</a></li>
-            <li><a id="embJsonl" href="#" target="_blank">Embeddings (JSONL)</a></li>
-            <li><a id="markdownTxt" href="#" target="_blank">Markdown Text</a></li>
-          </ul>
+          <div id="urlListContainer" class="hidden">
+            <h3><span class="material-icons">link</span> Indexerade URLs</h3>
+            <div id="urlListDisplay" class="url-list"></div>
+          </div>
         </div>
       </div>
 
@@ -214,6 +303,34 @@
     </div>
 
     <script>
+      let currentMode = 'single';
+
+      // Mode switching
+      document.getElementById('modeSingle').addEventListener('click', () => switchMode('single'));
+      document.getElementById('modeMultiple').addEventListener('click', () => switchMode('multiple'));
+      document.getElementById('modeAddToExisting').addEventListener('click', () => switchMode('add'));
+
+      function switchMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('singleUrlMode').classList.add('hidden');
+        document.getElementById('multipleUrlsMode').classList.add('hidden');
+        document.getElementById('addToExistingMode').classList.add('hidden');
+
+        if (mode === 'single') {
+          document.getElementById('modeSingle').classList.add('active');
+          document.getElementById('singleUrlMode').classList.remove('hidden');
+        } else if (mode === 'multiple') {
+          document.getElementById('modeMultiple').classList.add('active');
+          document.getElementById('multipleUrlsMode').classList.remove('hidden');
+        } else if (mode === 'add') {
+          document.getElementById('modeAddToExisting').classList.add('active');
+          document.getElementById('addToExistingMode').classList.remove('hidden');
+          refreshExistingCollections();
+        }
+      }
+
+      // PDF Upload
       const drop = document.getElementById('dropzone');
       const fileInput = document.getElementById('file');
       const result = document.getElementById('result');
@@ -253,6 +370,7 @@
       drop.addEventListener('drop', e => handleFile(e.dataTransfer.files?.[0]));
       fileInput.addEventListener('change', e => handleFile(e.target.files?.[0]));
 
+      // Single URL
       const urlEls = {
         input: document.getElementById('urlInput'),
         backend: document.getElementById('embedBackend'),
@@ -261,9 +379,6 @@
         collection: document.getElementById('collectionName'),
         records: document.getElementById('recordCount'),
         vectors: document.getElementById('vectorCount'),
-        recordsJson: document.getElementById('recordsJson'),
-        embJsonl: document.getElementById('embJsonl'),
-        markdownTxt: document.getElementById('markdownTxt'),
         collectionNameInput: document.getElementById('urlCollectionName'),
       };
 
@@ -290,19 +405,125 @@
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data?.detail || 'Fel');
-          urlEls.collection.textContent = data.collection_name;
-          urlEls.records.textContent = data.record_count;
-          urlEls.vectors.textContent = data.vector_store?.stats?.total_vectors || 0;
-          urlEls.recordsJson.href = data.outputs?.records_json || '#';
-          urlEls.embJsonl.href = data.outputs?.embeddings_jsonl || '#';
-          urlEls.markdownTxt.href = data.outputs?.markdown_txt || '#';
-          urlEls.panel.style.display = 'block';
+          displayUrlResults(data);
           urlEls.collectionNameInput.value = '';
           refreshAllCollections();
         } catch (e) { alert('Fel: ' + e.message); }
         urlEls.btn.disabled = false;
         urlEls.btn.innerHTML = '<span class="material-icons">download</span> Hämta';
       });
+
+      // Multiple URLs
+      document.getElementById('multiFetchBtn').addEventListener('click', async () => {
+        const urls = document.getElementById('multiUrlInput').value.trim().split('\n').filter(u => u.trim());
+        const collectionName = document.getElementById('multiUrlCollectionName').value.trim();
+        const backend = document.getElementById('multiEmbedBackend').value;
+
+        if (!collectionName) { alert('Ange ett samlingens namn.'); return; }
+        if (urls.length === 0) { alert('Ange minst en URL.'); return; }
+
+        const btn = document.getElementById('multiFetchBtn');
+        const progress = document.getElementById('multiProgress');
+        const progressBar = document.getElementById('multiProgressBar');
+        const progressText = document.getElementById('multiProgressText');
+
+        btn.disabled = true;
+        progress.style.display = 'block';
+
+        let completed = 0;
+        for (const url of urls) {
+          if (!url.trim()) continue;
+          try {
+            progressText.textContent = `${completed} / ${urls.length} - Hämtar ${url}`;
+            const res = await fetch('/api/fetch_url', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: url.trim(), collection_name: collectionName, embed_backend: backend })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            completed++;
+            progressBar.style.width = `${(completed / urls.length) * 100}%`;
+            progressText.textContent = `${completed} / ${urls.length}`;
+          } catch (e) {
+            console.error(`Fel vid ${url}:`, e);
+          }
+        }
+
+        progressText.textContent = `Klart! ${completed} / ${urls.length} URLs indexerade`;
+        btn.disabled = false;
+        
+        // Get final stats
+        try {
+          const statsRes = await fetch('/api/collection_info/' + encodeURIComponent(collectionName));
+          const stats = await statsRes.json();
+          displayUrlResults(stats);
+        } catch (e) {}
+
+        refreshAllCollections();
+        setTimeout(() => { progress.style.display = 'none'; progressBar.style.width = '0%'; }, 3000);
+      });
+
+      // Add to existing
+      document.getElementById('addFetchBtn').addEventListener('click', async () => {
+        const url = document.getElementById('addUrlInput').value.trim();
+        const collection = document.getElementById('existingCollectionSelect').value;
+        const backend = document.getElementById('addEmbedBackend').value;
+
+        if (!url) { alert('Ange en URL.'); return; }
+        if (!collection) { alert('Välj en samling.'); return; }
+
+        const btn = document.getElementById('addFetchBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Lägger till...';
+
+        try {
+          const res = await fetch('/api/fetch_url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, collection_name: collection, embed_backend: backend })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.detail || 'Fel');
+          displayUrlResults(data);
+          document.getElementById('addUrlInput').value = '';
+          refreshAllCollections();
+          alert('URL tillagd till samlingen!');
+        } catch (e) { alert('Fel: ' + e.message); }
+
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons">add</span> Lägg till';
+      });
+
+      function displayUrlResults(data) {
+        urlEls.collection.textContent = data.collection_name;
+        urlEls.records.textContent = data.record_count || data.total_records || 0;
+        urlEls.vectors.textContent = data.vector_store?.stats?.total_vectors || data.total_vectors || 0;
+        urlEls.panel.style.display = 'block';
+
+        if (data.indexed_urls && data.indexed_urls.length > 0) {
+          const urlListContainer = document.getElementById('urlListContainer');
+          const urlListDisplay = document.getElementById('urlListDisplay');
+          urlListContainer.classList.remove('hidden');
+          urlListDisplay.innerHTML = data.indexed_urls.map(u => 
+            `<div class="url-item"><span class="material-icons" style="font-size: 16px; color: var(--secondary);">link</span><span class="url-item-text">${u}</span></div>`
+          ).join('');
+        }
+      }
+
+      async function refreshExistingCollections() {
+        try {
+          const res = await fetch('/api/collections');
+          const data = await res.json();
+          const sel = document.getElementById('existingCollectionSelect');
+          sel.innerHTML = '<option value="">-- Välj samling --</option>';
+          data.collections.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.name;
+            o.textContent = c.name;
+            sel.appendChild(o);
+          });
+        } catch (e) { console.error(e); }
+      }
 
       const searchEls = {
         collection: document.getElementById('searchCollection'),
