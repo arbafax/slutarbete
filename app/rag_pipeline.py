@@ -504,33 +504,53 @@ def slugify(s: str) -> str:
     return s[:80] or "chunk"
 
 
-def is_probably_nav_or_footer(tag) -> bool:
-    """
-    Kontrollera om HTML-tag troligen är navigering eller footer.
+# def is_probably_nav_or_footer(tag) -> bool:
+#     """
+#     Kontrollera om HTML-tag troligen är navigering eller footer.
+#     Använder ordgränser för att undvika false positives.
 
-    Args:
-        tag: BeautifulSoup tag-objekt
+#     Args:
+#         tag: BeautifulSoup tag-objekt
 
-    Returns:
-        bool: True om tag är nav/footer
-    """
-    classes = " ".join(tag.get("class", [])).lower()
-    id_ = (tag.get("id") or "").lower()
-    bad = [
-        "cookie",
-        "gdpr",
-        "consent",
-        "banner",
-        "nav",
-        "navbar",
-        "menu",
-        "footer",
-        "subscribe",
-        "newsletter",
-        "share",
-        "social",
-    ]
-    return any(w in classes or w in id_ for w in bad)
+#     Returns:
+#         bool: True om tag är nav/footer
+#     """
+#     classes = " ".join(tag.get("class", [])).lower()
+#     id_ = (tag.get("id") or "").lower()
+#     tag_name = tag.name.lower()
+
+#     # Ta bort nav/footer tags direkt
+#     if tag_name in ("nav", "footer", "header"):
+#         return True
+
+#     # Lista med ord att filtrera (med ordgränser)
+#     bad_patterns = [
+#         r"\bcookie\b",
+#         r"\bgdpr\b",
+#         r"\bconsent\b",
+#         r"\bbanner\b",
+#         r"\bnavbar\b",
+#         r"\bnavigation\b",
+#         r"\bmain-nav\b",
+#         r"\bside-nav\b",
+#         r"\btop-nav\b",
+#         r"\bfooter\b",
+#         r"\bsubscribe\b",
+#         r"\bnewsletter\b",
+#         r"\bshare-buttons\b",
+#         r"\bsocial-share\b",
+#         r"\bsocial-media\b",
+#         r"\bads\b",
+#         r"\badvertisement\b",
+#     ]
+
+#     text_to_check = f"{classes} {id_}"
+
+#     for pattern in bad_patterns:
+#         if re.search(pattern, text_to_check):
+#             return True
+
+#     return False
 
 
 # ---------------- Steps ----------------
@@ -571,9 +591,82 @@ def scrape_url(url: str, timeout: int = 20) -> ScrapeResult:
     return ScrapeResult(url=url, base_url=base, html=r.text)
 
 
-def clean_html(raw_html: str) -> str:
+from bs4 import BeautifulSoup
+import html
+
+
+def extract_main_content(raw_html: str) -> str:
     """
-    Rensa HTML från script, style och onödig navigation.
+    Extrahera huvudinnehållet från HTML genom att fokusera på
+    relevanta containers istället för att filtrera bort allt.
+
+    Args:
+        raw_html (str): Rå HTML-kod
+
+    Returns:
+        str: Rengjord HTML med huvudinnehåll
+    """
+    soup = BeautifulSoup(raw_html, "html.parser")
+
+    # Ta bort script, style, etc
+    for tag in soup(["script", "style", "noscript", "template", "svg"]):
+        tag.decompose()
+
+    # Försök hitta huvudinnehållet med vanliga selektorer
+    main_content = None
+
+    # Prioritetsordning av selektorer för att hitta huvudinnehåll
+    content_selectors = [
+        "main",
+        "article",
+        '[role="main"]',
+        ".main-content",
+        ".content",
+        "#main-content",
+        "#content",
+        ".post-content",
+        ".entry-content",
+        ".article-content",
+    ]
+
+    for selector in content_selectors:
+        main_content = soup.select_one(selector)
+        if main_content and len(main_content.get_text(strip=True)) > 200:
+            # Hitta något med substans
+            break
+
+    # Om vi inte hittar huvudinnehåll, använd body men filtrera nav/footer
+    if not main_content:
+        main_content = soup.find("body") or soup
+
+        # Ta bara bort explicita nav/footer/header tags
+        for tag in main_content.find_all(["nav", "footer", "header"]):
+            tag.decompose()
+
+        # Ta bort element med uppenbart dåliga klasser/IDs
+        for tag in list(main_content.find_all(True)):
+            classes = " ".join(tag.get("class", [])).lower()
+            id_ = (tag.get("id") or "").lower()
+
+            # Mer konservativ filtrering
+            if any(
+                bad in classes or bad in id_
+                for bad in [
+                    "cookie-banner",
+                    "gdpr-notice",
+                    "newsletter-popup",
+                    "advertisement",
+                    "sidebar-ads",
+                ]
+            ):
+                tag.decompose()
+
+    return html.unescape(str(main_content))
+
+
+def clean_html(raw_html: str) -> str:  ## NEW VERSION
+    """
+    Förbättrad version av clean_html som behåller mer innehåll.
 
     Args:
         raw_html (str): Rå HTML-kod
@@ -581,16 +674,29 @@ def clean_html(raw_html: str) -> str:
     Returns:
         str: Rengjord HTML
     """
-    soup = BeautifulSoup(raw_html, "html.parser")
-    for tag in soup(["script", "style", "noscript", "template", "svg"]):
-        tag.decompose()
-    for tag in list(soup.find_all(True)):
-        try:
-            if is_probably_nav_or_footer(tag):
-                tag.decompose()
-        except Exception:
-            pass
-    return html.unescape(str(soup))
+    return extract_main_content(raw_html)
+
+
+# def clean_html_OLD(raw_html: str) -> str:
+#     """
+#     Rensa HTML från script, style och onödig navigation.
+
+#     Args:
+#         raw_html (str): Rå HTML-kod
+
+#     Returns:
+#         str: Rengjord HTML
+#     """
+#     soup = BeautifulSoup(raw_html, "html.parser")
+#     for tag in soup(["script", "style", "noscript", "template", "svg"]):
+#         tag.decompose()
+#     for tag in list(soup.find_all(True)):
+#         try:
+#             if is_probably_nav_or_footer(tag):
+#                 tag.decompose()
+#         except Exception:
+#             pass
+#     return html.unescape(str(soup))
 
 
 def normalize_html(cleaned_html: str) -> BeautifulSoup:

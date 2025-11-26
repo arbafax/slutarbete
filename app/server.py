@@ -16,16 +16,18 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 import os
-import io
+
+# import io
 import time
 import json
 import re
-import httpx
+
+# import httpx
 import requests
 
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-from typing import List, Dict, Optional
+# from bs4 import BeautifulSoup
+# from urllib.parse import urlparse
+from typing import Dict, Optional
 
 from pathlib import Path
 from rag_pipeline import (

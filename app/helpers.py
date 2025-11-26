@@ -96,21 +96,21 @@ def sanitize_basename(name: str) -> str:
     return base or "pdf"
 
 
-def _build_txt_filename_from_url(url: str) -> str:
-    """
-    Skapa filnamn baserat på URL.
+# def _build_txt_filename_from_url(url: str) -> str:
+#     """
+#     Skapa filnamn baserat på URL.
 
-    Args:
-        url (str): URL att konvertera
+#     Args:
+#         url (str): URL att konvertera
 
-    Returns:
-        str: Säkert filnamn med .txt extension
-    """
-    p = urlparse(url)
-    host = p.netloc or "unknown"
-    path = p.path.strip("/").replace("/", "_")
-    base = sanitize_basename(f"{host}_{path or 'index'}")
-    return f"{base}.txt"
+#     Returns:
+#         str: Säkert filnamn med .txt extension
+#     """
+#     p = urlparse(url)
+#     host = p.netloc or "unknown"
+#     path = p.path.strip("/").replace("/", "_")
+#     base = sanitize_basename(f"{host}_{path or 'index'}")
+#     return f"{base}.txt"
 
 
 # def split_paragraphs(block_text: str) -> list[str]:
