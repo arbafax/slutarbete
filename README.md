@@ -1,228 +1,193 @@
-# Slutarbete
-Projekt som ska visa att jag lärt mig något på AI-kursen från YH
+# RAG System - PDF Multi-Upload
 
-Projektet bygger på ett backend med FastAPI och en frontend med HTMX och Jinja-templates
+ß
+### Tre sätt att arbeta med PDFs:
 
-## Python-bibliotek som behövs
+1. ** En PDF** - Ladda upp en enskild PDF (som tidigare, men förbättrad)
+2. ** Flera PDFs** - Ladda upp många PDFs samtidigt till samma samling
+3. ** Lägg till i befintlig** - Utöka en befintlig samling med nya PDFs
 
-För att köra applikationen behöver följande Python-bibliotek installeras:
+### Samma funktionalitet som för URLs!
+Nu har både PDFs och URLs exakt samma arbetsflöde och möjligheter.
 
-### Kärnbibliotek
-- **FastAPI** - Web framework för API
-- **uvicorn** - ASGI server för att köra FastAPI
-- **python-multipart** - För att hantera filuppladdningar
+## Vad ingår?
 
-### AI & Machine Learning
-- **google-genai** - Google Gemini API för LLM och embeddings
-- **openai** - OpenAI API (valfritt, för GPT-modeller)
-- **sentence-transformers** - För lokala SBERT embeddings (valfritt)
-- **faiss-cpu** - FAISS vector store för semantisk sökning
-- **numpy** - Numeriska beräkningar för vektorer
+### Uppdaterade filer:
+- **server.py** - Backend med stöd för PDF multi-upload
+- **index.html** - Frontend med tre PDF-lägen
+- **helpers.py** - Oförändrad (inkluderad för komplettering)
+- **rag_pipeline.py** - Oförändrad (inkluderad för komplettering)
 
-### Web scraping & HTML-parsing
-- **requests** - HTTP-förfrågningar
-- **httpx** - Asynkron HTTP-klient
-- **beautifulsoup4** - HTML-parsing
-- **lxml** - HTML-parser (används av BeautifulSoup)
-- **markdownify** - Konvertera HTML till Markdown
+### Dokumentation:
+- **UPPDATERINGAR.md** - Detaljerad funktionsbeskrivning
+- **INSTALLATION.md** - Installations- och uppgraderingsguide
+- **README.md** - Denna fil
 
-### PDF-hantering
-- **PyMuPDF** (fitz) - PDF-extraktion och parsing
+## Snabbstart
 
-### Hjälpbibliotek
-- **python-dateutil** - Datumhantering
+### Första användningen:
+1. Öppna webbgränssnittet
+2. Gå till PDF-sektionen
+3. Se de tre nya lägena
+4. Testa att ladda upp flera PDFs samtidigt!
 
-### Installation
+## UI-förändringar
 
-Skapa och aktivera virtuell miljö:
-
-```bash
-# Skapa virtuell miljö
-python3 -m venv .venv
-
-# Aktivera (macOS/Linux)
-source .venv/bin/activate
-
-# Aktivera (Windows)
-.venv\Scripts\activate
+### Före:
+```
+PDF med Semantisk Sökning
+├── Samlingens namn (valfritt)
+├── Embedding Model
+├── Chunk-storlek
+└── Drag-and-drop zon
 ```
 
-Installera alla bibliotek:
-
-```bash
-pip install fastapi uvicorn[standard] python-multipart
-pip install google-genai openai
-pip install sentence-transformers
-pip install faiss-cpu numpy
-pip install requests httpx beautifulsoup4 lxml markdownify
-pip install PyMuPDF
-pip install python-dateutil
+### Efter:
+```
+PDF med Semantisk Sökning
+├── Mode Selector [En PDF | Flera PDFs | Lägg till i befintlig]
+│
+├── EN PDF
+│   ├── Samlingens namn (valfritt)
+│   ├── Embedding Model
+│   ├── Chunk-storlek
+│   └── Drag-and-drop zon
+│
+├── FLERA PDFs
+│   ├── Samlingens namn (obligatoriskt)
+│   ├── Embedding Model
+│   ├── Chunk-storlek
+│   ├── Drag-and-drop zon (multi-select)
+│   └── Progress bar
+│
+└── LÄGG TILL I BEFINTLIG
+    ├── Välj samling (dropdown)
+    ├── Embedding Model
+    ├── Chunk-storlek
+    └── Drag-and-drop zon
 ```
 
-Eller använd en requirements.txt:
+## Användningsexempel
 
-```bash
-pip install -r requirements.txt
+### Exempel 1: Årsredovisningar
+```
+1. Välj "Flera PDFs"
+2. Ange namn: "Årsredovisningar_2020-2024"
+3. Dra och släpp alla årsredovisningar samtidigt
+4. Alla indexeras till samma samling
 ```
 
-### requirements.txt innehåll:
+### Exempel 2: Utöka dokumentation
 ```
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-python-multipart>=0.0.6
-google-genai>=0.2.0
-openai>=1.3.0
-sentence-transformers>=2.2.2
-faiss-cpu>=1.7.4
-numpy>=1.24.0
-requests>=2.31.0
-httpx>=0.25.0
-beautifulsoup4>=4.12.0
-lxml>=4.9.3
-markdownify>=0.11.6
-PyMuPDF>=1.23.0
-python-dateutil>=2.8.2
+1. Välj "Lägg till i befintlig"
+2. Välj samling: "Projektdokumentation"
+3. Ladda upp ny manual
+4. Manualen läggs till i befintlig samling
 ```
 
-## Snabbstart 
-
-### Kör servern
-
-```bash
-# Stå i projektets root-mapp (där ligger mappen _app_)
-source .venv/bin/activate
-
-# Navigera till app-mappen
-cd app
-
-# Starta servern
-uvicorn server:app --reload --host 0.0.0.0 --port 8000
-
-# Öppna http://127.0.0.1:8000 med webläsare
+### Exempel 3: Snabb single-upload
+```
+1. Välj "En PDF" (standard)
+2. Dra och släpp PDF
+3. Automatiskt samlingens namn från filnamn
 ```
 
-## Lokal LLM med Ollama (Valfritt)
+## Tekniska Detaljer
 
-Vill man köra lokal LLM istället för Google/OpenAI:
+### Backend-ändringar (server.py):
+- `/api/upload_pdf` - Stödjer nu befintliga samlingar
+- `/api/collections` - Returnerar `pdf_count`
+- `/api/collection_info` - Returnerar `indexed_pdfs`
+- Metadata tracking för PDFs (`indexed_pdfs`)
 
-### Kolla att Ollama finns
+### Frontend-ändringar (index.html):
+- Tre PDF-lägen med mode selector
+- Multi-file upload support
+- Progress bar för batch uploads
+- PDF-lista i resultatvisning
+- Drag-and-drop för alla lägen
 
-```bash
-ollama --version
+## Kompatibilitet
+
+- **Bakåtkompatibel** - Gamla samlingar fungerar utan ändringar
+- **Befintliga funktioner** - Allt som fungerade före fungerar fortfarande
+- **API-kompatibilitet** - Inga breaking changes
+- **Metadata** - Automatisk uppdatering av befintliga samlingar
+
+## Metadata-format
+
+### Ny metadata-struktur:
+```json
+{
+  "indexed_urls": [
+    "https://example.com/page1",
+    "https://example.com/page2"
+  ],
+  "indexed_pdfs": [
+    "dokument1.pdf",
+    "dokument2.pdf",
+    "rapport.pdf"
+  ],
+  "total_records": 456,
+  "total_vectors": 456,
+  "last_updated": "2025-11-26T10:30:00Z",
+  "embed_backend": "google"
+}
 ```
 
-Om "command not found":
+## Kända begränsningar
 
-```bash
-brew install ollama
-```
+- **Filstorlek**: Begränsas av server-konfiguration (default ~100MB)
+- **Parallell processing**: Batch-uploads processas sekventiellt
+- **Browser memory**: Många stora PDFs kan påverka prestanda
 
-### Starta Ollama-servern i ett separat fönster
+## Framtida förbättringar
 
-```bash
-ollama serve
-```
+Potentiella förbättringar (ej implementerade än):
+- [ ] Parallell batch processing
+- [ ] PDF preview i UI
+- [ ] Ta bort enskilda PDFs från samling
+- [ ] PDF metadata-extraction
+- [ ] Merge collections
+- [ ] Export/Import funktionalitet
 
-Låt den processen ligga kvar igång.
+## Dokumentation
 
-### Hämta en modell (om du inte redan gjort det)
+- **[UPPDATERINGAR.md](UPPDATERINGAR.md)** - Detaljerad funktionsbeskrivning med exempel
+- **[INSTALLATION.md](INSTALLATION.md)** - Steg-för-steg installation och felsökning
 
-I ytterligare ett terminalfönster (eller samma där du kör serve innan du startar servern):
+## Support
 
-```bash
-ollama pull llama3.1
-```
+### Frågor?
+Kontakta systemadministratören eller öppna ett issue.
 
-### Snabbtest att API:et verkligen svarar
+### Buggrapporter
+Inkludera:
+- Browser och version
+- Felmeddelande (från console/network tab)
+- Steg för att återskapa felet
+- Server-loggar
 
-```bash
-curl http://localhost:11434/api/tags
-# ska ge JSON med listade modeller
+### Feature requests
+Förslag på förbättringar är alltid välkomna!
 
-curl http://localhost:11434/api/generate -d '{"model":"llama3.1","prompt":"Hej! Säg något kort."}'
-# ska ge ett JSON-svar med text
-```
+## Changelog
 
-## Så här fungerar webbappen:
+### Version 2.0 (2025-11-26)
+- Lagt till multi-PDF upload
+- Lagt till "lägg till i befintlig" för PDFs
+- Progress bar för batch uploads
+- PDF-lista i resultatvisning
+- Förbättrad error handling
+- Komplett dokumentation
 
-### 1. Ladda upp PDF eller URL
+### Version 1.0 (Tidigare)
+- Initial release med single PDF upload
+- URL multi-upload funktionalitet
+- Semantisk sökning
+- AI-frågor
 
-Systemet:
-* Extraherar all text från PDF:en eller webbsidan
-* Delar upp i meningsfulla chunks (~512 tokens)
-* Skapar embeddings med AI
-* Bygger sökbart FAISS-index
-
-### 2. Sök i dokumentet
-
-Skriv naturlig språk som:
-* "Vad säger dokumentet om AI?"
-* "Sammanfatta huvudpunkterna"
-* "Hitta information om säkerhet"
-
-### 3. Få rankade resultat
-
-De mest relevanta styckena baserat på semantisk likhet!
-
-### 4. Ställ frågor med /api/ask
-
-Systemet:
-* Söker relevanta dokument
-* Skickar kontext till LLM
-* Genererar svar baserat på dokumenten
-
-## API Endpoints
-
-- **GET /** - Frontend
-- **POST /api/upload_pdf** - Ladda upp PDF
-- **POST /api/fetch_url** - Processa URL
-- **POST /api/search** - Semantisk sökning
-- **POST /api/ask** - RAG-baserad fråga-svar
-- **GET /api/collections** - Lista alla collections
-- **DELETE /api/collection/{name}** - Radera collection
-- **GET /api/health** - Health check
-
-## Konfiguration
-
-### API-nycklar
-
-Lägg till dina API-nycklar i .env filen:
-
-```bash
-GOOGLE_API_KEY=din-google-api-nyckel
-OPENAI_API_KEY=din-openai-api-nyckel
-```
-
-### Embedding backends
-
-Välj mellan:
-- `google` - Google Gemini (default, 768 dimensioner)
-- `openai` - OpenAI (1536 eller 3072 dimensioner)
-- `sbert` - Lokal sentence-transformers (384 dimensioner)
-- `ollama` - Lokal Ollama (768 dimensioner)
-
-### LLM backends
-
-Välj mellan:
-- `google` - Google Gemini (default)
-- `openai` - OpenAI GPT
-- `ollama` - Lokal Ollama
-
-## Projektstruktur
-
-```
-slutarbete/
-├── app/
-│   ├── server.py          # FastAPI endpoints
-│   ├── rag_pipeline.py    # RAG-logik och embeddings
-│   ├── static/            # Frontend filer
-│   ├── uploads/           # Uppladdade PDF:er
-│   ├── outputs/           # Genererade JSON/text
-│   └── vector_stores/     # FAISS index
-├── .venv/                 # Virtuell miljö
-└── README.md
-```
-
-## Anteckningar för utvecklingen
-
-### Kommande förbättringar
+---
+**Version**: 2.0  
+**Senast uppdaterad**: 2025-11-26  
+**Licens**: Public Domain

@@ -97,38 +97,147 @@
             <span class="material-icons">clear</span> Rensa
           </button>
         </div>
-        <p class="text-muted">Ladda upp en PDF så skapas automatiskt embeddings för semantisk sökning.</p>
+        <p class="text-muted">Ladda upp en eller flera PDFs så skapas automatiskt embeddings för semantisk sökning.</p>
         
-        <div style="margin-bottom: 16px;">
-          <label>Samlingens namn (valfritt)</label>
-          <input id="pdfCollectionName" type="text" placeholder="T.ex. 'Årsredovisning 2024' eller lämna tomt för automatiskt namn" />
-        </div>
-        
-        <div class="input-group" style="margin-bottom: 16px;">
-          <div style="flex: 1;"><label>Embedding Model</label>
-            <select id="pdfEmbedBackend">
-              <option value="google">Google (Standard)</option>
-              <option value="openai">OpenAI</option>
-              <option value="sbert">Sentence-BERT</option>
-              <option value="ollama">Ollama (Lokal)</option>
-            </select>
+        <!-- Mode Selector for PDF -->
+        <div class="mode-selector">
+          <div class="mode-btn active" id="pdfModeSingle">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">description</span>
+            En PDF
           </div>
-          <div style="flex: 1;"><label>Chunk-storlek</label>
-            <select id="pdfChunkSize">
-              <option value="256">256 tokens</option>
-              <option value="512" selected>512 tokens</option>
-              <option value="1024">1024 tokens</option>
-            </select>
+          <div class="mode-btn" id="pdfModeMultiple">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">content_copy</span>
+            Flera PDFs
+          </div>
+          <div class="mode-btn" id="pdfModeAddToExisting">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add</span>
+            Lägg till i befintlig
           </div>
         </div>
-        <div id="dropzone" class="zone">
-          <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
-          <p><strong>Släpp PDF här</strong></p>
-          <p class="text-muted">eller</p>
-          <label class="btn btn-outlined" for="file"><span class="material-icons">folder_open</span> Välj PDF</label>
-          <input class="hidden" id="file" type="file" accept="application/pdf" />
+
+        <!-- Single PDF Mode -->
+        <div id="singlePdfMode">
+          <div style="margin-bottom: 16px;">
+            <label>Samlingens namn (valfritt)</label>
+            <input id="pdfCollectionName" type="text" placeholder="T.ex. 'Årsredovisning 2024' eller lämna tomt för automatiskt namn" />
+          </div>
+          
+          <div class="input-group" style="margin-bottom: 16px;">
+            <div style="flex: 1;"><label>Embedding Model</label>
+              <select id="pdfEmbedBackend">
+                <option value="google">Google (Standard)</option>
+                <option value="openai">OpenAI</option>
+                <option value="sbert">Sentence-BERT</option>
+                <option value="ollama">Ollama (Lokal)</option>
+              </select>
+            </div>
+            <div style="flex: 1;"><label>Chunk-storlek</label>
+              <select id="pdfChunkSize">
+                <option value="256">256 tokens</option>
+                <option value="512" selected>512 tokens</option>
+                <option value="1024">1024 tokens</option>
+              </select>
+            </div>
+          </div>
+          <div id="dropzone" class="zone">
+            <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
+            <p><strong>Släpp PDF här</strong></p>
+            <p class="text-muted">eller</p>
+            <label class="btn btn-outlined" for="file"><span class="material-icons">folder_open</span> Välj PDF</label>
+            <input class="hidden" id="file" type="file" accept="application/pdf" />
+          </div>
         </div>
+
+        <!-- Multiple PDFs Mode -->
+        <div id="multiplePdfsMode" class="hidden">
+          <div style="margin-bottom: 16px;">
+            <label>Samlingens namn (obligatoriskt)</label>
+            <input id="multiPdfCollectionName" type="text" placeholder="T.ex. 'Företagsdokument 2024'" />
+          </div>
+
+          <div class="input-group" style="margin-bottom: 16px;">
+            <div style="flex: 1;"><label>Embedding Model</label>
+              <select id="multiPdfEmbedBackend">
+                <option value="google">Google (Standard)</option>
+                <option value="openai">OpenAI</option>
+                <option value="sbert">Sentence-BERT</option>
+                <option value="ollama">Ollama (Lokal)</option>
+              </select>
+            </div>
+            <div style="flex: 1;"><label>Chunk-storlek</label>
+              <select id="multiPdfChunkSize">
+                <option value="256">256 tokens</option>
+                <option value="512" selected>512 tokens</option>
+                <option value="1024">1024 tokens</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="zone" id="multiDropzone">
+            <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
+            <p><strong>Släpp flera PDFs här</strong></p>
+            <p class="text-muted">eller</p>
+            <label class="btn btn-outlined" for="multiFile"><span class="material-icons">folder_open</span> Välj flera PDFs</label>
+            <input class="hidden" id="multiFile" type="file" accept="application/pdf" multiple />
+          </div>
+
+          <div id="multiPdfProgress" style="display: none; margin-top: 16px;">
+            <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+              <div id="multiPdfProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+            </div>
+            <p id="multiPdfProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
+          </div>
+        </div>
+
+        <!-- Add to Existing Mode -->
+        <div id="addPdfToExistingMode" class="hidden">
+          <div style="margin-bottom: 16px;">
+            <label>Välj befintlig samling</label>
+            <select id="existingPdfCollectionSelect">
+              <option value="">-- Välj samling --</option>
+            </select>
+          </div>
+
+          <div class="input-group" style="margin-bottom: 16px;">
+            <div style="flex: 1;"><label>Embedding Model</label>
+              <select id="addPdfEmbedBackend">
+                <option value="google">Google (Standard)</option>
+                <option value="openai">OpenAI</option>
+                <option value="sbert">Sentence-BERT</option>
+                <option value="ollama">Ollama (Lokal)</option>
+              </select>
+            </div>
+            <div style="flex: 1;"><label>Chunk-storlek</label>
+              <select id="addPdfChunkSize">
+                <option value="256">256 tokens</option>
+                <option value="512" selected>512 tokens</option>
+                <option value="1024">1024 tokens</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="zone" id="addDropzone">
+            <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
+            <p><strong>Släpp PDF här</strong></p>
+            <p class="text-muted">eller</p>
+            <label class="btn btn-outlined" for="addFile"><span class="material-icons">folder_open</span> Välj PDF</label>
+            <input class="hidden" id="addFile" type="file" accept="application/pdf" />
+          </div>
+        </div>
+
         <div id="result" class="result hidden"></div>
+        
+        <div id="pdfResult" style="display:none; margin-top:20px">
+          <div class="stats">
+            <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="pdfCollectionNameDisplay">-</div></div>
+            <div class="stat-card"><div class="stat-label">Totalt chunkar</div><div class="stat-value" id="pdfRecordCount">-</div></div>
+            <div class="stat-card"><div class="stat-label">Totalt vektorer</div><div class="stat-value" id="pdfVectorCount">-</div></div>
+          </div>
+          <div id="pdfListContainer" class="hidden">
+            <h3><span class="material-icons">description</span> Indexerade PDFs</h3>
+            <div id="pdfListDisplay" class="url-list"></div>
+          </div>
+        </div>
       </div>
 
       <!-- URL Fetch -->
@@ -324,11 +433,17 @@
 
     <script>
       let currentMode = 'single';
+      let currentPdfMode = 'single';
 
-      // Mode switching
+      // URL Mode switching
       document.getElementById('modeSingle').addEventListener('click', () => switchMode('single'));
       document.getElementById('modeMultiple').addEventListener('click', () => switchMode('multiple'));
       document.getElementById('modeAddToExisting').addEventListener('click', () => switchMode('add'));
+
+      // PDF Mode switching
+      document.getElementById('pdfModeSingle').addEventListener('click', () => switchPdfMode('single'));
+      document.getElementById('pdfModeMultiple').addEventListener('click', () => switchPdfMode('multiple'));
+      document.getElementById('pdfModeAddToExisting').addEventListener('click', () => switchPdfMode('add'));
 
       function switchMode(mode) {
         currentMode = mode;
@@ -350,7 +465,32 @@
         }
       }
 
-      // PDF Upload
+      function switchPdfMode(mode) {
+        currentPdfMode = mode;
+        // Remove active from all PDF mode buttons
+        document.getElementById('pdfModeSingle').classList.remove('active');
+        document.getElementById('pdfModeMultiple').classList.remove('active');
+        document.getElementById('pdfModeAddToExisting').classList.remove('active');
+        
+        // Hide all PDF modes
+        document.getElementById('singlePdfMode').classList.add('hidden');
+        document.getElementById('multiplePdfsMode').classList.add('hidden');
+        document.getElementById('addPdfToExistingMode').classList.add('hidden');
+
+        if (mode === 'single') {
+          document.getElementById('pdfModeSingle').classList.add('active');
+          document.getElementById('singlePdfMode').classList.remove('hidden');
+        } else if (mode === 'multiple') {
+          document.getElementById('pdfModeMultiple').classList.add('active');
+          document.getElementById('multiplePdfsMode').classList.remove('hidden');
+        } else if (mode === 'add') {
+          document.getElementById('pdfModeAddToExisting').classList.add('active');
+          document.getElementById('addPdfToExistingMode').classList.remove('hidden');
+          refreshExistingPdfCollections();
+        }
+      }
+
+      // PDF Upload - Single Mode
       const drop = document.getElementById('dropzone');
       const fileInput = document.getElementById('file');
       const result = document.getElementById('result');
@@ -358,7 +498,7 @@
 
       function show(html) { result.classList.remove('hidden'); result.innerHTML = html; }
 
-      async function handleFile(file) {
+      async function handleFile(file, collectionName = null) {
         if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
           show('<p style="color:var(--error);">Välj en giltig PDF-fil.</p>');
           return;
@@ -369,26 +509,161 @@
           form.append('file', file);
           const backend = document.getElementById('pdfEmbedBackend').value;
           const chunk = document.getElementById('pdfChunkSize').value;
-          const collectionName = pdfCollectionNameInput.value.trim();
+          const colName = collectionName || pdfCollectionNameInput.value.trim();
           
           let url = '/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk;
-          if (collectionName) {
-            url += '&collection_name=' + encodeURIComponent(collectionName);
+          if (colName) {
+            url += '&collection_name=' + encodeURIComponent(colName);
           }
           
           const res = await fetch(url, { method: 'POST', body: form });
           const data = await res.json();
           if (!res.ok) throw new Error(data?.detail || 'Fel');
+          
+          displayPdfResults(data);
           show('<p style="color:var(--secondary);"><span class="material-icons" style="vertical-align:middle;">check_circle</span> Klart! Samling: <strong>' + data.collection_name + '</strong> (' + data.record_count + ' chunkar)</p>');
           pdfCollectionNameInput.value = '';
           refreshAllCollections();
-        } catch (e) { show('<p style="color:var(--error);">Fel: ' + e.message + '</p>'); }
+          return data;
+        } catch (e) { 
+          show('<p style="color:var(--error);">Fel: ' + e.message + '</p>'); 
+          throw e;
+        }
       }
 
       ['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('dragover'); }));
       ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('dragover'); }));
       drop.addEventListener('drop', e => handleFile(e.dataTransfer.files?.[0]));
       fileInput.addEventListener('change', e => handleFile(e.target.files?.[0]));
+
+      // PDF Upload - Multiple Mode
+      const multiDropzone = document.getElementById('multiDropzone');
+      const multiFileInput = document.getElementById('multiFile');
+
+      async function handleMultiplePdfs(files) {
+        const collectionName = document.getElementById('multiPdfCollectionName').value.trim();
+        if (!collectionName) { alert('Ange ett samlingens namn.'); return; }
+        if (!files || files.length === 0) { alert('Välj minst en PDF-fil.'); return; }
+
+        const backend = document.getElementById('multiPdfEmbedBackend').value;
+        const chunk = document.getElementById('multiPdfChunkSize').value;
+        const progress = document.getElementById('multiPdfProgress');
+        const progressBar = document.getElementById('multiPdfProgressBar');
+        const progressText = document.getElementById('multiPdfProgressText');
+
+        progress.style.display = 'block';
+        let completed = 0;
+        let lastData = null;
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          if (!file.name.toLowerCase().endsWith('.pdf')) continue;
+          
+          try {
+            progressText.textContent = `${completed} / ${files.length} - Laddar upp ${file.name}`;
+            
+            const form = new FormData();
+            form.append('file', file);
+            let url = '/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk + '&collection_name=' + encodeURIComponent(collectionName);
+            
+            const res = await fetch(url, { method: 'POST', body: form });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || 'Fel');
+            
+            lastData = data;
+            completed++;
+            progressBar.style.width = `${(completed / files.length) * 100}%`;
+            progressText.textContent = `${completed} / ${files.length}`;
+          } catch (e) {
+            console.error(`Fel vid ${file.name}:`, e);
+          }
+        }
+
+        progressText.textContent = `Klart! ${completed} / ${files.length} PDFs indexerade`;
+        
+        if (lastData) {
+          displayPdfResults(lastData);
+        }
+        
+        refreshAllCollections();
+        setTimeout(() => { progress.style.display = 'none'; progressBar.style.width = '0%'; }, 3000);
+      }
+
+      ['dragenter','dragover'].forEach(e => multiDropzone.addEventListener(e, ev => { ev.preventDefault(); multiDropzone.classList.add('dragover'); }));
+      ['dragleave','drop'].forEach(e => multiDropzone.addEventListener(e, ev => { ev.preventDefault(); multiDropzone.classList.remove('dragover'); }));
+      multiDropzone.addEventListener('drop', e => handleMultiplePdfs(e.dataTransfer.files));
+      multiFileInput.addEventListener('change', e => handleMultiplePdfs(e.target.files));
+
+      // PDF Upload - Add to Existing Mode
+      const addDropzone = document.getElementById('addDropzone');
+      const addFileInput = document.getElementById('addFile');
+
+      async function handleAddPdf(file) {
+        const collection = document.getElementById('existingPdfCollectionSelect').value;
+        if (!collection) { alert('Välj en samling.'); return; }
+        if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+          alert('Välj en giltig PDF-fil.');
+          return;
+        }
+
+        const backend = document.getElementById('addPdfEmbedBackend').value;
+        const chunk = document.getElementById('addPdfChunkSize').value;
+
+        show('<p><span class="spinner"></span> Lägger till: <code>' + file.name + '</code></p>');
+        
+        try {
+          const form = new FormData();
+          form.append('file', file);
+          let url = '/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk + '&collection_name=' + encodeURIComponent(collection);
+          
+          const res = await fetch(url, { method: 'POST', body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.detail || 'Fel');
+          
+          displayPdfResults(data);
+          show('<p style="color:var(--secondary);"><span class="material-icons" style="vertical-align:middle;">check_circle</span> PDF tillagd till samlingen! (' + data.record_count + ' nya chunkar)</p>');
+          refreshAllCollections();
+          alert('PDF tillagd till samlingen!');
+        } catch (e) {
+          show('<p style="color:var(--error);">Fel: ' + e.message + '</p>');
+        }
+      }
+
+      ['dragenter','dragover'].forEach(e => addDropzone.addEventListener(e, ev => { ev.preventDefault(); addDropzone.classList.add('dragover'); }));
+      ['dragleave','drop'].forEach(e => addDropzone.addEventListener(e, ev => { ev.preventDefault(); addDropzone.classList.remove('dragover'); }));
+      addDropzone.addEventListener('drop', e => handleAddPdf(e.dataTransfer.files?.[0]));
+      addFileInput.addEventListener('change', e => handleAddPdf(e.target.files?.[0]));
+
+      function displayPdfResults(data) {
+        document.getElementById('pdfCollectionNameDisplay').textContent = data.collection_name;
+        document.getElementById('pdfRecordCount').textContent = data.record_count || data.total_records || 0;
+        document.getElementById('pdfVectorCount').textContent = data.vector_store?.stats?.total_vectors || data.total_vectors || 0;
+        document.getElementById('pdfResult').style.display = 'block';
+
+        if (data.indexed_pdfs && data.indexed_pdfs.length > 0) {
+          const pdfListContainer = document.getElementById('pdfListContainer');
+          const pdfListDisplay = document.getElementById('pdfListDisplay');
+          pdfListContainer.classList.remove('hidden');
+          pdfListDisplay.innerHTML = data.indexed_pdfs.map(p => 
+            `<div class="url-item"><span class="material-icons" style="font-size: 16px; color: var(--secondary);">description</span><span class="url-item-text">${p}</span></div>`
+          ).join('');
+        }
+      }
+
+      async function refreshExistingPdfCollections() {
+        try {
+          const res = await fetch('/api/collections');
+          const data = await res.json();
+          const sel = document.getElementById('existingPdfCollectionSelect');
+          sel.innerHTML = '<option value="">-- Välj samling --</option>';
+          data.collections.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.name;
+            o.textContent = c.name;
+            sel.appendChild(o);
+          });
+        } catch (e) { console.error(e); }
+      }
 
       // Single URL
       const urlEls = {
@@ -651,10 +926,27 @@
 
       // Clear buttons functionality
       document.getElementById('clearPdfBtn').addEventListener('click', () => {
+        // Single mode
         pdfCollectionNameInput.value = '';
         fileInput.value = '';
+        
+        // Multiple mode
+        document.getElementById('multiPdfCollectionName').value = '';
+        multiFileInput.value = '';
+        document.getElementById('multiPdfProgress').style.display = 'none';
+        document.getElementById('multiPdfProgressBar').style.width = '0%';
+        document.getElementById('multiPdfProgressText').textContent = '0 / 0';
+        
+        // Add to existing mode
+        addFileInput.value = '';
+        document.getElementById('existingPdfCollectionSelect').value = '';
+        
+        // Hide results
         result.classList.add('hidden');
         result.innerHTML = '';
+        document.getElementById('pdfResult').style.display = 'none';
+        document.getElementById('pdfListContainer').classList.add('hidden');
+        document.getElementById('pdfListDisplay').innerHTML = '';
       });
 
       document.getElementById('clearUrlBtn').addEventListener('click', () => {

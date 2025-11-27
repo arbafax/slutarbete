@@ -30,6 +30,18 @@ os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
 load_dotenv()
 
 
+def getDefaultSystemPrompt() -> str:
+    return """Du är en hjälpsam assistent som svarar på frågor baserat på den kontext som ges.
+
+VIKTIGA REGLER:
+- Svara ENDAST baserat på informationen i den bifogade kontexten
+- Om kontexten inte innehåller tillräcklig information för att svara, säg "Det finns inte tillräckligt med information i dokumentet för att svara på den frågan."
+- Gissa inte eller hitta på information
+- Formulera dig tydligt och dela upp svaret i läsbara stycken
+- Var koncis men informativ
+- Om du citerar från kontexten, var tydlig med det"""
+
+
 def utc_timestamp() -> str:
     """
     Generera UTC timestamp i ISO-format.

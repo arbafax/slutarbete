@@ -8,12 +8,22 @@
 #
 ###################################################
 
-from fastapi import FastAPI, UploadFile, File, Body, HTTPException
-from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from datetime import datetime, timezone
-from dotenv import load_dotenv
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    Body,
+    HTTPException,
+)  # pyright: ignore[reportMissingImports]
+from fastapi.responses import (
+    JSONResponse,
+    FileResponse,
+    HTMLResponse,
+)  # pyright: ignore[reportMissingImports]
+from fastapi.middleware.cors import (
+    CORSMiddleware,
+)  # pyright: ignore[reportMissingImports]
+from fastapi.staticfiles import StaticFiles  # pyright: ignore[reportMissingImports]
 
 import os
 import time
@@ -34,6 +44,7 @@ from helpers import (
     hlog,
     sanitize_basename,
     getApiKey,
+    getDefaultSystemPrompt,
     STATIC_DIR,
     UPLOAD_DIR,
     OUTPUT_DIR,
@@ -127,17 +138,6 @@ def get_llm_backend(kind: Optional[str] = None) -> LLMBackend:
     return GoogleLLMBackend()
 
 
-DEFAULT_SYSTEM_PROMPT = """Du är en hjälpsam assistent som svarar på frågor baserat på den kontext som ges.
-
-VIKTIGA REGLER:
-- Svara ENDAST baserat på informationen i den bifogade kontexten
-- Om kontexten inte innehåller tillräcklig information för att svara, säg "Det finns inte tillräckligt med information i dokumentet för att svara på den frågan."
-- Gissa inte eller hitta på information
-- Formulera dig tydligt och dela upp svaret i läsbara stycken
-- Var koncis men informativ
-- Om du citerar från kontexten, var tydlig med det"""
-
-
 # -----------------------------
 # FastAPI App
 # -----------------------------
@@ -195,6 +195,9 @@ async def upload_pdf(
     max_tokens_per_chunk: int = 512,
     collection_name: Optional[str] = None,
 ):
+    """
+    Upload and process PDF for RAG. Supports adding to existing collections.
+    """
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a .pdf file")
 
@@ -215,19 +218,60 @@ async def upload_pdf(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
 
+    # Determine collection name
+    is_new_collection = False
     if collection_name and collection_name.strip():
         collection_name = sanitize_basename(collection_name.strip())
     else:
         collection_name = sanitize_basename(file.filename)
+        is_new_collection = True
 
+    # Load or create vector store
+    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+    backend_obj = get_backend(embed_backend)
+    dimension = backend_obj.get_dimension()
+
+    if vector_store_path.with_suffix(".faiss").exists() and not is_new_collection:
+        # Load existing vector store
+        if collection_name not in vector_stores:
+            store = FAISSVectorStore(dimension=dimension)
+            store.load(str(vector_store_path))
+            vector_stores[collection_name] = store
+            hlog(f"✓ Loaded existing vector store '{collection_name}'")
+        else:
+            store = vector_stores[collection_name]
+
+        # Add new records to existing store
+        store.add_records(pkg["records"])
+        store.save(str(vector_store_path))
+        hlog(f"✓ Added {len(pkg['records'])} new records to '{collection_name}'")
+    else:
+        # Create new vector store
+        store = FAISSVectorStore(dimension=dimension)
+        store.add_records(pkg["records"])
+        store.save(str(vector_store_path))
+        vector_stores[collection_name] = store
+        hlog(
+            f"✓ Created new vector store '{collection_name}' with {len(pkg['records'])} vectors"
+        )
+
+    # Update metadata
+    metadata = load_collection_metadata(collection_name)
+    if safe_name_pdf not in metadata.get("indexed_pdfs", []):
+        metadata.setdefault("indexed_pdfs", []).append(safe_name_pdf)
+    metadata["total_records"] = store.get_stats()["total_vectors"]
+    metadata["last_updated"] = utc_timestamp()
+    metadata["embed_backend"] = embed_backend or "google"
+    save_collection_metadata(collection_name, metadata)
+
+    # Save individual PDF data
+    stem = f"{collection_name}_{int(time.time())}"
     records_slim = []
-    embeddings = []
     all_text = []
 
     for r in pkg["records"]:
         slim = {k: v for k, v in r.items() if k != "embedding"}
         records_slim.append(slim)
-        embeddings.append({"id": r["id"], "embedding": r["embedding"]})
         h = r.get("heading") or ""
         body = r.get("markdown", "")
         if h:
@@ -237,39 +281,23 @@ async def upload_pdf(
 
     all_text_str = "\n".join(all_text).strip()
 
-    meta = {
-        "source_file": safe_name_pdf,
-        "title": pkg["title"],
-        "collection_name": collection_name,
-        "created_at": utc_timestamp(),
-        "record_count": len(pkg["records"]),
-        "max_tokens_per_chunk": max_tokens_per_chunk,
-        "embed_backend": embed_backend,
-        "type": "pdf",
-    }
-
-    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
-    stem = collection_name
-
     meta_path = Path(OUTPUT_DIR) / f"{stem}.json"
-    emb_path = Path(OUTPUT_DIR) / f"{stem}.embeddings.jsonl"
     txt_path = Path(OUTPUT_DIR) / f"{stem}.txt"
 
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(
-            {"meta": meta, "records": records_slim}, f, ensure_ascii=False, indent=2
+            {
+                "source_file": safe_name_pdf,
+                "title": pkg["title"],
+                "records": records_slim,
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
         )
-
-    with open(emb_path, "w", encoding="utf-8") as f:
-        for row in embeddings:
-            f.write(json.dumps(row) + "\n")
 
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(all_text_str)
-
-    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
-    pkg["vector_store"].save(str(vector_store_path))
-    vector_stores[collection_name] = pkg["vector_store"]
 
     hlog(
         f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks as '{collection_name}'"
@@ -281,15 +309,17 @@ async def upload_pdf(
             "source_file": safe_name_pdf,
             "title": pkg["title"],
             "collection_name": collection_name,
-            "record_count": meta["record_count"],
+            "record_count": len(pkg["records"]),
+            "total_records": metadata["total_records"],
+            "total_vectors": store.get_stats()["total_vectors"],
+            "indexed_pdfs": metadata["indexed_pdfs"],
             "outputs": {
                 "records_json": f"/outputs/{meta_path.name}",
-                "embeddings_jsonl": f"/outputs/{emb_path.name}",
                 "text_file": f"/outputs/{txt_path.name}",
             },
             "vector_store": {
                 "available": True,
-                "stats": pkg["vector_store"].get_stats(),
+                "stats": store.get_stats(),
             },
             "params": {
                 "max_tokens_per_chunk": max_tokens_per_chunk,
@@ -438,6 +468,7 @@ def get_collection_info(collection_name: str):
         content={
             "collection_name": collection_name,
             "indexed_urls": metadata.get("indexed_urls", []),
+            "indexed_pdfs": metadata.get("indexed_pdfs", []),
             "total_records": metadata.get("total_records", stats["total_vectors"]),
             "total_vectors": stats["total_vectors"],
             "last_updated": metadata.get("last_updated"),
@@ -599,7 +630,7 @@ FRÅGA: {query}
 
 Svara på frågan baserat på kontexten ovan."""
 
-    system_prompt = custom_system_prompt or DEFAULT_SYSTEM_PROMPT
+    system_prompt = custom_system_prompt or getDefaultSystemPrompt()
 
     try:
         llm = get_llm_backend(llm_backend_name)
@@ -631,9 +662,10 @@ def list_collections():
         is_loaded = name in vector_stores
         stats = vector_stores[name].get_stats() if is_loaded else None
 
-        # Load metadata to get URL count
+        # Load metadata to get URL and PDF counts
         metadata = load_collection_metadata(name)
         url_count = len(metadata.get("indexed_urls", []))
+        pdf_count = len(metadata.get("indexed_pdfs", []))
 
         collections.append(
             {
@@ -641,6 +673,7 @@ def list_collections():
                 "loaded": is_loaded,
                 "stats": stats,
                 "url_count": url_count,
+                "pdf_count": pdf_count,
             }
         )
 
