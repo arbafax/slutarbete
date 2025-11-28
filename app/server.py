@@ -1,10 +1,13 @@
 ###################################################
 #
-#   file: server.py
+#   file: server.py (FÖRBÄTTRAD MED FELHANTERING)
 #
 #   Holds the API endpoints with multi-URL support
 #   Read and write towards the file system
 #   Uses rag_pipeline.py
+#
+#   FÖRBÄTTRING: Alla exceptions fångas och returneras som
+#   strukturerade felmeddelanden till frontend
 #
 ###################################################
 
@@ -14,22 +17,21 @@ from fastapi import (
     File,
     Body,
     HTTPException,
-)  # pyright: ignore[reportMissingImports]
+)
 from fastapi.responses import (
     JSONResponse,
     FileResponse,
     HTMLResponse,
-)  # pyright: ignore[reportMissingImports]
-from fastapi.middleware.cors import (
-    CORSMiddleware,
-)  # pyright: ignore[reportMissingImports]
-from fastapi.staticfiles import StaticFiles  # pyright: ignore[reportMissingImports]
+)
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 import os
 import time
 import json
 import re
 import requests
+import traceback
 
 from typing import Dict, Optional, List
 from pathlib import Path
@@ -64,6 +66,53 @@ collection_metadata: Dict[str, Dict] = {}
 
 
 # -----------------------------
+# Felhantering Helpers
+# -----------------------------
+
+
+def create_error_response(error: Exception, context: str = "") -> Dict:
+    """
+    Skapa strukturerat felmeddelande för frontend.
+
+    Args:
+        error: Exception-objektet
+        context: Kontext där felet uppstod
+
+    Returns:
+        Dict med error-information
+    """
+    error_type = type(error).__name__
+    error_msg = str(error)
+
+    # Bygg användarvänligt meddelande
+    user_message = f"Fel vid {context}: {error_msg}" if context else error_msg
+
+    # Hantera specifika feltyper
+    if "API key" in error_msg or "authentication" in error_msg.lower():
+        user_message = f"API-nyckel saknas eller är ogiltig. Kontrollera din .env-fil.\n\nDetaljer: {error_msg}"
+    elif "not installed" in error_msg or "No module named" in error_msg:
+        missing_package = error_msg.split("'")[1] if "'" in error_msg else "paketet"
+        user_message = f"Saknat paket: {missing_package}\n\nInstallera med: pip install {missing_package} --break-system-packages"
+    elif "Connection" in error_msg or "timeout" in error_msg.lower():
+        user_message = f"Nätverksfel: Kunde inte ansluta.\n\nDetaljer: {error_msg}"
+    elif "Permission" in error_msg or "Access denied" in error_msg:
+        user_message = (
+            f"Åtkomstfel: Kontrollera filrättigheter.\n\nDetaljer: {error_msg}"
+        )
+
+    return {
+        "success": False,
+        "error": {
+            "type": error_type,
+            "message": user_message,
+            "details": error_msg,
+            "context": context,
+            "traceback": traceback.format_exc() if os.getenv("DEBUG") else None,
+        },
+    }
+
+
+# -----------------------------
 # LLM Backends
 # -----------------------------
 
@@ -78,36 +127,45 @@ class GoogleLLMBackend(LLMBackend):
         self.model = model
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        response = genai_client.models.generate_content(
-            model=self.model,
-            contents=user_prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0.3,
-                max_output_tokens=2048,
-            ),
-        )
-        return response.text
+        try:
+            response = genai_client.models.generate_content(
+                model=self.model,
+                contents=user_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=0.3,
+                    max_output_tokens=2048,
+                ),
+            )
+            return response.text
+        except Exception as e:
+            raise Exception(f"Google LLM fel: {str(e)}")
 
 
 class OpenAILLMBackend(LLMBackend):
     def __init__(self, model: str = "gpt-4o-mini"):
-        from openai import OpenAI
+        try:
+            from openai import OpenAI
 
-        self.client = OpenAI()
-        self.model = model
+            self.client = OpenAI()
+            self.model = model
+        except Exception as e:
+            raise Exception(f"OpenAI initialization fel: {str(e)}")
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.3,
-            max_tokens=2048,
-        )
-        return response.choices[0].message.content
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.3,
+                max_tokens=2048,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            raise Exception(f"OpenAI LLM fel: {str(e)}")
 
 
 class OllamaLLMBackend(LLMBackend):
@@ -116,26 +174,35 @@ class OllamaLLMBackend(LLMBackend):
         self.host = host.rstrip("/")
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        r = requests.post(
-            f"{self.host}/api/generate",
-            json={
-                "model": self.model,
-                "prompt": user_prompt,
-                "system": system_prompt,
-                "stream": False,
-            },
-        )
-        r.raise_for_status()
-        return r.json()["response"]
+        try:
+            r = requests.post(
+                f"{self.host}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": user_prompt,
+                    "system": system_prompt,
+                    "stream": False,
+                },
+                timeout=120,
+            )
+            r.raise_for_status()
+            return r.json()["response"]
+        except requests.exceptions.ConnectionError:
+            raise Exception(f"Ollama server är inte igång. Starta med: ollama serve")
+        except Exception as e:
+            raise Exception(f"Ollama LLM fel: {str(e)}")
 
 
 def get_llm_backend(kind: Optional[str] = None) -> LLMBackend:
-    backend = (kind or "google").lower()
-    if backend == "openai":
-        return OpenAILLMBackend()
-    if backend == "ollama":
-        return OllamaLLMBackend()
-    return GoogleLLMBackend()
+    try:
+        backend = (kind or "google").lower()
+        if backend == "openai":
+            return OpenAILLMBackend()
+        if backend == "ollama":
+            return OllamaLLMBackend()
+        return GoogleLLMBackend()
+    except Exception as e:
+        raise Exception(f"Kunde inte ladda LLM backend '{kind}': {str(e)}")
 
 
 # -----------------------------
@@ -198,136 +265,166 @@ async def upload_pdf(
     """
     Upload and process PDF for RAG. Supports adding to existing collections.
     """
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Please upload a .pdf file")
-
-    pdf_bytes = await file.read()
-    safe_name_pdf = sanitize_basename(file.filename) + ".pdf"
-    upload_path = os.path.join(UPLOAD_DIR, safe_name_pdf)
-
-    with open(upload_path, "wb") as out:
-        out.write(pdf_bytes)
-
     try:
-        pkg = process_pdf_for_rag(
-            pdf_bytes,
-            filename=file.filename,
-            max_tokens_per_chunk=max_tokens_per_chunk,
-            embed_backend=embed_backend,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
+        # Validera fil
+        if not file.filename.lower().endswith(".pdf"):
+            return JSONResponse(
+                status_code=400,
+                content=create_error_response(
+                    Exception("Endast .pdf-filer tillåtna"), "filvalidering"
+                ),
+            )
 
-    # Determine collection name
-    is_new_collection = False
-    if collection_name and collection_name.strip():
-        collection_name = sanitize_basename(collection_name.strip())
-    else:
-        collection_name = sanitize_basename(file.filename)
-        is_new_collection = True
+        pdf_bytes = await file.read()
+        safe_name_pdf = sanitize_basename(file.filename) + ".pdf"
+        upload_path = os.path.join(UPLOAD_DIR, safe_name_pdf)
 
-    # Load or create vector store
-    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
-    backend_obj = get_backend(embed_backend)
-    dimension = backend_obj.get_dimension()
+        # Spara uppladdad fil
+        with open(upload_path, "wb") as out:
+            out.write(pdf_bytes)
 
-    if vector_store_path.with_suffix(".faiss").exists() and not is_new_collection:
-        # Load existing vector store
-        if collection_name not in vector_stores:
-            store = FAISSVectorStore(dimension=dimension)
-            store.load(str(vector_store_path))
-            vector_stores[collection_name] = store
-            hlog(f"✓ Loaded existing vector store '{collection_name}'")
+        # Processa PDF
+        try:
+            pkg = process_pdf_for_rag(
+                pdf_bytes,
+                filename=file.filename,
+                max_tokens_per_chunk=max_tokens_per_chunk,
+                embed_backend=embed_backend,
+            )
+        except Exception as e:
+            return JSONResponse(
+                status_code=500, content=create_error_response(e, "PDF-processering")
+            )
+
+        # Bestäm collection name
+        is_new_collection = False
+        if collection_name and collection_name.strip():
+            collection_name = sanitize_basename(collection_name.strip())
         else:
-            store = vector_stores[collection_name]
+            collection_name = sanitize_basename(file.filename)
+            is_new_collection = True
 
-        # Add new records to existing store
-        store.add_records(pkg["records"])
-        store.save(str(vector_store_path))
-        hlog(f"✓ Added {len(pkg['records'])} new records to '{collection_name}'")
-    else:
-        # Create new vector store
-        store = FAISSVectorStore(dimension=dimension)
-        store.add_records(pkg["records"])
-        store.save(str(vector_store_path))
-        vector_stores[collection_name] = store
+        # Ladda eller skapa vector store
+        try:
+            vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+            backend_obj = get_backend(embed_backend)
+            dimension = backend_obj.get_dimension()
+
+            if (
+                vector_store_path.with_suffix(".faiss").exists()
+                and not is_new_collection
+            ):
+                # Ladda befintlig
+                if collection_name not in vector_stores:
+                    store = FAISSVectorStore(dimension=dimension)
+                    store.load(str(vector_store_path))
+                    vector_stores[collection_name] = store
+                    hlog(f"✓ Loaded existing vector store '{collection_name}'")
+                else:
+                    store = vector_stores[collection_name]
+
+                store.add_records(pkg["records"])
+                store.save(str(vector_store_path))
+                hlog(
+                    f"✓ Added {len(pkg['records'])} new records to '{collection_name}'"
+                )
+            else:
+                # Skapa ny
+                store = FAISSVectorStore(dimension=dimension)
+                store.add_records(pkg["records"])
+                store.save(str(vector_store_path))
+                vector_stores[collection_name] = store
+                hlog(
+                    f"✓ Created new vector store '{collection_name}' with {len(pkg['records'])} vectors"
+                )
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content=create_error_response(e, "vector store-skapande"),
+            )
+
+        # Uppdatera metadata
+        metadata = load_collection_metadata(collection_name)
+        if safe_name_pdf not in metadata.get("indexed_pdfs", []):
+            metadata.setdefault("indexed_pdfs", []).append(safe_name_pdf)
+        metadata["total_records"] = store.get_stats()["total_vectors"]
+        metadata["last_updated"] = utc_timestamp()
+        metadata["embed_backend"] = embed_backend or "google"
+        save_collection_metadata(collection_name, metadata)
+
+        # Spara individuell PDF-data
+        stem = f"{collection_name}_{int(time.time())}"
+        records_slim = []
+        all_text = []
+
+        for r in pkg["records"]:
+            slim = {k: v for k, v in r.items() if k != "embedding"}
+            records_slim.append(slim)
+            h = r.get("heading") or ""
+            body = r.get("markdown", "")
+            if h:
+                all_text.append(f"# {h}\n{body}\n")
+            else:
+                all_text.append(f"{body}\n")
+
+        all_text_str = "\n".join(all_text).strip()
+
+        meta_path = Path(OUTPUT_DIR) / f"{stem}.json"
+        txt_path = Path(OUTPUT_DIR) / f"{stem}.txt"
+
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "source_file": safe_name_pdf,
+                    "title": pkg["title"],
+                    "records": records_slim,
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+        with open(txt_path, "w", encoding="utf-8") as f:
+            f.write(all_text_str)
+
         hlog(
-            f"✓ Created new vector store '{collection_name}' with {len(pkg['records'])} vectors"
+            f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks as '{collection_name}'"
         )
 
-    # Update metadata
-    metadata = load_collection_metadata(collection_name)
-    if safe_name_pdf not in metadata.get("indexed_pdfs", []):
-        metadata.setdefault("indexed_pdfs", []).append(safe_name_pdf)
-    metadata["total_records"] = store.get_stats()["total_vectors"]
-    metadata["last_updated"] = utc_timestamp()
-    metadata["embed_backend"] = embed_backend or "google"
-    save_collection_metadata(collection_name, metadata)
-
-    # Save individual PDF data
-    stem = f"{collection_name}_{int(time.time())}"
-    records_slim = []
-    all_text = []
-
-    for r in pkg["records"]:
-        slim = {k: v for k, v in r.items() if k != "embedding"}
-        records_slim.append(slim)
-        h = r.get("heading") or ""
-        body = r.get("markdown", "")
-        if h:
-            all_text.append(f"# {h}\n{body}\n")
-        else:
-            all_text.append(f"{body}\n")
-
-    all_text_str = "\n".join(all_text).strip()
-
-    meta_path = Path(OUTPUT_DIR) / f"{stem}.json"
-    txt_path = Path(OUTPUT_DIR) / f"{stem}.txt"
-
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(
-            {
+        return JSONResponse(
+            content={
+                "success": True,
+                "message": "OK",
                 "source_file": safe_name_pdf,
                 "title": pkg["title"],
-                "records": records_slim,
+                "collection_name": collection_name,
+                "record_count": len(pkg["records"]),
+                "total_records": metadata["total_records"],
+                "total_vectors": store.get_stats()["total_vectors"],
+                "indexed_pdfs": metadata["indexed_pdfs"],
+                "outputs": {
+                    "records_json": f"/outputs/{meta_path.name}",
+                    "text_file": f"/outputs/{txt_path.name}",
+                },
+                "vector_store": {
+                    "available": True,
+                    "stats": store.get_stats(),
+                },
+                "params": {
+                    "max_tokens_per_chunk": max_tokens_per_chunk,
+                    "embed_backend": embed_backend,
+                },
             },
-            f,
-            ensure_ascii=False,
-            indent=2,
+            status_code=200,
         )
 
-    with open(txt_path, "w", encoding="utf-8") as f:
-        f.write(all_text_str)
-
-    hlog(
-        f"✓ PDF '{file.filename}' processed: {len(pkg['records'])} chunks as '{collection_name}'"
-    )
-
-    return JSONResponse(
-        content={
-            "message": "OK",
-            "source_file": safe_name_pdf,
-            "title": pkg["title"],
-            "collection_name": collection_name,
-            "record_count": len(pkg["records"]),
-            "total_records": metadata["total_records"],
-            "total_vectors": store.get_stats()["total_vectors"],
-            "indexed_pdfs": metadata["indexed_pdfs"],
-            "outputs": {
-                "records_json": f"/outputs/{meta_path.name}",
-                "text_file": f"/outputs/{txt_path.name}",
-            },
-            "vector_store": {
-                "available": True,
-                "stats": store.get_stats(),
-            },
-            "params": {
-                "max_tokens_per_chunk": max_tokens_per_chunk,
-                "embed_backend": embed_backend,
-            },
-        },
-        status_code=200,
-    )
+    except Exception as e:
+        # Catch-all för oväntade fel
+        hlog(f"❌ Unexpected error in upload_pdf: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content=create_error_response(e, "PDF-uppladdning (oväntat fel)"),
+        )
 
 
 @app.post("/api/fetch_url")
@@ -335,293 +432,378 @@ async def api_fetch_url(payload: dict = Body(...)):
     """
     Fetch and process URL for RAG. Supports adding to existing collections.
     """
-    url = (payload.get("url") or "").strip()
-    if not url or not url.lower().startswith(("http://", "https://")):
-        raise HTTPException(status_code=400, detail="Provide a valid http(s) URL")
-
-    max_tokens = int(payload.get("max_tokens_per_chunk") or 512)
-    embed_backend = payload.get("embed_backend")
-    collection_name = payload.get("collection_name")
-
     try:
-        pkg = process_url_for_rag(
-            url,
-            max_tokens_per_chunk=max_tokens,
-            embed_backend=embed_backend,
-            create_vector_store=False,  # We'll handle this manually
-        )
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Pipeline failed: {e!s}")
+        url = (payload.get("url") or "").strip()
+        if not url or not url.lower().startswith(("http://", "https://")):
+            return JSONResponse(
+                status_code=400,
+                content=create_error_response(
+                    Exception("Ogiltig URL. Måste börja med http:// eller https://"),
+                    "URL-validering",
+                ),
+            )
 
-    # Determine collection name
-    is_new_collection = False
-    if collection_name and collection_name.strip():
-        collection_name = sanitize_basename(collection_name.strip())
-    else:
-        base = (
-            re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60]
-            or "document"
-        )
-        collection_name = f"{base}_{int(time.time())}"
-        is_new_collection = True
+        max_tokens = int(payload.get("max_tokens_per_chunk") or 512)
+        embed_backend = payload.get("embed_backend")
+        collection_name = payload.get("collection_name")
 
-    collection_name = sanitize_basename(collection_name)
+        # Processa URL
+        try:
+            pkg = process_url_for_rag(
+                url,
+                max_tokens_per_chunk=max_tokens,
+                embed_backend=embed_backend,
+                create_vector_store=False,
+            )
+        except Exception as e:
+            return JSONResponse(
+                status_code=502,
+                content=create_error_response(e, f"URL-hämtning ({url})"),
+            )
 
-    # Load or create vector store
-    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
-    backend_obj = get_backend(embed_backend)
-    dimension = backend_obj.get_dimension()
-
-    if vector_store_path.with_suffix(".faiss").exists() and not is_new_collection:
-        # Load existing vector store
-        if collection_name not in vector_stores:
-            store = FAISSVectorStore(dimension=dimension)
-            store.load(str(vector_store_path))
-            vector_stores[collection_name] = store
-            hlog(f"✓ Loaded existing vector store '{collection_name}'")
+        # Bestäm collection name
+        is_new_collection = False
+        if collection_name and collection_name.strip():
+            collection_name = sanitize_basename(collection_name.strip())
         else:
-            store = vector_stores[collection_name]
+            base = (
+                re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60]
+                or "document"
+            )
+            collection_name = f"{base}_{int(time.time())}"
+            is_new_collection = True
 
-        # Add new records to existing store
-        store.add_records(pkg["records"])
-        store.save(str(vector_store_path))
-        hlog(f"✓ Added {len(pkg['records'])} new records to '{collection_name}'")
-    else:
-        # Create new vector store
-        store = FAISSVectorStore(dimension=dimension)
-        store.add_records(pkg["records"])
-        store.save(str(vector_store_path))
-        vector_stores[collection_name] = store
-        hlog(
-            f"✓ Created new vector store '{collection_name}' with {len(pkg['records'])} vectors"
+        collection_name = sanitize_basename(collection_name)
+
+        # Ladda eller skapa vector store
+        try:
+            vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+            backend_obj = get_backend(embed_backend)
+            dimension = backend_obj.get_dimension()
+
+            if (
+                vector_store_path.with_suffix(".faiss").exists()
+                and not is_new_collection
+            ):
+                if collection_name not in vector_stores:
+                    store = FAISSVectorStore(dimension=dimension)
+                    store.load(str(vector_store_path))
+                    vector_stores[collection_name] = store
+                    hlog(f"✓ Loaded existing vector store '{collection_name}'")
+                else:
+                    store = vector_stores[collection_name]
+
+                store.add_records(pkg["records"])
+                store.save(str(vector_store_path))
+                hlog(
+                    f"✓ Added {len(pkg['records'])} new records to '{collection_name}'"
+                )
+            else:
+                store = FAISSVectorStore(dimension=dimension)
+                store.add_records(pkg["records"])
+                store.save(str(vector_store_path))
+                vector_stores[collection_name] = store
+                hlog(
+                    f"✓ Created new vector store '{collection_name}' with {len(pkg['records'])} vectors"
+                )
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content=create_error_response(e, "vector store-skapande"),
+            )
+
+        # Uppdatera metadata
+        metadata = load_collection_metadata(collection_name)
+        if url not in metadata.get("indexed_urls", []):
+            metadata.setdefault("indexed_urls", []).append(url)
+        metadata["total_records"] = store.get_stats()["total_vectors"]
+        metadata["last_updated"] = utc_timestamp()
+        metadata["embed_backend"] = embed_backend or "google"
+        save_collection_metadata(collection_name, metadata)
+
+        # Spara individuell URL-data
+        stem = f"{collection_name}_{int(time.time())}"
+        records_slim = []
+        for r in pkg["records"]:
+            slim = {k: v for k, v in r.items() if k != "embedding"}
+            records_slim.append(slim)
+
+        meta_path = Path(OUTPUT_DIR) / f"{stem}.json"
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "url": pkg["source_url"],
+                    "title": pkg["title"],
+                    "records": records_slim,
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "message": "OK",
+                "source_url": pkg["source_url"],
+                "title": pkg["title"],
+                "collection_name": collection_name,
+                "record_count": len(pkg["records"]),
+                "total_records": metadata["total_records"],
+                "total_vectors": store.get_stats()["total_vectors"],
+                "indexed_urls": metadata["indexed_urls"],
+                "vector_store": {
+                    "available": True,
+                    "stats": store.get_stats(),
+                },
+                "params": {
+                    "max_tokens_per_chunk": max_tokens,
+                    "embed_backend": embed_backend or "google",
+                },
+            }
         )
 
-    # Update metadata
-    metadata = load_collection_metadata(collection_name)
-    if url not in metadata.get("indexed_urls", []):
-        metadata.setdefault("indexed_urls", []).append(url)
-    metadata["total_records"] = store.get_stats()["total_vectors"]
-    metadata["last_updated"] = utc_timestamp()
-    metadata["embed_backend"] = embed_backend or "google"
-    save_collection_metadata(collection_name, metadata)
-
-    # Save individual URL data
-    stem = f"{collection_name}_{int(time.time())}"
-    records_slim = []
-    for r in pkg["records"]:
-        slim = {k: v for k, v in r.items() if k != "embedding"}
-        records_slim.append(slim)
-
-    meta_path = Path(OUTPUT_DIR) / f"{stem}.json"
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(
-            {"url": pkg["source_url"], "title": pkg["title"], "records": records_slim},
-            f,
-            ensure_ascii=False,
-            indent=2,
+    except Exception as e:
+        hlog(f"❌ Unexpected error in fetch_url: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content=create_error_response(e, "URL-hämtning (oväntat fel)"),
         )
-
-    return JSONResponse(
-        content={
-            "message": "OK",
-            "source_url": pkg["source_url"],
-            "title": pkg["title"],
-            "collection_name": collection_name,
-            "record_count": len(pkg["records"]),
-            "total_records": metadata["total_records"],
-            "total_vectors": store.get_stats()["total_vectors"],
-            "indexed_urls": metadata["indexed_urls"],
-            "vector_store": {
-                "available": True,
-                "stats": store.get_stats(),
-            },
-            "params": {
-                "max_tokens_per_chunk": max_tokens,
-                "embed_backend": embed_backend or "google",
-            },
-        }
-    )
 
 
 @app.get("/api/collection_info/{collection_name}")
 def get_collection_info(collection_name: str):
     """Get information about a collection including all indexed URLs"""
-    collection_name = sanitize_basename(collection_name)
+    try:
+        collection_name = sanitize_basename(collection_name)
 
-    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
-    if not vector_store_path.with_suffix(".faiss").exists():
-        raise HTTPException(
-            status_code=404, detail=f"Collection '{collection_name}' not found"
+        vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+        if not vector_store_path.with_suffix(".faiss").exists():
+            return JSONResponse(
+                status_code=404,
+                content=create_error_response(
+                    Exception(f"Samlingen '{collection_name}' finns inte"),
+                    "collection lookup",
+                ),
+            )
+
+        metadata = load_collection_metadata(collection_name)
+
+        if collection_name not in vector_stores:
+            store = FAISSVectorStore()
+            store.load(str(vector_store_path))
+            vector_stores[collection_name] = store
+
+        stats = vector_stores[collection_name].get_stats()
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "collection_name": collection_name,
+                "indexed_urls": metadata.get("indexed_urls", []),
+                "indexed_pdfs": metadata.get("indexed_pdfs", []),
+                "total_records": metadata.get("total_records", stats["total_vectors"]),
+                "total_vectors": stats["total_vectors"],
+                "last_updated": metadata.get("last_updated"),
+                "embed_backend": metadata.get("embed_backend", "unknown"),
+                "vector_store": {
+                    "available": True,
+                    "stats": stats,
+                },
+            }
         )
-
-    metadata = load_collection_metadata(collection_name)
-
-    # Load vector store stats if not already loaded
-    if collection_name not in vector_stores:
-        store = FAISSVectorStore()
-        store.load(str(vector_store_path))
-        vector_stores[collection_name] = store
-
-    stats = vector_stores[collection_name].get_stats()
-
-    return JSONResponse(
-        content={
-            "collection_name": collection_name,
-            "indexed_urls": metadata.get("indexed_urls", []),
-            "indexed_pdfs": metadata.get("indexed_pdfs", []),
-            "total_records": metadata.get("total_records", stats["total_vectors"]),
-            "total_vectors": stats["total_vectors"],
-            "last_updated": metadata.get("last_updated"),
-            "embed_backend": metadata.get("embed_backend", "unknown"),
-            "vector_store": {
-                "available": True,
-                "stats": stats,
-            },
-        }
-    )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content=create_error_response(e, "collection info-hämtning"),
+        )
 
 
 @app.post("/api/search")
 async def api_search(payload: dict = Body(...)):
-    query = payload.get("query", "").strip()
-    collection = payload.get("collection", "").strip()
-    k = int(payload.get("k", 5))
-    embed_backend = payload.get("embed_backend")
-
-    if not query:
-        raise HTTPException(status_code=400, detail="Missing 'query' parameter")
-    if not collection:
-        raise HTTPException(status_code=400, detail="Missing 'collection' parameter")
-
-    if collection not in vector_stores:
-        vector_store_path = Path(VECTOR_STORE_DIR) / collection
-        if not vector_store_path.with_suffix(".faiss").exists():
-            raise HTTPException(
-                status_code=404,
-                detail=f"Collection '{collection}' not found",
-            )
-        try:
-            store = FAISSVectorStore()
-            store.load(str(vector_store_path))
-            vector_stores[collection] = store
-            hlog(f"✓ Loaded vector store '{collection}' from disk")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to load: {e}")
-
-    store = vector_stores[collection]
-
     try:
-        backend = get_backend(embed_backend)
-        results = store.search_with_text(query, k=k, backend=backend)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
+        query = payload.get("query", "").strip()
+        collection = payload.get("collection", "").strip()
+        k = int(payload.get("k", 5))
+        embed_backend = payload.get("embed_backend")
 
-    formatted_results = []
-    for res in results:
-        rec = res["record"]
-        formatted_results.append(
-            {
-                "rank": res["rank"],
-                "score": round(res["score"], 4),
-                "id": rec["id"],
-                "title": rec.get("title"),
-                "heading": rec.get("heading"),
-                "url": rec.get("url"),
-                "anchor": rec.get("anchor"),
-                "breadcrumbs": rec.get("breadcrumbs", []),
-                "markdown": (
-                    rec["markdown"][:300] + "..."
-                    if len(rec["markdown"]) > 300
-                    else rec["markdown"]
-                ),
-                "full_markdown": rec["markdown"],
-                "tokens_est": rec.get("tokens_est"),
+        if not query:
+            return JSONResponse(
+                status_code=400,
+                content=create_error_response(Exception("Sökfråga saknas"), "sökning"),
+            )
+        if not collection:
+            return JSONResponse(
+                status_code=400,
+                content=create_error_response(Exception("Samling saknas"), "sökning"),
+            )
+
+        # Ladda collection
+        if collection not in vector_stores:
+            vector_store_path = Path(VECTOR_STORE_DIR) / collection
+            if not vector_store_path.with_suffix(".faiss").exists():
+                return JSONResponse(
+                    status_code=404,
+                    content=create_error_response(
+                        Exception(f"Samlingen '{collection}' finns inte"), "sökning"
+                    ),
+                )
+            try:
+                store = FAISSVectorStore()
+                store.load(str(vector_store_path))
+                vector_stores[collection] = store
+                hlog(f"✓ Loaded vector store '{collection}' from disk")
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500,
+                    content=create_error_response(e, "vector store-laddning"),
+                )
+
+        store = vector_stores[collection]
+
+        # Sök
+        try:
+            backend = get_backend(embed_backend)
+            results = store.search_with_text(query, k=k, backend=backend)
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content=create_error_response(e, "sökning i vector store"),
+            )
+
+        # Formatera resultat
+        formatted_results = []
+        for res in results:
+            rec = res["record"]
+            formatted_results.append(
+                {
+                    "rank": res["rank"],
+                    "score": round(res["score"], 4),
+                    "id": rec["id"],
+                    "title": rec.get("title"),
+                    "heading": rec.get("heading"),
+                    "url": rec.get("url"),
+                    "anchor": rec.get("anchor"),
+                    "breadcrumbs": rec.get("breadcrumbs", []),
+                    "markdown": (
+                        rec["markdown"][:300] + "..."
+                        if len(rec["markdown"]) > 300
+                        else rec["markdown"]
+                    ),
+                    "full_markdown": rec["markdown"],
+                    "tokens_est": rec.get("tokens_est"),
+                }
+            )
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "query": query,
+                "collection": collection,
+                "k": k,
+                "results_count": len(formatted_results),
+                "results": formatted_results,
+                "store_stats": store.get_stats(),
             }
         )
-
-    return JSONResponse(
-        content={
-            "query": query,
-            "collection": collection,
-            "k": k,
-            "results_count": len(formatted_results),
-            "results": formatted_results,
-            "store_stats": store.get_stats(),
-        }
-    )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500, content=create_error_response(e, "sökning (oväntat fel)")
+        )
 
 
 @app.post("/api/ask")
 async def api_ask(payload: dict = Body(...)):
-    query = payload.get("query", "").strip()
-    collection = payload.get("collection", "").strip()
-    k = int(payload.get("k", 5))
-    llm_backend_name = payload.get("llm_backend", "google")
-    embed_backend_name = payload.get("embed_backend")
-    custom_system_prompt = payload.get("system_prompt")
-
-    if not query:
-        raise HTTPException(status_code=400, detail="Missing 'query' parameter")
-    if not collection:
-        raise HTTPException(status_code=400, detail="Missing 'collection' parameter")
-
-    if collection not in vector_stores:
-        vector_store_path = Path(VECTOR_STORE_DIR) / collection
-        if not vector_store_path.with_suffix(".faiss").exists():
-            raise HTTPException(status_code=404, detail=f"Collection not found")
-        try:
-            store = FAISSVectorStore()
-            store.load(str(vector_store_path))
-            vector_stores[collection] = store
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to load: {e}")
-
-    store = vector_stores[collection]
-
     try:
-        embed_backend = get_backend(embed_backend_name)
-        search_results = store.search_with_text(query, k=k, backend=embed_backend)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
+        query = payload.get("query", "").strip()
+        collection = payload.get("collection", "").strip()
+        k = int(payload.get("k", 5))
+        llm_backend_name = payload.get("llm_backend", "google")
+        embed_backend_name = payload.get("embed_backend")
+        custom_system_prompt = payload.get("system_prompt")
 
-    if not search_results:
-        return JSONResponse(
-            content={
-                "query": query,
-                "answer": "Inga relevanta dokument hittades.",
-                "sources": [],
-                "context_used": "",
-            }
-        )
+        if not query:
+            return JSONResponse(
+                status_code=400,
+                content=create_error_response(Exception("Fråga saknas"), "AI-fråga"),
+            )
+        if not collection:
+            return JSONResponse(
+                status_code=400,
+                content=create_error_response(Exception("Samling saknas"), "AI-fråga"),
+            )
 
-    context_parts = []
-    sources = []
+        # Ladda collection
+        if collection not in vector_stores:
+            vector_store_path = Path(VECTOR_STORE_DIR) / collection
+            if not vector_store_path.with_suffix(".faiss").exists():
+                return JSONResponse(
+                    status_code=404,
+                    content=create_error_response(
+                        Exception(f"Samlingen '{collection}' finns inte"), "AI-fråga"
+                    ),
+                )
+            try:
+                store = FAISSVectorStore()
+                store.load(str(vector_store_path))
+                vector_stores[collection] = store
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500,
+                    content=create_error_response(e, "vector store-laddning"),
+                )
 
-    for i, res in enumerate(search_results, 1):
-        rec = res["record"]
-        heading = rec.get("heading", "")
-        text = rec.get("markdown", "")
-        score = res["score"]
+        store = vector_stores[collection]
 
-        if heading:
-            context_parts.append(f"[Källa {i}: {heading}]\n{text}")
-        else:
-            context_parts.append(f"[Källa {i}]\n{text}")
+        # Sök relevanta dokument
+        try:
+            embed_backend = get_backend(embed_backend_name)
+            search_results = store.search_with_text(query, k=k, backend=embed_backend)
+        except Exception as e:
+            return JSONResponse(
+                status_code=500, content=create_error_response(e, "dokumentsökning")
+            )
 
-        sources.append(
-            {
-                "rank": i,
-                "score": round(score, 4),
-                "heading": heading,
-                "preview": text[:200] + "..." if len(text) > 200 else text,
-                "url": rec.get("url"),
-                "anchor": rec.get("anchor"),
-            }
-        )
+        if not search_results:
+            return JSONResponse(
+                content={
+                    "success": True,
+                    "query": query,
+                    "answer": "Inga relevanta dokument hittades.",
+                    "sources": [],
+                    "context_used": "",
+                }
+            )
 
-    context = "\n\n---\n\n".join(context_parts)
+        # Bygg kontext
+        context_parts = []
+        sources = []
 
-    user_prompt = f"""KONTEXT:
+        for i, res in enumerate(search_results, 1):
+            rec = res["record"]
+            heading = rec.get("heading", "")
+            text = rec.get("markdown", "")
+            score = res["score"]
+
+            if heading:
+                context_parts.append(f"[Källa {i}: {heading}]\n{text}")
+            else:
+                context_parts.append(f"[Källa {i}]\n{text}")
+
+            sources.append(
+                {
+                    "rank": i,
+                    "score": round(score, 4),
+                    "heading": heading,
+                    "preview": text[:200] + "..." if len(text) > 200 else text,
+                    "url": rec.get("url"),
+                    "anchor": rec.get("anchor"),
+                }
+            )
+
+        context = "\n\n---\n\n".join(context_parts)
+
+        user_prompt = f"""KONTEXT:
 {context}
 
 ---
@@ -630,118 +812,167 @@ FRÅGA: {query}
 
 Svara på frågan baserat på kontexten ovan."""
 
-    system_prompt = custom_system_prompt or getDefaultSystemPrompt()
+        system_prompt = custom_system_prompt or getDefaultSystemPrompt()
 
-    try:
-        llm = get_llm_backend(llm_backend_name)
-        answer = llm.generate(system_prompt, user_prompt)
+        # Generera svar med LLM
+        try:
+            llm = get_llm_backend(llm_backend_name)
+            answer = llm.generate(system_prompt, user_prompt)
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content=create_error_response(
+                    e, f"LLM-generering ({llm_backend_name})"
+                ),
+            )
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "query": query,
+                "answer": answer,
+                "sources": sources,
+                "context_used": context,
+                "params": {
+                    "collection": collection,
+                    "k": k,
+                    "llm_backend": llm_backend_name,
+                    "embed_backend": embed_backend_name or "google",
+                },
+            }
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM failed: {e}")
-
-    return JSONResponse(
-        content={
-            "query": query,
-            "answer": answer,
-            "sources": sources,
-            "context_used": context,
-            "params": {
-                "collection": collection,
-                "k": k,
-                "llm_backend": llm_backend_name,
-                "embed_backend": embed_backend_name or "google",
-            },
-        }
-    )
+        return JSONResponse(
+            status_code=500, content=create_error_response(e, "AI-fråga (oväntat fel)")
+        )
 
 
 @app.get("/api/collections")
 def list_collections():
-    collections = []
-    for item in Path(VECTOR_STORE_DIR).glob("*.faiss"):
-        name = item.stem
-        is_loaded = name in vector_stores
-        stats = vector_stores[name].get_stats() if is_loaded else None
+    try:
+        collections = []
+        for item in Path(VECTOR_STORE_DIR).glob("*.faiss"):
+            name = item.stem
+            is_loaded = name in vector_stores
+            stats = vector_stores[name].get_stats() if is_loaded else None
 
-        # Load metadata to get URL and PDF counts
-        metadata = load_collection_metadata(name)
-        url_count = len(metadata.get("indexed_urls", []))
-        pdf_count = len(metadata.get("indexed_pdfs", []))
+            metadata = load_collection_metadata(name)
+            url_count = len(metadata.get("indexed_urls", []))
+            pdf_count = len(metadata.get("indexed_pdfs", []))
 
-        collections.append(
-            {
-                "name": name,
-                "loaded": is_loaded,
-                "stats": stats,
-                "url_count": url_count,
-                "pdf_count": pdf_count,
+            collections.append(
+                {
+                    "name": name,
+                    "loaded": is_loaded,
+                    "stats": stats,
+                    "url_count": url_count,
+                    "pdf_count": pdf_count,
+                }
+            )
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "collections": collections,
+                "loaded_count": len(vector_stores),
+                "total_count": len(collections),
             }
         )
-
-    return JSONResponse(
-        content={
-            "collections": collections,
-            "loaded_count": len(vector_stores),
-            "total_count": len(collections),
-        }
-    )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500, content=create_error_response(e, "collection-listning")
+        )
 
 
 @app.delete("/api/collection/{collection_name}")
 def delete_collection(collection_name: str):
-    collection_name = sanitize_basename(collection_name)
+    try:
+        collection_name = sanitize_basename(collection_name)
 
-    if collection_name in vector_stores:
-        del vector_stores[collection_name]
+        if collection_name in vector_stores:
+            del vector_stores[collection_name]
 
-    vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
-    deleted_files = []
+        vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+        deleted_files = []
 
-    for ext in [".faiss", ".pkl"]:
-        file_path = vector_store_path.with_suffix(ext)
-        if file_path.exists():
-            file_path.unlink()
-            deleted_files.append(str(file_path.name))
+        for ext in [".faiss", ".pkl"]:
+            file_path = vector_store_path.with_suffix(ext)
+            if file_path.exists():
+                file_path.unlink()
+                deleted_files.append(str(file_path.name))
 
-    # Delete metadata
-    meta_path = Path(OUTPUT_DIR) / f"{collection_name}.meta.json"
-    if meta_path.exists():
-        meta_path.unlink()
-        deleted_files.append(str(meta_path.name))
+        meta_path = Path(OUTPUT_DIR) / f"{collection_name}.meta.json"
+        if meta_path.exists():
+            meta_path.unlink()
+            deleted_files.append(str(meta_path.name))
 
-    if not deleted_files:
-        raise HTTPException(status_code=404, detail=f"Collection not found")
+        if not deleted_files:
+            return JSONResponse(
+                status_code=404,
+                content=create_error_response(
+                    Exception(f"Samlingen '{collection_name}' finns inte"),
+                    "collection-radering",
+                ),
+            )
 
-    return JSONResponse(
-        content={
-            "message": f"Collection '{collection_name}' deleted",
-            "deleted_files": deleted_files,
-        }
-    )
+        return JSONResponse(
+            content={
+                "success": True,
+                "message": f"Collection '{collection_name}' deleted",
+                "deleted_files": deleted_files,
+            }
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500, content=create_error_response(e, "collection-radering")
+        )
 
 
 @app.get("/api/download/{basename}")
 def download_json(basename: str):
-    safe = sanitize_basename(basename)
-    path = os.path.join(OUTPUT_DIR, f"{safe}.json")
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path, media_type="application/json", filename=f"{safe}.json")
+    try:
+        safe = sanitize_basename(basename)
+        path = os.path.join(OUTPUT_DIR, f"{safe}.json")
+        if not os.path.exists(path):
+            return JSONResponse(
+                status_code=404,
+                content=create_error_response(
+                    Exception(f"Filen '{safe}.json' finns inte"), "fil-nedladdning"
+                ),
+            )
+        return FileResponse(
+            path, media_type="application/json", filename=f"{safe}.json"
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500, content=create_error_response(e, "fil-nedladdning")
+        )
 
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "success": True}
 
 
 @app.get("/")
 def root_index():
-    return HTMLResponse(
-        open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
-    )
+    try:
+        return HTMLResponse(
+            open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
+        )
+    except Exception as e:
+        return HTMLResponse(
+            f"<h1>Fel: {str(e)}</h1><p>Kunde inte ladda index.html</p>", status_code=500
+        )
 
 
 @app.get("/index.html")
 def index_alias():
-    return HTMLResponse(
-        open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
-    )
+    try:
+        return HTMLResponse(
+            open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8").read()
+        )
+    except Exception as e:
+        return HTMLResponse(
+            f"<h1>Fel: {str(e)}</h1><p>Kunde inte ladda index.html</p>", status_code=500
+        )

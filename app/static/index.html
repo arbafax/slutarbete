@@ -97,37 +97,37 @@
             <span class="material-icons">clear</span> Rensa
           </button>
         </div>
-        <p class="text-muted">Ladda upp en eller flera PDFs så skapas automatiskt embeddings för semantisk sökning.</p>
+        <p class="text-muted">Ladda upp en eller flera PDFs. Stöder både nya samlingar och tillägg till befintliga.</p>
         
         <!-- Mode Selector for PDF -->
         <div class="mode-selector">
-          <div class="mode-btn active" id="pdfModeSingle">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">description</span>
-            En PDF
+          <div class="mode-btn active" id="pdfModeNew">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add_circle</span>
+            Ny samling
           </div>
-          <div class="mode-btn" id="pdfModeMultiple">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">content_copy</span>
-            Flera PDFs
-          </div>
-          <div class="mode-btn" id="pdfModeAddToExisting">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add</span>
+          <div class="mode-btn" id="pdfModeAdd">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">library_add</span>
             Lägg till i befintlig
           </div>
         </div>
 
-        <!-- Single PDF Mode -->
-        <div id="singlePdfMode">
+        <!-- New Collection Mode -->
+        <div id="pdfNewMode">
           <div style="margin-bottom: 16px;">
             <label>Samlingens namn (valfritt)</label>
             <input id="pdfCollectionName" type="text" placeholder="T.ex. 'Årsredovisning 2024' eller lämna tomt för automatiskt namn" />
+            <p class="text-muted" style="margin-top: 4px;">Om du lämnar tomt skapas namnet automatiskt från första filen</p>
           </div>
           
           <div class="input-group" style="margin-bottom: 16px;">
             <div style="flex: 1;"><label>Embedding Model</label>
               <select id="pdfEmbedBackend">
-                <option value="google">Google (Standard)</option>
+                <option value="google">Google Gemini (Standard)</option>
+                <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
+                <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
+                <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
                 <option value="openai">OpenAI</option>
-                <option value="sbert">Sentence-BERT</option>
+                <option value="sbert">Sentence-BERT (Enkel)</option>
                 <option value="ollama">Ollama (Lokal)</option>
               </select>
             </div>
@@ -139,58 +139,18 @@
               </select>
             </div>
           </div>
-          <div id="dropzone" class="zone">
+
+          <div id="pdfDropzone" class="zone">
             <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
-            <p><strong>Släpp PDF här</strong></p>
+            <p><strong>Släpp en eller flera PDFs här</strong></p>
             <p class="text-muted">eller</p>
-            <label class="btn btn-outlined" for="file"><span class="material-icons">folder_open</span> Välj PDF</label>
-            <input class="hidden" id="file" type="file" accept="application/pdf" />
-          </div>
-        </div>
-
-        <!-- Multiple PDFs Mode -->
-        <div id="multiplePdfsMode" class="hidden">
-          <div style="margin-bottom: 16px;">
-            <label>Samlingens namn (obligatoriskt)</label>
-            <input id="multiPdfCollectionName" type="text" placeholder="T.ex. 'Företagsdokument 2024'" />
-          </div>
-
-          <div class="input-group" style="margin-bottom: 16px;">
-            <div style="flex: 1;"><label>Embedding Model</label>
-              <select id="multiPdfEmbedBackend">
-                <option value="google">Google (Standard)</option>
-                <option value="openai">OpenAI</option>
-                <option value="sbert">Sentence-BERT</option>
-                <option value="ollama">Ollama (Lokal)</option>
-              </select>
-            </div>
-            <div style="flex: 1;"><label>Chunk-storlek</label>
-              <select id="multiPdfChunkSize">
-                <option value="256">256 tokens</option>
-                <option value="512" selected>512 tokens</option>
-                <option value="1024">1024 tokens</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="zone" id="multiDropzone">
-            <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
-            <p><strong>Släpp flera PDFs här</strong></p>
-            <p class="text-muted">eller</p>
-            <label class="btn btn-outlined" for="multiFile"><span class="material-icons">folder_open</span> Välj flera PDFs</label>
-            <input class="hidden" id="multiFile" type="file" accept="application/pdf" multiple />
-          </div>
-
-          <div id="multiPdfProgress" style="display: none; margin-top: 16px;">
-            <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
-              <div id="multiPdfProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
-            </div>
-            <p id="multiPdfProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
+            <label class="btn btn-outlined" for="pdfFile"><span class="material-icons">folder_open</span> Välj PDF(er)</label>
+            <input class="hidden" id="pdfFile" type="file" accept="application/pdf" multiple />
           </div>
         </div>
 
         <!-- Add to Existing Mode -->
-        <div id="addPdfToExistingMode" class="hidden">
+        <div id="pdfAddMode" class="hidden">
           <div style="margin-bottom: 16px;">
             <label>Välj befintlig samling</label>
             <select id="existingPdfCollectionSelect">
@@ -201,9 +161,12 @@
           <div class="input-group" style="margin-bottom: 16px;">
             <div style="flex: 1;"><label>Embedding Model</label>
               <select id="addPdfEmbedBackend">
-                <option value="google">Google (Standard)</option>
+                <option value="google">Google Gemini (Standard)</option>
+                <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
+                <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
+                <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
                 <option value="openai">OpenAI</option>
-                <option value="sbert">Sentence-BERT</option>
+                <option value="sbert">Sentence-BERT (Enkel)</option>
                 <option value="ollama">Ollama (Lokal)</option>
               </select>
             </div>
@@ -216,17 +179,22 @@
             </div>
           </div>
 
-          <div class="zone" id="addDropzone">
+          <div class="zone" id="addPdfDropzone">
             <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
-            <p><strong>Släpp PDF här</strong></p>
+            <p><strong>Släpp en eller flera PDFs här</strong></p>
             <p class="text-muted">eller</p>
-            <label class="btn btn-outlined" for="addFile"><span class="material-icons">folder_open</span> Välj PDF</label>
-            <input class="hidden" id="addFile" type="file" accept="application/pdf" />
+            <label class="btn btn-outlined" for="addPdfFile"><span class="material-icons">folder_open</span> Välj PDF(er)</label>
+            <input class="hidden" id="addPdfFile" type="file" accept="application/pdf" multiple />
           </div>
         </div>
 
-        <div id="result" class="result hidden"></div>
-        
+        <div id="pdfProgress" style="display: none; margin-top: 16px;">
+          <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+            <div id="pdfProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+          </div>
+          <p id="pdfProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
+        </div>
+
         <div id="pdfResult" style="display:none; margin-top:20px">
           <div class="stats">
             <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="pdfCollectionNameDisplay">-</div></div>
@@ -252,106 +220,91 @@
         
         <!-- Mode Selector -->
         <div class="mode-selector">
-          <div class="mode-btn active" id="modeSingle">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">link</span>
-            En URL
+          <div class="mode-btn active" id="urlModeNew">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add_circle</span>
+            Ny samling
           </div>
-          <div class="mode-btn" id="modeMultiple">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">link_off</span>
-            Flera URLs
-          </div>
-          <div class="mode-btn" id="modeAddToExisting">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add_link</span>
+          <div class="mode-btn" id="urlModeAdd">
+            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">library_add</span>
             Lägg till i befintlig
           </div>
         </div>
 
-        <!-- Single URL Mode -->
-        <div id="singleUrlMode">
+        <!-- New Collection Mode -->
+        <div id="urlNewMode">
           <div style="margin-bottom: 16px;">
             <label>Samlingens namn (valfritt)</label>
             <input id="urlCollectionName" type="text" placeholder="T.ex. 'Wikipedia AI' eller lämna tomt för automatiskt namn" />
-          </div>
-          
-          <div class="input-group">
-            <div style="flex: 1;"><label>Webbadress</label><input id="urlInput" type="url" placeholder="https://exempel.se/sida" /></div>
-            <div style="width: 200px;"><label>Embedding Model</label>
-              <select id="embedBackend">
-                <option value="google">Google</option>
-                <option value="openai">OpenAI</option>
-                <option value="sbert">SBERT</option>
-                <option value="ollama">Ollama</option>
-              </select>
-            </div>
-            <button class="btn btn-raised" id="fetchBtn"><span class="material-icons">download</span> Hämta</button>
-          </div>
-        </div>
-
-        <!-- Multiple URLs Mode -->
-        <div id="multipleUrlsMode" class="hidden">
-          <div style="margin-bottom: 16px;">
-            <label>Samlingens namn (obligatoriskt)</label>
-            <input id="multiUrlCollectionName" type="text" placeholder="T.ex. 'AI Research Articles'" />
+            <p class="text-muted" style="margin-top: 4px;">Om du lämnar tomt skapas namnet automatiskt från första URL:en</p>
           </div>
 
           <div style="margin-bottom: 16px;">
             <label>URLs (en per rad)</label>
-            <textarea id="multiUrlInput" placeholder="https://exempel.se/sida1&#10;https://exempel.se/sida2&#10;https://exempel.se/sida3"></textarea>
-            <p class="text-muted" style="margin-top: 4px;">Ange en URL per rad. Alla kommer att indexeras till samma samling.</p>
+            <textarea id="urlInput" placeholder="https://exempel.se/sida1&#10;https://exempel.se/sida2&#10;https://exempel.se/sida3
+
+Kan också ange bara en URL för en enda sida"></textarea>
+            <p class="text-muted" style="margin-top: 4px;">Ange en eller flera URLs, en per rad. Alla kommer att indexeras till samma samling.</p>
           </div>
 
           <div class="input-group">
             <div style="flex: 1;"><label>Embedding Model</label>
-              <select id="multiEmbedBackend">
-                <option value="google">Google</option>
+              <select id="urlEmbedBackend">
+                <option value="google">Google Gemini</option>
+                <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
+                <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
+                <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
                 <option value="openai">OpenAI</option>
                 <option value="sbert">SBERT</option>
                 <option value="ollama">Ollama</option>
               </select>
             </div>
-            <button class="btn btn-raised" id="multiFetchBtn"><span class="material-icons">download</span> Hämta alla</button>
-          </div>
-
-          <div id="multiProgress" style="display: none; margin-top: 16px;">
-            <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
-              <div id="multiProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
-            </div>
-            <p id="multiProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
+            <button class="btn btn-raised" id="urlFetchBtn"><span class="material-icons">download</span> Hämta</button>
           </div>
         </div>
 
         <!-- Add to Existing Mode -->
-        <div id="addToExistingMode" class="hidden">
+        <div id="urlAddMode" class="hidden">
           <div style="margin-bottom: 16px;">
             <label>Välj befintlig samling</label>
-            <select id="existingCollectionSelect">
+            <select id="existingUrlCollectionSelect">
               <option value="">-- Välj samling --</option>
             </select>
           </div>
 
           <div style="margin-bottom: 16px;">
-            <label>URL att lägga till</label>
-            <input id="addUrlInput" type="url" placeholder="https://exempel.se/ny-sida" />
+            <label>URLs att lägga till (en per rad)</label>
+            <textarea id="addUrlInput" placeholder="https://exempel.se/ny-sida1&#10;https://exempel.se/ny-sida2"></textarea>
+            <p class="text-muted" style="margin-top: 4px;">Ange en eller flera URLs, en per rad</p>
           </div>
 
           <div class="input-group">
             <div style="flex: 1;"><label>Embedding Model</label>
-              <select id="addEmbedBackend">
-                <option value="google">Google</option>
+              <select id="addUrlEmbedBackend">
+                <option value="google">Google Gemini</option>
+                <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
+                <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
+                <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
                 <option value="openai">OpenAI</option>
                 <option value="sbert">SBERT</option>
                 <option value="ollama">Ollama</option>
               </select>
             </div>
-            <button class="btn btn-raised" id="addFetchBtn"><span class="material-icons">add</span> Lägg till</button>
+            <button class="btn btn-raised" id="addUrlFetchBtn"><span class="material-icons">add</span> Lägg till</button>
           </div>
+        </div>
+
+        <div id="urlProgress" style="display: none; margin-top: 16px;">
+          <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+            <div id="urlProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+          </div>
+          <p id="urlProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
         </div>
 
         <div id="urlResult" style="display:none; margin-top:20px">
           <div class="stats">
-            <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="collectionName">-</div></div>
-            <div class="stat-card"><div class="stat-label">Totalt chunkar</div><div class="stat-value" id="recordCount">-</div></div>
-            <div class="stat-card"><div class="stat-label">Totalt vektorer</div><div class="stat-value" id="vectorCount">-</div></div>
+            <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="urlCollectionNameDisplay">-</div></div>
+            <div class="stat-card"><div class="stat-label">Totalt chunkar</div><div class="stat-value" id="urlRecordCount">-</div></div>
+            <div class="stat-card"><div class="stat-label">Totalt vektorer</div><div class="stat-value" id="urlVectorCount">-</div></div>
           </div>
           <div id="urlListContainer" class="hidden">
             <h3><span class="material-icons">link</span> Indexerade URLs</h3>
@@ -432,143 +385,155 @@
     </div>
 
     <script>
-      let currentMode = 'single';
-      let currentPdfMode = 'single';
+      let currentPdfMode = 'new';
+      let currentUrlMode = 'new';
 
-      // URL Mode switching
-      document.getElementById('modeSingle').addEventListener('click', () => switchMode('single'));
-      document.getElementById('modeMultiple').addEventListener('click', () => switchMode('multiple'));
-      document.getElementById('modeAddToExisting').addEventListener('click', () => switchMode('add'));
+      // ============= FELHANTERING =============
+      function showError(errorData, context = '') {
+        let message = '';
+        
+        if (errorData.error) {
+          // Strukturerat felmeddelande från server
+          message = errorData.error.message || errorData.error.details || 'Ett okänt fel uppstod';
+          
+          if (errorData.error.context) {
+            message = `FEL VID ${errorData.error.context.toUpperCase()}:\n\n${message}`;
+          }
+        } else if (errorData.detail) {
+          // HTTPException från FastAPI
+          message = errorData.detail;
+        } else if (typeof errorData === 'string') {
+          // Enkel sträng
+          message = errorData;
+        } else {
+          message = 'Ett okänt fel uppstod';
+        }
+        
+        // Visa alert med felet
+        alert(message);
+        
+        // Logga också till konsol för debugging
+        console.error('Error:', errorData);
+      }
+
+      // Helper för att hantera fetch-errors
+      async function handleFetchError(response) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { error: { message: `HTTP ${response.status}: ${response.statusText}` } };
+        }
+        
+        // Kolla om det är ett strukturerat fel
+        if (errorData.success === false || errorData.error) {
+          showError(errorData);
+        } else {
+          showError(errorData);
+        }
+        
+        return errorData;
+      }
 
       // PDF Mode switching
-      document.getElementById('pdfModeSingle').addEventListener('click', () => switchPdfMode('single'));
-      document.getElementById('pdfModeMultiple').addEventListener('click', () => switchPdfMode('multiple'));
-      document.getElementById('pdfModeAddToExisting').addEventListener('click', () => switchPdfMode('add'));
+      document.getElementById('pdfModeNew').addEventListener('click', () => switchPdfMode('new'));
+      document.getElementById('pdfModeAdd').addEventListener('click', () => switchPdfMode('add'));
 
-      function switchMode(mode) {
-        currentMode = mode;
-        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('singleUrlMode').classList.add('hidden');
-        document.getElementById('multipleUrlsMode').classList.add('hidden');
-        document.getElementById('addToExistingMode').classList.add('hidden');
-
-        if (mode === 'single') {
-          document.getElementById('modeSingle').classList.add('active');
-          document.getElementById('singleUrlMode').classList.remove('hidden');
-        } else if (mode === 'multiple') {
-          document.getElementById('modeMultiple').classList.add('active');
-          document.getElementById('multipleUrlsMode').classList.remove('hidden');
-        } else if (mode === 'add') {
-          document.getElementById('modeAddToExisting').classList.add('active');
-          document.getElementById('addToExistingMode').classList.remove('hidden');
-          refreshExistingCollections();
-        }
-      }
+      // URL Mode switching
+      document.getElementById('urlModeNew').addEventListener('click', () => switchUrlMode('new'));
+      document.getElementById('urlModeAdd').addEventListener('click', () => switchUrlMode('add'));
 
       function switchPdfMode(mode) {
         currentPdfMode = mode;
-        // Remove active from all PDF mode buttons
-        document.getElementById('pdfModeSingle').classList.remove('active');
-        document.getElementById('pdfModeMultiple').classList.remove('active');
-        document.getElementById('pdfModeAddToExisting').classList.remove('active');
+        document.getElementById('pdfModeNew').classList.remove('active');
+        document.getElementById('pdfModeAdd').classList.remove('active');
         
-        // Hide all PDF modes
-        document.getElementById('singlePdfMode').classList.add('hidden');
-        document.getElementById('multiplePdfsMode').classList.add('hidden');
-        document.getElementById('addPdfToExistingMode').classList.add('hidden');
+        document.getElementById('pdfNewMode').classList.add('hidden');
+        document.getElementById('pdfAddMode').classList.add('hidden');
 
-        if (mode === 'single') {
-          document.getElementById('pdfModeSingle').classList.add('active');
-          document.getElementById('singlePdfMode').classList.remove('hidden');
-        } else if (mode === 'multiple') {
-          document.getElementById('pdfModeMultiple').classList.add('active');
-          document.getElementById('multiplePdfsMode').classList.remove('hidden');
+        if (mode === 'new') {
+          document.getElementById('pdfModeNew').classList.add('active');
+          document.getElementById('pdfNewMode').classList.remove('hidden');
         } else if (mode === 'add') {
-          document.getElementById('pdfModeAddToExisting').classList.add('active');
-          document.getElementById('addPdfToExistingMode').classList.remove('hidden');
+          document.getElementById('pdfModeAdd').classList.add('active');
+          document.getElementById('pdfAddMode').classList.remove('hidden');
           refreshExistingPdfCollections();
         }
       }
 
-      // PDF Upload - Single Mode
-      const drop = document.getElementById('dropzone');
-      const fileInput = document.getElementById('file');
-      const result = document.getElementById('result');
-      const pdfCollectionNameInput = document.getElementById('pdfCollectionName');
+      function switchUrlMode(mode) {
+        currentUrlMode = mode;
+        document.getElementById('urlModeNew').classList.remove('active');
+        document.getElementById('urlModeAdd').classList.remove('active');
+        
+        document.getElementById('urlNewMode').classList.add('hidden');
+        document.getElementById('urlAddMode').classList.add('hidden');
 
-      function show(html) { result.classList.remove('hidden'); result.innerHTML = html; }
-
-      async function handleFile(file, collectionName = null) {
-        if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
-          show('<p style="color:var(--error);">Välj en giltig PDF-fil.</p>');
-          return;
-        }
-        show('<p><span class="spinner"></span> Laddar upp: <code>' + file.name + '</code></p>');
-        try {
-          const form = new FormData();
-          form.append('file', file);
-          const backend = document.getElementById('pdfEmbedBackend').value;
-          const chunk = document.getElementById('pdfChunkSize').value;
-          const colName = collectionName || pdfCollectionNameInput.value.trim();
-          
-          let url = '/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk;
-          if (colName) {
-            url += '&collection_name=' + encodeURIComponent(colName);
-          }
-          
-          const res = await fetch(url, { method: 'POST', body: form });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data?.detail || 'Fel');
-          
-          displayPdfResults(data);
-          show('<p style="color:var(--secondary);"><span class="material-icons" style="vertical-align:middle;">check_circle</span> Klart! Samling: <strong>' + data.collection_name + '</strong> (' + data.record_count + ' chunkar)</p>');
-          pdfCollectionNameInput.value = '';
-          refreshAllCollections();
-          return data;
-        } catch (e) { 
-          show('<p style="color:var(--error);">Fel: ' + e.message + '</p>'); 
-          throw e;
+        if (mode === 'new') {
+          document.getElementById('urlModeNew').classList.add('active');
+          document.getElementById('urlNewMode').classList.remove('hidden');
+        } else if (mode === 'add') {
+          document.getElementById('urlModeAdd').classList.add('active');
+          document.getElementById('urlAddMode').classList.remove('hidden');
+          refreshExistingUrlCollections();
         }
       }
 
-      ['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('dragover'); }));
-      ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('dragover'); }));
-      drop.addEventListener('drop', e => handleFile(e.dataTransfer.files?.[0]));
-      fileInput.addEventListener('change', e => handleFile(e.target.files?.[0]));
+      // PDF Upload - New Collection Mode
+      const pdfDropzone = document.getElementById('pdfDropzone');
+      const pdfFileInput = document.getElementById('pdfFile');
+      const pdfCollectionNameInput = document.getElementById('pdfCollectionName');
 
-      // PDF Upload - Multiple Mode
-      const multiDropzone = document.getElementById('multiDropzone');
-      const multiFileInput = document.getElementById('multiFile');
+      async function handlePdfFiles(files, collectionName = null) {
+        if (!files || files.length === 0) { 
+          showError('Välj minst en PDF-fil', 'PDF-val'); 
+          return; 
+        }
 
-      async function handleMultiplePdfs(files) {
-        const collectionName = document.getElementById('multiPdfCollectionName').value.trim();
-        if (!collectionName) { alert('Ange ett samlingens namn.'); return; }
-        if (!files || files.length === 0) { alert('Välj minst en PDF-fil.'); return; }
-
-        const backend = document.getElementById('multiPdfEmbedBackend').value;
-        const chunk = document.getElementById('multiPdfChunkSize').value;
-        const progress = document.getElementById('multiPdfProgress');
-        const progressBar = document.getElementById('multiPdfProgressBar');
-        const progressText = document.getElementById('multiPdfProgressText');
+        const colName = collectionName || pdfCollectionNameInput.value.trim();
+        const backend = document.getElementById('pdfEmbedBackend').value;
+        const chunk = document.getElementById('pdfChunkSize').value;
+        const progress = document.getElementById('pdfProgress');
+        const progressBar = document.getElementById('pdfProgressBar');
+        const progressText = document.getElementById('pdfProgressText');
 
         progress.style.display = 'block';
         let completed = 0;
         let lastData = null;
+        let errors = [];
 
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
-          if (!file.name.toLowerCase().endsWith('.pdf')) continue;
+          if (!file.name.toLowerCase().endsWith('.pdf')) {
+            errors.push(`${file.name}: Inte en PDF-fil`);
+            continue;
+          }
           
           try {
             progressText.textContent = `${completed} / ${files.length} - Laddar upp ${file.name}`;
             
             const form = new FormData();
             form.append('file', file);
-            let url = '/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk + '&collection_name=' + encodeURIComponent(collectionName);
+            let url = '/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk;
+            if (colName) {
+              url += '&collection_name=' + encodeURIComponent(colName);
+            }
             
             const res = await fetch(url, { method: 'POST', body: form });
+            
+            if (!res.ok) {
+              const errorData = await handleFetchError(res);
+              errors.push(`${file.name}: ${errorData.error?.message || 'Okänt fel'}`);
+              continue;
+            }
+            
             const data = await res.json();
-            if (!res.ok) throw new Error(data?.detail || 'Fel');
+            
+            if (data.success === false) {
+              showError(data);
+              errors.push(`${file.name}: Processering misslyckades`);
+              continue;
+            }
             
             lastData = data;
             completed++;
@@ -576,7 +541,12 @@
             progressText.textContent = `${completed} / ${files.length}`;
           } catch (e) {
             console.error(`Fel vid ${file.name}:`, e);
+            errors.push(`${file.name}: ${e.message}`);
           }
+        }
+
+        if (errors.length > 0) {
+          showError(`Några filer kunde inte processas:\n\n${errors.join('\n')}`);
         }
 
         progressText.textContent = `Klart! ${completed} / ${files.length} PDFs indexerade`;
@@ -585,54 +555,32 @@
           displayPdfResults(lastData);
         }
         
+        pdfCollectionNameInput.value = '';
         refreshAllCollections();
         setTimeout(() => { progress.style.display = 'none'; progressBar.style.width = '0%'; }, 3000);
       }
 
-      ['dragenter','dragover'].forEach(e => multiDropzone.addEventListener(e, ev => { ev.preventDefault(); multiDropzone.classList.add('dragover'); }));
-      ['dragleave','drop'].forEach(e => multiDropzone.addEventListener(e, ev => { ev.preventDefault(); multiDropzone.classList.remove('dragover'); }));
-      multiDropzone.addEventListener('drop', e => handleMultiplePdfs(e.dataTransfer.files));
-      multiFileInput.addEventListener('change', e => handleMultiplePdfs(e.target.files));
+      ['dragenter','dragover'].forEach(e => pdfDropzone.addEventListener(e, ev => { ev.preventDefault(); pdfDropzone.classList.add('dragover'); }));
+      ['dragleave','drop'].forEach(e => pdfDropzone.addEventListener(e, ev => { ev.preventDefault(); pdfDropzone.classList.remove('dragover'); }));
+      pdfDropzone.addEventListener('drop', e => handlePdfFiles(e.dataTransfer.files));
+      pdfFileInput.addEventListener('change', e => handlePdfFiles(e.target.files));
 
       // PDF Upload - Add to Existing Mode
-      const addDropzone = document.getElementById('addDropzone');
-      const addFileInput = document.getElementById('addFile');
+      const addPdfDropzone = document.getElementById('addPdfDropzone');
+      const addPdfFileInput = document.getElementById('addPdfFile');
 
-      async function handleAddPdf(file) {
+      async function handleAddPdfFiles(files) {
         const collection = document.getElementById('existingPdfCollectionSelect').value;
         if (!collection) { alert('Välj en samling.'); return; }
-        if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
-          alert('Välj en giltig PDF-fil.');
-          return;
-        }
+        if (!files || files.length === 0) { alert('Välj minst en PDF-fil.'); return; }
 
-        const backend = document.getElementById('addPdfEmbedBackend').value;
-        const chunk = document.getElementById('addPdfChunkSize').value;
-
-        show('<p><span class="spinner"></span> Lägger till: <code>' + file.name + '</code></p>');
-        
-        try {
-          const form = new FormData();
-          form.append('file', file);
-          let url = '/api/upload_pdf?embed_backend=' + backend + '&max_tokens_per_chunk=' + chunk + '&collection_name=' + encodeURIComponent(collection);
-          
-          const res = await fetch(url, { method: 'POST', body: form });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data?.detail || 'Fel');
-          
-          displayPdfResults(data);
-          show('<p style="color:var(--secondary);"><span class="material-icons" style="vertical-align:middle;">check_circle</span> PDF tillagd till samlingen! (' + data.record_count + ' nya chunkar)</p>');
-          refreshAllCollections();
-          alert('PDF tillagd till samlingen!');
-        } catch (e) {
-          show('<p style="color:var(--error);">Fel: ' + e.message + '</p>');
-        }
+        await handlePdfFiles(files, collection);
       }
 
-      ['dragenter','dragover'].forEach(e => addDropzone.addEventListener(e, ev => { ev.preventDefault(); addDropzone.classList.add('dragover'); }));
-      ['dragleave','drop'].forEach(e => addDropzone.addEventListener(e, ev => { ev.preventDefault(); addDropzone.classList.remove('dragover'); }));
-      addDropzone.addEventListener('drop', e => handleAddPdf(e.dataTransfer.files?.[0]));
-      addFileInput.addEventListener('change', e => handleAddPdf(e.target.files?.[0]));
+      ['dragenter','dragover'].forEach(e => addPdfDropzone.addEventListener(e, ev => { ev.preventDefault(); addPdfDropzone.classList.add('dragover'); }));
+      ['dragleave','drop'].forEach(e => addPdfDropzone.addEventListener(e, ev => { ev.preventDefault(); addPdfDropzone.classList.remove('dragover'); }));
+      addPdfDropzone.addEventListener('drop', e => handleAddPdfFiles(e.dataTransfer.files));
+      addPdfFileInput.addEventListener('change', e => handleAddPdfFiles(e.target.files));
 
       function displayPdfResults(data) {
         document.getElementById('pdfCollectionNameDisplay').textContent = data.collection_name;
@@ -665,135 +613,113 @@
         } catch (e) { console.error(e); }
       }
 
-      // Single URL
-      const urlEls = {
-        input: document.getElementById('urlInput'),
-        backend: document.getElementById('embedBackend'),
-        btn: document.getElementById('fetchBtn'),
-        panel: document.getElementById('urlResult'),
-        collection: document.getElementById('collectionName'),
-        records: document.getElementById('recordCount'),
-        vectors: document.getElementById('vectorCount'),
-        collectionNameInput: document.getElementById('urlCollectionName'),
-      };
+      // URL Fetch - New Collection Mode
+      document.getElementById('urlFetchBtn').addEventListener('click', async () => {
+        const urls = document.getElementById('urlInput').value.trim().split('\n').filter(u => u.trim());
+        const collectionName = document.getElementById('urlCollectionName').value.trim();
+        const backend = document.getElementById('urlEmbedBackend').value;
 
-      urlEls.btn.addEventListener('click', async () => {
-        const url = urlEls.input.value.trim();
-        if (!url) { alert('Ange en URL.'); return; }
-        const collectionName = urlEls.collectionNameInput.value.trim();
-        
-        urlEls.btn.disabled = true;
-        urlEls.btn.innerHTML = '<span class="spinner"></span> Hämtar...';
-        try {
-          const payload = { 
-            url, 
-            embed_backend: urlEls.backend.value 
-          };
-          if (collectionName) {
-            payload.collection_name = collectionName;
-          }
-          
-          const res = await fetch('/api/fetch_url', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data?.detail || 'Fel');
-          displayUrlResults(data);
-          urlEls.collectionNameInput.value = '';
-          refreshAllCollections();
-        } catch (e) { alert('Fel: ' + e.message); }
-        urlEls.btn.disabled = false;
-        urlEls.btn.innerHTML = '<span class="material-icons">download</span> Hämta';
-      });
-
-      // Multiple URLs
-      document.getElementById('multiFetchBtn').addEventListener('click', async () => {
-        const urls = document.getElementById('multiUrlInput').value.trim().split('\n').filter(u => u.trim());
-        const collectionName = document.getElementById('multiUrlCollectionName').value.trim();
-        const backend = document.getElementById('multiEmbedBackend').value;
-
-        if (!collectionName) { alert('Ange ett samlingens namn.'); return; }
         if (urls.length === 0) { alert('Ange minst en URL.'); return; }
 
-        const btn = document.getElementById('multiFetchBtn');
-        const progress = document.getElementById('multiProgress');
-        const progressBar = document.getElementById('multiProgressBar');
-        const progressText = document.getElementById('multiProgressText');
+        await fetchUrls(urls, collectionName, backend);
+      });
+
+      // URL Fetch - Add to Existing Mode
+      document.getElementById('addUrlFetchBtn').addEventListener('click', async () => {
+        const urls = document.getElementById('addUrlInput').value.trim().split('\n').filter(u => u.trim());
+        const collection = document.getElementById('existingUrlCollectionSelect').value;
+        const backend = document.getElementById('addUrlEmbedBackend').value;
+
+        if (!collection) { alert('Välj en samling.'); return; }
+        if (urls.length === 0) { alert('Ange minst en URL.'); return; }
+
+        await fetchUrls(urls, collection, backend);
+      });
+
+      async function fetchUrls(urls, collectionName, backend) {
+        const btn = document.getElementById(currentUrlMode === 'new' ? 'urlFetchBtn' : 'addUrlFetchBtn');
+        const progress = document.getElementById('urlProgress');
+        const progressBar = document.getElementById('urlProgressBar');
+        const progressText = document.getElementById('urlProgressText');
 
         btn.disabled = true;
         progress.style.display = 'block';
 
         let completed = 0;
+        let lastData = null;
+        let errors = [];
+
         for (const url of urls) {
           if (!url.trim()) continue;
           try {
             progressText.textContent = `${completed} / ${urls.length} - Hämtar ${url}`;
+            
+            const payload = { 
+              url: url.trim(), 
+              embed_backend: backend 
+            };
+            if (collectionName) {
+              payload.collection_name = collectionName;
+            }
+
             const res = await fetch('/api/fetch_url', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url: url.trim(), collection_name: collectionName, embed_backend: backend })
+              body: JSON.stringify(payload)
             });
-            if (!res.ok) throw new Error(await res.text());
+            
+            if (!res.ok) {
+              const errorData = await handleFetchError(res);
+              errors.push(`${url}: ${errorData.error?.message || 'Okänt fel'}`);
+              continue;
+            }
+            
+            const data = await res.json();
+            
+            if (data.success === false) {
+              showError(data);
+              errors.push(`${url}: Processering misslyckades`);
+              continue;
+            }
+            
+            lastData = data;
             completed++;
             progressBar.style.width = `${(completed / urls.length) * 100}%`;
             progressText.textContent = `${completed} / ${urls.length}`;
           } catch (e) {
             console.error(`Fel vid ${url}:`, e);
+            errors.push(`${url}: ${e.message}`);
           }
+        }
+
+        if (errors.length > 0) {
+          showError(`Några URLs kunde inte processas:\n\n${errors.join('\n')}`);
         }
 
         progressText.textContent = `Klart! ${completed} / ${urls.length} URLs indexerade`;
         btn.disabled = false;
         
-        // Get final stats
-        try {
-          const statsRes = await fetch('/api/collection_info/' + encodeURIComponent(collectionName));
-          const stats = await statsRes.json();
-          displayUrlResults(stats);
-        } catch (e) {}
+        if (lastData) {
+          displayUrlResults(lastData);
+        }
+
+        // Clear inputs
+        if (currentUrlMode === 'new') {
+          document.getElementById('urlInput').value = '';
+          document.getElementById('urlCollectionName').value = '';
+        } else {
+          document.getElementById('addUrlInput').value = '';
+        }
 
         refreshAllCollections();
         setTimeout(() => { progress.style.display = 'none'; progressBar.style.width = '0%'; }, 3000);
-      });
-
-      // Add to existing
-      document.getElementById('addFetchBtn').addEventListener('click', async () => {
-        const url = document.getElementById('addUrlInput').value.trim();
-        const collection = document.getElementById('existingCollectionSelect').value;
-        const backend = document.getElementById('addEmbedBackend').value;
-
-        if (!url) { alert('Ange en URL.'); return; }
-        if (!collection) { alert('Välj en samling.'); return; }
-
-        const btn = document.getElementById('addFetchBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Lägger till...';
-
-        try {
-          const res = await fetch('/api/fetch_url', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, collection_name: collection, embed_backend: backend })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data?.detail || 'Fel');
-          displayUrlResults(data);
-          document.getElementById('addUrlInput').value = '';
-          refreshAllCollections();
-          alert('URL tillagd till samlingen!');
-        } catch (e) { alert('Fel: ' + e.message); }
-
-        btn.disabled = false;
-        btn.innerHTML = '<span class="material-icons">add</span> Lägg till';
-      });
+      }
 
       function displayUrlResults(data) {
-        urlEls.collection.textContent = data.collection_name;
-        urlEls.records.textContent = data.record_count || data.total_records || 0;
-        urlEls.vectors.textContent = data.vector_store?.stats?.total_vectors || data.total_vectors || 0;
-        urlEls.panel.style.display = 'block';
+        document.getElementById('urlCollectionNameDisplay').textContent = data.collection_name;
+        document.getElementById('urlRecordCount').textContent = data.record_count || data.total_records || 0;
+        document.getElementById('urlVectorCount').textContent = data.vector_store?.stats?.total_vectors || data.total_vectors || 0;
+        document.getElementById('urlResult').style.display = 'block';
 
         if (data.indexed_urls && data.indexed_urls.length > 0) {
           const urlListContainer = document.getElementById('urlListContainer');
@@ -805,11 +731,11 @@
         }
       }
 
-      async function refreshExistingCollections() {
+      async function refreshExistingUrlCollections() {
         try {
           const res = await fetch('/api/collections');
           const data = await res.json();
-          const sel = document.getElementById('existingCollectionSelect');
+          const sel = document.getElementById('existingUrlCollectionSelect');
           sel.innerHTML = '<option value="">-- Välj samling --</option>';
           data.collections.forEach(c => {
             const o = document.createElement('option');
@@ -861,8 +787,8 @@
 
       searchEls.btn.addEventListener('click', async () => {
         const col = searchEls.collection.value, q = searchEls.query.value.trim(), k = searchEls.k.value;
-        if (!col) { alert('Välj en samling.'); return; }
-        if (!q) { alert('Ange sökfråga.'); return; }
+        if (!col) { showError('Välj en samling', 'sökning'); return; }
+        if (!q) { showError('Ange sökfråga', 'sökning'); return; }
         searchEls.results.innerHTML = '<p><span class="spinner"></span> Söker...</p>';
         try {
           const res = await fetch('/api/search', {
@@ -870,7 +796,21 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection: col, query: q, k: parseInt(k) })
           });
+          
+          if (!res.ok) {
+            await handleFetchError(res);
+            searchEls.results.innerHTML = '<p style="color:var(--error);">Sökningen misslyckades</p>';
+            return;
+          }
+          
           const data = await res.json();
+          
+          if (data.success === false) {
+            showError(data);
+            searchEls.results.innerHTML = '<p style="color:var(--error);">Sökningen misslyckades</p>';
+            return;
+          }
+          
           if (!data.results?.length) {
             searchEls.results.innerHTML = '<div class="empty-state"><span class="material-icons">search_off</span><p>Inga resultat.</p></div>';
             return;
@@ -880,7 +820,10 @@
             html += '<div class="search-result"><div class="search-result-header"><h4 class="search-result-title">' + (r.heading || 'Utan titel') + '</h4><span class="search-result-score">' + r.score + '</span></div><div class="search-result-text">' + r.markdown + '</div></div>';
           });
           searchEls.results.innerHTML = html;
-        } catch (e) { searchEls.results.innerHTML = '<p style="color:var(--error);">Fel: ' + e.message + '</p>'; }
+        } catch (e) { 
+          searchEls.results.innerHTML = '<p style="color:var(--error);">Fel: ' + e.message + '</p>'; 
+          showError(e.message, 'sökning');
+        }
       });
 
       searchEls.refresh.addEventListener('click', refreshAllCollections);
@@ -888,8 +831,8 @@
 
       askEls.btn.addEventListener('click', async () => {
         const col = askEls.collection.value, q = askEls.query.value.trim(), k = askEls.k.value, llm = askEls.llm.value;
-        if (!col) { alert('Välj en samling.'); return; }
-        if (!q) { alert('Skriv en fråga.'); return; }
+        if (!col) { showError('Välj en samling', 'AI-fråga'); return; }
+        if (!q) { showError('Skriv en fråga', 'AI-fråga'); return; }
         askEls.answer.style.display = 'none';
         askEls.loading.style.display = 'block';
         askEls.btn.disabled = true;
@@ -899,8 +842,29 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection: col, query: q, k: parseInt(k), llm_backend: llm })
           });
+          
+          if (!res.ok) {
+            await handleFetchError(res);
+            askEls.loading.style.display = 'none';
+            askEls.answer.style.display = 'block';
+            askEls.answerText.textContent = 'AI-frågan misslyckades. Se felmeddelandet ovan.';
+            askEls.sources.innerHTML = '';
+            askEls.btn.disabled = false;
+            return;
+          }
+          
           const data = await res.json();
-          if (!res.ok) throw new Error(data?.detail || 'Fel');
+          
+          if (data.success === false) {
+            showError(data);
+            askEls.loading.style.display = 'none';
+            askEls.answer.style.display = 'block';
+            askEls.answerText.textContent = 'AI-frågan misslyckades. Se felmeddelandet ovan.';
+            askEls.sources.innerHTML = '';
+            askEls.btn.disabled = false;
+            return;
+          }
+          
           askEls.answerText.textContent = data.answer;
           let srcHtml = '';
           if (data.sources?.length) {
@@ -918,6 +882,7 @@
           askEls.answer.style.display = 'block';
           askEls.answerText.textContent = 'Fel: ' + e.message;
           askEls.sources.innerHTML = '';
+          showError(e.message, 'AI-fråga');
         }
         askEls.btn.disabled = false;
       });
@@ -926,47 +891,27 @@
 
       // Clear buttons functionality
       document.getElementById('clearPdfBtn').addEventListener('click', () => {
-        // Single mode
         pdfCollectionNameInput.value = '';
-        fileInput.value = '';
-        
-        // Multiple mode
-        document.getElementById('multiPdfCollectionName').value = '';
-        multiFileInput.value = '';
-        document.getElementById('multiPdfProgress').style.display = 'none';
-        document.getElementById('multiPdfProgressBar').style.width = '0%';
-        document.getElementById('multiPdfProgressText').textContent = '0 / 0';
-        
-        // Add to existing mode
-        addFileInput.value = '';
+        pdfFileInput.value = '';
+        addPdfFileInput.value = '';
         document.getElementById('existingPdfCollectionSelect').value = '';
-        
-        // Hide results
-        result.classList.add('hidden');
-        result.innerHTML = '';
+        document.getElementById('pdfProgress').style.display = 'none';
+        document.getElementById('pdfProgressBar').style.width = '0%';
+        document.getElementById('pdfProgressText').textContent = '0 / 0';
         document.getElementById('pdfResult').style.display = 'none';
         document.getElementById('pdfListContainer').classList.add('hidden');
         document.getElementById('pdfListDisplay').innerHTML = '';
       });
 
       document.getElementById('clearUrlBtn').addEventListener('click', () => {
-        // Single mode
-        urlEls.input.value = '';
-        urlEls.collectionNameInput.value = '';
-        
-        // Multiple mode
-        document.getElementById('multiUrlInput').value = '';
-        document.getElementById('multiUrlCollectionName').value = '';
-        document.getElementById('multiProgress').style.display = 'none';
-        document.getElementById('multiProgressBar').style.width = '0%';
-        document.getElementById('multiProgressText').textContent = '0 / 0';
-        
-        // Add to existing mode
+        document.getElementById('urlInput').value = '';
+        document.getElementById('urlCollectionName').value = '';
         document.getElementById('addUrlInput').value = '';
-        document.getElementById('existingCollectionSelect').value = '';
-        
-        // Hide results
-        urlEls.panel.style.display = 'none';
+        document.getElementById('existingUrlCollectionSelect').value = '';
+        document.getElementById('urlProgress').style.display = 'none';
+        document.getElementById('urlProgressBar').style.width = '0%';
+        document.getElementById('urlProgressText').textContent = '0 / 0';
+        document.getElementById('urlResult').style.display = 'none';
         document.getElementById('urlListContainer').classList.add('hidden');
         document.getElementById('urlListDisplay').innerHTML = '';
       });

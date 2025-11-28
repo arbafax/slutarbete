@@ -1,14 +1,19 @@
-# RAG System - PDF Multi-Upload
+# RAG Search System 
 
-ß
 ### Tre sätt att arbeta med PDFs:
 
-1. ** En PDF** - Ladda upp en enskild PDF (som tidigare, men förbättrad)
-2. ** Flera PDFs** - Ladda upp många PDFs samtidigt till samma samling
-3. ** Lägg till i befintlig** - Utöka en befintlig samling med nya PDFs
+Alla PDF:er kan laddas upp med dra-o-släpp
 
-### Samma funktionalitet som för URLs!
-Nu har både PDFs och URLs exakt samma arbetsflöde och möjligheter.
+1. **En PDF** - Ladda upp en enskild PDF
+2. **Flera PDFs** - Ladda upp många PDFs samtidigt till samma samling
+3. **Lägg till i befintlig** - Utöka en befintlig samling med nya PDFs
+
+### Tre sätt att arbeta med URLar:
+
+1. **En URL** – Copy/paste en URL
+2. **Flera URLar** – Klistra in flera URL:ar. En URL per rad
+3. **En URL till befintlig** – Utöka en befintlig samling med ny URL
+
 
 ## Vad ingår?
 
@@ -91,7 +96,15 @@ PDF med Semantisk Sökning
 2. Dra och släpp PDF
 3. Automatiskt samlingens namn från filnamn
 ```
+### Server.py
 
+För att köra server.py i en teminal navigera till mappen app /slutarbete och kör
+
+        source .venv/bin/activate
+
+navigera till mappen /app och kör
+
+        uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ## Tekniska Detaljer
 
 ### Backend-ändringar (server.py):

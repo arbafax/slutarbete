@@ -1,9 +1,14 @@
 ###################################################
 #
-#   file: rag_pipeline.py (DOKUMENTERAD)
+#   file: rag_pipeline.py
 #
 #   Helper classes for RAG as well as a pipeline for a RAG Process
 #   Now with FAISS vector store integration
+#
+#   FAS 1 FÖRBÄTTRINGAR:
+#   - Nya moderna embedding backends (Cohere, BGE-M3, E5)
+#   - Overlapping chunks för bättre kontextbevarande
+#   - Aggressiv HTML-rensning för mindre brus
 #
 ###################################################
 
@@ -79,8 +84,6 @@ class OpenAIBackend(EmbeddingBackend):
             model (str): OpenAI modellnamn (default: "text-embedding-3-large")
         """
         from openai import OpenAI
-
-        # OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
         self.client = OpenAI(api_key=getApiKey("OPENAI_API_KEY"))
         self.model = model
@@ -244,17 +247,179 @@ class GoogleBackend(EmbeddingBackend):
         return self._dimension
 
 
+# ============= NYA FAS 1 BACKENDS =============
+
+
+class CohereBackend(EmbeddingBackend):
+    """
+    Cohere embedding backend - Mycket robust mot brusig data.
+    Utmärkt för PDF och HTML med formatfel.
+    Stöder flera språk och stora kontextlängder (512 tokens).
+    """
+
+    def __init__(self, model: str = "embed-multilingual-v3.0"):
+        """
+        Initiera Cohere backend.
+
+        Args:
+            model (str): Cohere modellnamn (default: "embed-multilingual-v3.0")
+                Alternativ: "embed-english-v3.0", "embed-multilingual-light-v3.0"
+        """
+        try:
+            import cohere
+        except ImportError:
+            raise ImportError("Cohere package not installed. Run: pip install cohere")
+
+        api_key = getApiKey("COHERE_API_KEY")
+        if not api_key:
+            raise ValueError("COHERE_API_KEY not found in environment")
+
+        self.client = cohere.Client(api_key)
+        self.model = model
+        self._dimension = 1024  # Cohere v3 models use 1024 dimensions
+
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        """
+        Skapa embeddings med Cohere.
+
+        Args:
+            texts (List[str]): Texter att embedda
+
+        Returns:
+            List[List[float]]: Embedding-vektorer
+        """
+        response = self.client.embed(
+            texts=texts, model=self.model, input_type="search_document"
+        )
+        return response.embeddings
+
+    def get_dimension(self) -> int:
+        """
+        Hämta embedding dimension.
+
+        Returns:
+            int: Dimension (1024)
+        """
+        return self._dimension
+
+
+class BGEBackend(EmbeddingBackend):
+    """
+    BGE-M3 embedding backend - State-of-the-art öppen källkod.
+    Multilingual, utmärkt för RAG, hanterar långa texter.
+    Tränad specifikt för informationssökning.
+    """
+
+    def __init__(self, model: str = "BAAI/bge-m3"):
+        """
+        Initiera BGE backend.
+
+        Args:
+            model (str): BGE modellnamn (default: "BAAI/bge-m3")
+                Alternativ: "BAAI/bge-large-en-v1.5", "BAAI/bge-base-en-v1.5"
+        """
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError(
+                "sentence-transformers not installed. Run: pip install sentence-transformers"
+            )
+
+        print(f"Loading BGE model {model}... (this may take a moment first time)")
+        self.model = SentenceTransformer(model)
+        self._dimension = self.model.get_sentence_embedding_dimension()
+
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        """
+        Skapa embeddings med BGE.
+
+        Args:
+            texts (List[str]): Texter att embedda
+
+        Returns:
+            List[List[float]]: Normaliserade embedding-vektorer
+        """
+        # BGE models benefit from instruction prefix for queries
+        # For documents, we don't need prefix
+        return self.model.encode(texts, normalize_embeddings=True).tolist()
+
+    def get_dimension(self) -> int:
+        """
+        Hämta embedding dimension.
+
+        Returns:
+            int: Dimension från modellen (typically 1024)
+        """
+        return self._dimension
+
+
+class E5Backend(EmbeddingBackend):
+    """
+    E5 embedding backend - Modern öppen källkod från Microsoft.
+    Balanserad prestanda/kostnad, bra för svenska texter.
+    Robust mot stavfel och ostrukturerad text.
+    """
+
+    def __init__(self, model: str = "intfloat/multilingual-e5-large"):
+        """
+        Initiera E5 backend.
+
+        Args:
+            model (str): E5 modellnamn (default: "intfloat/multilingual-e5-large")
+                Alternativ: "intfloat/e5-large-v2", "intfloat/multilingual-e5-base"
+        """
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError(
+                "sentence-transformers not installed. Run: pip install sentence-transformers"
+            )
+
+        print(f"Loading E5 model {model}... (this may take a moment first time)")
+        self.model = SentenceTransformer(model)
+        self._dimension = self.model.get_sentence_embedding_dimension()
+
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        """
+        Skapa embeddings med E5.
+
+        E5 models förväntar sig prefix "passage: " för dokument
+        och "query: " för sökfrågor. Vi använder passage för alla chunks.
+
+        Args:
+            texts (List[str]): Texter att embedda
+
+        Returns:
+            List[List[float]]: Normaliserade embedding-vektorer
+        """
+        # Add E5 prefix for better performance
+        prefixed_texts = [f"passage: {text}" for text in texts]
+        return self.model.encode(prefixed_texts, normalize_embeddings=True).tolist()
+
+    def get_dimension(self) -> int:
+        """
+        Hämta embedding dimension.
+
+        Returns:
+            int: Dimension från modellen (1024 för large, 768 för base)
+        """
+        return self._dimension
+
+
 def get_backend(kind: Optional[str] = None) -> EmbeddingBackend:
     """
     Hämta rätt embedding backend baserat på namn.
 
     Args:
-        kind (Optional[str]): Backend-typ ("google", "openai", "sbert", "ollama")
+        kind (Optional[str]): Backend-typ ("google", "openai", "sbert", "ollama",
+                              "cohere", "bge", "e5")
 
     Returns:
         EmbeddingBackend: Instans av vald backend
     """
     backend = (kind or os.getenv("EMBED_BACKEND") or "google").lower()
+
+    # Original backends
     if backend == "openai":
         return OpenAIBackend()
     if backend == "sbert":
@@ -263,6 +428,14 @@ def get_backend(kind: Optional[str] = None) -> EmbeddingBackend:
         return OllamaBackend()
     if backend == "google":
         return GoogleBackend()
+
+    # FAS 1: Nya moderna backends
+    if backend == "cohere":
+        return CohereBackend()
+    if backend in ["bge", "bge-m3"]:
+        return BGEBackend()
+    if backend == "e5":
+        return E5Backend()
 
     # fallback
     return GoogleBackend()
@@ -537,14 +710,14 @@ def scrape_url(url: str, timeout: int = 20) -> ScrapeResult:
     return ScrapeResult(url=url, base_url=base, html=r.text)
 
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 import html
 
 
 def extract_main_content(raw_html: str) -> str:
     """
-    Extrahera huvudinnehållet från HTML genom att fokusera på
-    relevanta containers istället för att filtrera bort allt.
+    FAS 1 FÖRBÄTTRAD: Aggressiv extrahering av huvudinnehåll från HTML.
+    Fokuserar på att ta bort så mycket brus som möjligt.
 
     Args:
         raw_html (str): Rå HTML-kod
@@ -552,13 +725,43 @@ def extract_main_content(raw_html: str) -> str:
     Returns:
         str: Rengjord HTML med huvudinnehåll
     """
-    soup = BeautifulSoup(raw_html, "html.parser")
+    if not raw_html or not raw_html.strip():
+        return "<html><body><p>Tomt innehåll</p></body></html>"
 
-    # Ta bort script, style, etc
-    for tag in soup(["script", "style", "noscript", "template", "svg"]):
-        tag.decompose()
+    try:
+        soup = BeautifulSoup(raw_html, "html.parser")
+    except Exception as e:
+        raise Exception(f"Kunde inte parsa HTML: {str(e)}")
 
-    # Försök hitta huvudinnehållet med vanliga selektorer
+    # 1. Ta bort alla script, style, iframe, form, button, etc
+    for tag in soup(
+        [
+            "script",
+            "style",
+            "noscript",
+            "template",
+            "svg",
+            "iframe",
+            "form",
+            "button",
+            "input",
+            "select",
+            "textarea",
+        ]
+    ):
+        try:
+            tag.decompose()
+        except Exception:
+            continue
+
+    # 2. Ta bort HTML-kommentarer
+    try:
+        for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
+            comment.extract()
+    except Exception:
+        pass
+
+    # 3. Försök hitta huvudinnehållet med vanliga selektorer
     main_content = None
 
     # Prioritetsordning av selektorer för att hitta huvudinnehåll
@@ -573,46 +776,111 @@ def extract_main_content(raw_html: str) -> str:
         ".post-content",
         ".entry-content",
         ".article-content",
+        ".article-body",
     ]
 
     for selector in content_selectors:
-        main_content = soup.select_one(selector)
-        if main_content and len(main_content.get_text(strip=True)) > 200:
-            # Hitta något med substans
-            break
+        try:
+            main_content = soup.select_one(selector)
+            if main_content and len(main_content.get_text(strip=True)) > 200:
+                # Hitta något med substans
+                break
+        except Exception:
+            continue
 
-    # Om vi inte hittar huvudinnehåll, använd body men filtrera nav/footer
+    # Om vi inte hittar huvudinnehåll, använd body men filtrera brus
     if not main_content:
-        main_content = soup.find("body") or soup
+        main_content = soup.find("body")
+        if not main_content:
+            main_content = soup
 
-        # Ta bara bort explicita nav/footer/header tags
-        for tag in main_content.find_all(["nav", "footer", "header"]):
-            tag.decompose()
-
-        # Ta bort element med uppenbart dåliga klasser/IDs
-        for tag in list(main_content.find_all(True)):
-            classes = " ".join(tag.get("class", [])).lower()
-            id_ = (tag.get("id") or "").lower()
-
-            # Mer konservativ filtrering
-            if any(
-                bad in classes or bad in id_
-                for bad in [
-                    "cookie-banner",
-                    "gdpr-notice",
-                    "newsletter-popup",
-                    "advertisement",
-                    "sidebar-ads",
-                ]
-            ):
+        # Ta bort explicita nav/footer/header/aside tags
+        try:
+            for tag in main_content.find_all(["nav", "footer", "header", "aside"]):
                 tag.decompose()
+        except Exception:
+            pass
 
-    return html.unescape(str(main_content))
+    # 4. AGGRESSIV brusfiltrering - ta bort element med brus-relaterade klasser/IDs
+    noise_patterns = [
+        "cookie",
+        "gdpr",
+        "consent",
+        "advertisement",
+        "ad-",
+        "ads-",
+        "sidebar",
+        "side-bar",
+        "widget",
+        "navigation",
+        "nav-",
+        "menu",
+        "footer",
+        "header",
+        "banner",
+        "popup",
+        "modal",
+        "overlay",
+        "social",
+        "share",
+        "sharing",
+        "comment",
+        "comments",
+        "related",
+        "recommend",
+        "breadcrumb",
+        "pagination",
+        "pager",
+        "search-box",
+        "searchbox",
+        "login",
+        "signup",
+        "subscribe",
+        "newsletter",
+        "promo",
+        "sponsored",
+        "tracking",
+    ]
+
+    try:
+        for tag in list(main_content.find_all(True)):
+            try:
+                classes = " ".join(tag.get("class", [])).lower()
+                id_ = (tag.get("id") or "").lower()
+
+                # Kolla om något brus-mönster matchar
+                if any(
+                    pattern in classes or pattern in id_ for pattern in noise_patterns
+                ):
+                    tag.decompose()
+                    continue
+
+                # 5. Ta bort element med väldigt kort text (ofta brus)
+                # Undantag: rubriker och list-items kan vara korta
+                text = tag.get_text(strip=True)
+                if (
+                    len(text) < 20
+                    and tag.name
+                    not in ["h1", "h2", "h3", "h4", "h5", "h6", "li", "td", "th"]
+                    and tag.name
+                    not in ["p", "div", "span"]  # Behåll strukturella element
+                ):
+                    tag.decompose()
+            except Exception:
+                # Skippa problem-element
+                continue
+    except Exception:
+        pass
+
+    try:
+        return html.unescape(str(main_content))
+    except Exception as e:
+        raise Exception(f"Kunde inte konvertera till sträng: {str(e)}")
 
 
-def clean_html(raw_html: str) -> str:  ## NEW VERSION
+def clean_html(raw_html: str) -> str:
     """
-    Förbättrad version av clean_html som behåller mer innehåll.
+    Förbättrad version av clean_html med aggressiv brusrensning.
 
     Args:
         raw_html (str): Rå HTML-kod
@@ -633,15 +901,32 @@ def normalize_html(cleaned_html: str) -> BeautifulSoup:
     Returns:
         BeautifulSoup: Normaliserad soup-objekt
     """
+    if not cleaned_html or not cleaned_html.strip():
+        # Returnera tom soup om input är tom
+        return BeautifulSoup("<html><body></body></html>", "html.parser")
+
     soup = BeautifulSoup(cleaned_html, "html.parser")
+
+    # Säker whitespace-normalisering
     for text_node in soup.find_all(string=True):
-        if text_node.parent and text_node.parent.name in ("pre", "code"):
+        try:
+            if text_node.parent and text_node.parent.name in ("pre", "code"):
+                continue
+            new = re.sub(r"\s+", " ", text_node)
+            text_node.replace_with(new)
+        except Exception:
+            # Skippa problem-noder
             continue
-        new = re.sub(r"\s+", " ", text_node)
-        text_node.replace_with(new)
+
+    # Ta bort tomma element (säkert)
     for tag in list(soup.find_all()):
-        if tag.name not in ("img", "br") and not tag.get_text(strip=True):
-            tag.decompose()
+        try:
+            if tag.name not in ("img", "br") and not tag.get_text(strip=True):
+                tag.decompose()
+        except Exception:
+            # Skippa problem-element
+            continue
+
     return soup
 
 
@@ -755,9 +1040,120 @@ def split_markdown_into_blocks(
     return blocks
 
 
+# ============= FAS 1: OVERLAPPING CHUNKS =============
+
+
+def chunk_text_with_overlap(
+    text: str, max_tokens: int = 512, overlap_tokens: int = 50
+) -> List[str]:
+    """
+    FAS 1 FÖRBÄTTRAD: Dela upp text i chunks med överlapp för att bevara kontext.
+
+    Overlapping chunks förhindrar att viktiga information förloras vid chunk-gränser.
+    Detta är särskilt viktigt för RAG där kontext kan spänna över flera meningar.
+
+    Args:
+        text (str): Text att dela upp
+        max_tokens (int): Max tokens per chunk (default: 512)
+        overlap_tokens (int): Antal tokens överlapp mellan chunks (default: 50, ~10%)
+
+    Returns:
+        List[str]: Lista med överlappande text-chunks
+    """
+    if approx_token_count(text) <= max_tokens:
+        return [text.strip()]
+
+    chunks = []
+    paragraphs = re.split(r"\n{2,}", text)
+
+    current_chunk = []
+    current_tokens = 0
+    previous_overlap = []  # Spara text för överlapp
+
+    for para in paragraphs:
+        if not para.strip():
+            continue
+
+        para_tokens = approx_token_count(para)
+
+        # Om ett enskilt stycke är större än max, dela upp det på meningar
+        if para_tokens > max_tokens:
+            sentences = re.split(r"(?<=[.!?])\s+", para)
+
+            for sentence in sentences:
+                if not sentence.strip():
+                    continue
+
+                sent_tokens = approx_token_count(sentence)
+
+                # Om vi skulle överskrida gränsen, spara nuvarande chunk
+                if current_tokens + sent_tokens > max_tokens and len(current_chunk) > 0:
+                    # Spara chunk
+                    chunk_text = "\n\n".join(current_chunk).strip()
+                    chunks.append(chunk_text)
+
+                    # Förbered nästa chunk med överlapp från föregående
+                    current_chunk = previous_overlap.copy()
+                    current_tokens = sum(
+                        approx_token_count(s) for s in previous_overlap
+                    )
+
+                    # Lägg till mening
+                    current_chunk.append(sentence)
+                    current_tokens += sent_tokens
+                else:
+                    current_chunk.append(sentence)
+                    current_tokens += sent_tokens
+
+                # Uppdatera överlapp-buffer (behåll sista ~overlap_tokens)
+                while (
+                    len(previous_overlap) > 0
+                    and sum(approx_token_count(s) for s in previous_overlap)
+                    > overlap_tokens
+                ):
+                    previous_overlap.pop(0)
+                previous_overlap.append(sentence)
+                if len(previous_overlap) > 5:  # Max 5 meningar i överlapp
+                    previous_overlap.pop(0)
+        else:
+            # Normalt stycke - behandla som förut men med överlapp
+            if current_tokens + para_tokens > max_tokens and len(current_chunk) > 0:
+                # Spara chunk
+                chunk_text = "\n\n".join(current_chunk).strip()
+                chunks.append(chunk_text)
+
+                # Förbered nästa chunk med överlapp
+                current_chunk = previous_overlap.copy()
+                current_tokens = sum(approx_token_count(p) for p in previous_overlap)
+
+            current_chunk.append(para)
+            current_tokens += para_tokens
+
+            # Uppdatera överlapp-buffer
+            while (
+                len(previous_overlap) > 0
+                and sum(approx_token_count(p) for p in previous_overlap)
+                > overlap_tokens
+            ):
+                previous_overlap.pop(0)
+            previous_overlap.append(para)
+            if len(previous_overlap) > 3:  # Max 3 stycken i överlapp
+                previous_overlap.pop(0)
+
+    # Lägg till sista chunken
+    if current_chunk:
+        chunk_text = "\n\n".join(current_chunk).strip()
+        chunks.append(chunk_text)
+
+    return chunks
+
+
 def chunk_text(text: str, max_tokens: int = 512, hard_limit: int = 2048) -> List[str]:
     """
-    Dela upp text i chunks baserat på token-gräns.
+    ÄLDRE VERSION: Dela upp text i chunks baserat på token-gräns.
+    Behålls för bakåtkompatibilitet.
+
+    För nya implementationer, använd chunk_text_with_overlap() istället.
 
     Args:
         text (str): Text att dela upp
@@ -819,27 +1215,42 @@ def _breadcrumbs(blocks: List[Block], idx: int) -> List[str]:
 
 
 def build_records(
-    url: str, title: Optional[str], blocks: List[Block], max_tokens_per_chunk: int = 512
+    url: str,
+    title: Optional[str],
+    blocks: List[Block],
+    max_tokens_per_chunk: int = 512,
+    use_overlap: bool = True,
 ) -> List[Dict]:
     """
     Bygg records från blocks för RAG-system.
+
+    FAS 1: Nu med stöd för overlapping chunks.
 
     Args:
         url (str): Käll-URL
         title (Optional[str]): Dokumenttitel
         blocks (List[Block]): Lista med textblock
         max_tokens_per_chunk (int): Max tokens per chunk (default: 512)
+        use_overlap (bool): Använd overlapping chunks (default: True)
 
     Returns:
         List[Dict]: Lista med records innehållande metadata och text-chunks
     """
     records = []
     doc_id = slugify(title or urlparse(url).path or "document")
+
     for i, b in enumerate(blocks):
         block_id = f"{doc_id}--{slugify(b.heading) or f'block-{i}'}"
-        for j, ch in enumerate(
-            chunk_text(b.content or "", max_tokens=max_tokens_per_chunk)
-        ):
+
+        # FAS 1: Använd overlapping chunks om aktiverat
+        if use_overlap:
+            chunks = chunk_text_with_overlap(
+                b.content or "", max_tokens=max_tokens_per_chunk, overlap_tokens=50
+            )
+        else:
+            chunks = chunk_text(b.content or "", max_tokens=max_tokens_per_chunk)
+
+        for j, ch in enumerate(chunks):
             records.append(
                 {
                     "id": f"{block_id}--{j}",
@@ -856,6 +1267,7 @@ def build_records(
                     "breadcrumbs": _breadcrumbs(blocks, i),
                 }
             )
+
     # Set chunk_count per block
     by_block = {}
     for r in records:
@@ -896,34 +1308,82 @@ def process_url_for_rag(
     max_tokens_per_chunk: int = 512,
     embed_backend: Optional[str] = None,
     create_vector_store: bool = True,
+    use_overlap: bool = True,
 ) -> Dict:
     """
     Komplett pipeline för att processa URL för RAG.
     Scrapar, rensar, chunkar, embeddar och skapar vector store.
+
+    FAS 1: Med förbättrad HTML-rensning och overlapping chunks.
 
     Args:
         url (str): URL att processa
         max_tokens_per_chunk (int): Max tokens per chunk (default: 512)
         embed_backend (Optional[str]): Embedding backend att använda
         create_vector_store (bool): Om vector store ska skapas (default: True)
+        use_overlap (bool): Använd overlapping chunks (default: True)
 
     Returns:
         Dict: Dictionary med source_url, title, records, och optionellt vector_store
     """
-    scraped = scrape_url(url)
-    cleaned = clean_html(scraped.html)
-    soup = normalize_html(cleaned)
-    soup = resolve_links(soup, scraped.base_url)
-    title = soup.title.string.strip() if (soup.title and soup.title.string) else None
-    markdown = html_to_markdown(soup)
-    blocks = split_markdown_into_blocks(markdown, min_level=1, max_level=6)
-    if not blocks:
-        blocks = [Block(level=1, heading="Innehåll", content=markdown)]
-    records = build_records(
-        scraped.url, title, blocks, max_tokens_per_chunk=max_tokens_per_chunk
-    )
-    backend = get_backend(embed_backend)
-    embed_records(records, backend=backend)
+    try:
+        scraped = scrape_url(url)
+    except Exception as e:
+        raise Exception(f"Kunde inte hämta URL: {str(e)}")
+
+    try:
+        cleaned = clean_html(scraped.html)
+        soup = normalize_html(cleaned)
+        soup = resolve_links(soup, scraped.base_url)
+    except Exception as e:
+        raise Exception(f"Kunde inte rensa HTML: {str(e)}")
+
+    # Säker title-extraktion
+    title = None
+    try:
+        if soup.title and soup.title.string:
+            title = soup.title.string.strip()
+        elif soup.find("h1"):
+            # Fallback: använd första h1 som title
+            title = soup.find("h1").get_text(strip=True)
+    except Exception:
+        pass  # title förblir None
+
+    # Om title fortfarande är None, använd URL som fallback
+    if not title:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+        title = parsed.netloc or "Untitled"
+
+    try:
+        markdown = html_to_markdown(soup)
+    except Exception as e:
+        raise Exception(f"Kunde inte konvertera till Markdown: {str(e)}")
+
+    try:
+        blocks = split_markdown_into_blocks(markdown, min_level=1, max_level=6)
+        if not blocks:
+            blocks = [Block(level=1, heading="Innehåll", content=markdown)]
+    except Exception as e:
+        raise Exception(f"Kunde inte dela upp i blocks: {str(e)}")
+
+    try:
+        records = build_records(
+            scraped.url,
+            title,
+            blocks,
+            max_tokens_per_chunk=max_tokens_per_chunk,
+            use_overlap=use_overlap,
+        )
+    except Exception as e:
+        raise Exception(f"Kunde inte bygga records: {str(e)}")
+
+    try:
+        backend = get_backend(embed_backend)
+        embed_records(records, backend=backend)
+    except Exception as e:
+        raise Exception(f"Kunde inte skapa embeddings ({embed_backend}): {str(e)}")
 
     result = {"source_url": scraped.url, "title": title, "records": records}
 
@@ -942,16 +1402,20 @@ def process_pdf_for_rag(
     filename: str,
     max_tokens_per_chunk: int = 512,
     embed_backend: Optional[str] = None,
+    use_overlap: bool = True,
 ) -> Dict:
     """
     Processa PDF för RAG (Retrieval Augmented Generation).
     Extraherar text, skapar chunks, genererar embeddings och bygger vector store.
+
+    FAS 1: Med overlapping chunks.
 
     Args:
         pdf_bytes (bytes): PDF-fil som bytes
         filename (str): Filnamn
         max_tokens_per_chunk (int): Max antal tokens per chunk (default: 512)
         embed_backend (Optional[str]): Embedding backend att använda
+        use_overlap (bool): Använd overlapping chunks (default: True)
 
     Returns:
         Dict: Dictionary med source_file, title, records, vector_store
@@ -994,6 +1458,7 @@ def process_pdf_for_rag(
         title=title,
         blocks=blocks,
         max_tokens_per_chunk=max_tokens_per_chunk,
+        use_overlap=use_overlap,
     )
 
     backend = get_backend(embed_backend)
