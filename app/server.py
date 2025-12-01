@@ -301,7 +301,7 @@ async def upload_pdf(
         if collection_name and collection_name.strip():
             collection_name = sanitize_basename(collection_name.strip())
         else:
-            collection_name = sanitize_basename(file.filename)
+            collection_name = f"Samling_{int(time.time())}"
             is_new_collection = True
 
         # Ladda eller skapa vector store
@@ -466,11 +466,7 @@ async def api_fetch_url(payload: dict = Body(...)):
         if collection_name and collection_name.strip():
             collection_name = sanitize_basename(collection_name.strip())
         else:
-            base = (
-                re.sub(r"[^a-zA-Z0-9_-]", "_", (pkg["title"] or "document"))[:60]
-                or "document"
-            )
-            collection_name = f"{base}_{int(time.time())}"
+            collection_name = f"Samling_{int(time.time())}"
             is_new_collection = True
 
         collection_name = sanitize_basename(collection_name)

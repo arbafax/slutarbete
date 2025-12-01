@@ -15,6 +15,7 @@
     <!-- CSS Files -->
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/tabs.css">
   </head>
   
   <body>
@@ -24,297 +25,322 @@
     </div>
 
     <div class="wrap">
-      <!-- PDF Upload -->
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0;">Extrahera från PDF</h2>
-          <button class="btn btn-outlined" id="clearPdfBtn" style="text-transform: none;">
-            <span class="material-icons">clear</span> Rensa
+      <!-- Tab Navigation -->
+      <div class="tabs-container">
+        <div class="tabs-nav">
+          <button class="tab-button active" data-tab="pdf">
+            <span class="material-icons">picture_as_pdf</span>
+            Extrahera PDF
+          </button>
+          <button class="tab-button" data-tab="url">
+            <span class="material-icons">link</span>
+            Extrahera URL
+          </button>
+          <button class="tab-button" data-tab="ask">
+            <span class="material-icons">smart_toy</span>
+            Fråga AI
+          </button>
+          <button class="tab-button" data-tab="search">
+            <span class="material-icons">search</span>
+            Semantisk Sökning
           </button>
         </div>
-        <p class="text-muted">Ladda upp en eller flera PDFs. Stöder både nya samlingar och tillägg till befintliga.</p>
-        
-        <!-- Mode Selector for PDF -->
-        <div class="mode-selector">
-          <div class="mode-btn active" id="pdfModeNew">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add_circle</span>
-            Ny samling
-          </div>
-          <div class="mode-btn" id="pdfModeAdd">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">library_add</span>
-            Lägg till i befintlig
-          </div>
-        </div>
 
-        <!-- New Collection Mode -->
-        <div id="pdfNewMode">
-          <div style="margin-bottom: 16px;">
-            <label>Samlingens namn (valfritt)</label>
-            <input id="pdfCollectionName" type="text" placeholder="Exempel: 'Årsredovisning 2024'" />
-            <p class="text-muted" style="margin-top: 4px;">Om du lämnar tomt skapas namnet automatiskt från första filen</p>
-          </div>
+        <!-- Tab Content -->
+        <div class="tabs-content">
           
-          <div class="input-group" style="margin-bottom: 16px;">
-            <div style="flex: 1;"><label>Embedding Model</label>
-              <select id="pdfEmbedBackend">
-                <option value="google">Google Gemini (Standard)</option>
-                <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
-                <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
-                <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
-                <option value="openai">OpenAI</option>
-                <option value="sbert">Sentence-BERT (Enkel)</option>
-                <option value="ollama">Ollama (Lokal)</option>
-              </select>
+          <!-- PDF TAB -->
+          <div class="tab-panel active" id="tab-pdf">
+            <div class="tab-header">
+              <h2><span class="material-icons">picture_as_pdf</span> Extrahera från PDF</h2>
+              <button class="btn btn-outlined" id="clearPdfBtn">
+                <span class="material-icons">clear</span> Rensa
+              </button>
             </div>
-            <div style="flex: 1;"><label>Chunk-storlek</label>
-              <select id="pdfChunkSize">
-                <option value="256">256 tokens</option>
-                <option value="512" selected>512 tokens</option>
-                <option value="1024">1024 tokens</option>
-              </select>
+            <p class="text-muted">Ladda upp en eller flera PDFs. Stöder både nya samlingar och tillägg till befintliga.</p>
+            
+            <!-- Mode Selector for PDF -->
+            <div class="mode-selector">
+              <div class="mode-btn active" id="pdfModeNew">
+                <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add_circle</span>
+                Ny samling
+              </div>
+              <div class="mode-btn" id="pdfModeAdd">
+                <span class="material-icons" style="vertical-align: middle; font-size: 18px;">library_add</span>
+                Lägg till i befintlig
+              </div>
             </div>
-          </div>
 
-          <div id="pdfDropzone" class="zone">
-            <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
-            <p><strong>Släpp en eller flera PDFs här</strong></p>
-            <p class="text-muted">eller</p>
-            <label class="btn btn-outlined" for="pdfFile"><span class="material-icons">folder_open</span> Välj PDF(er)</label>
-            <input class="hidden" id="pdfFile" type="file" accept="application/pdf" multiple />
-          </div>
-        </div>
+            <!-- New Collection Mode -->
+            <div id="pdfNewMode">
+              <div style="margin-bottom: 16px;">
+                <label>Samlingens namn (valfritt)</label>
+                <input id="pdfCollectionName" type="text" placeholder="Exempel: 'Årsredovisning 2024'" />
+                <p class="text-muted" style="margin-top: 4px;">Om du lämnar tomt skapas namnet automatiskt från första filen</p>
+              </div>
+              
+              <div class="input-group" style="margin-bottom: 16px;">
+                <div style="flex: 1;"><label>Embedding Model</label>
+                  <select id="pdfEmbedBackend">
+                    <option value="google">Google Gemini (Standard)</option>
+                    <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
+                    <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
+                    <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="sbert">Sentence-BERT (Enkel)</option>
+                    <option value="ollama">Ollama (Lokal)</option>
+                  </select>
+                </div>
+                <div style="flex: 1;"><label>Chunk-storlek</label>
+                  <select id="pdfChunkSize">
+                    <option value="256">256 tokens</option>
+                    <option value="512" selected>512 tokens</option>
+                    <option value="1024">1024 tokens</option>
+                  </select>
+                </div>
+              </div>
 
-        <!-- Add to Existing Mode -->
-        <div id="pdfAddMode" class="hidden">
-          <div style="margin-bottom: 16px;">
-            <label>Välj befintlig samling</label>
-            <select id="existingPdfCollectionSelect">
-              <option value="">-- Välj samling --</option>
-            </select>
-          </div>
-
-          <div class="input-group" style="margin-bottom: 16px;">
-            <div style="flex: 1;"><label>Embedding Model</label>
-              <select id="addPdfEmbedBackend">
-                <option value="google">Google Gemini (Standard)</option>
-                <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
-                <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
-                <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
-                <option value="openai">OpenAI</option>
-                <option value="sbert">Sentence-BERT (Enkel)</option>
-                <option value="ollama">Ollama (Lokal)</option>
-              </select>
+              <div id="pdfDropzone" class="zone">
+                <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
+                <p><strong>Släpp en eller flera PDFs här</strong></p>
+                <p class="text-muted">eller</p>
+                <label class="btn btn-outlined" for="pdfFile"><span class="material-icons">folder_open</span> Välj PDF(er)</label>
+                <input class="hidden" id="pdfFile" type="file" accept="application/pdf" multiple />
+              </div>
             </div>
-            <div style="flex: 1;"><label>Chunk-storlek</label>
-              <select id="addPdfChunkSize">
-                <option value="256">256 tokens</option>
-                <option value="512" selected>512 tokens</option>
-                <option value="1024">1024 tokens</option>
-              </select>
+
+            <!-- Add to Existing Mode -->
+            <div id="pdfAddMode" class="hidden">
+              <div style="margin-bottom: 16px;">
+                <label>Välj befintlig samling</label>
+                <select id="existingPdfCollectionSelect">
+                  <option value="">-- Välj samling --</option>
+                </select>
+              </div>
+
+              <div class="input-group" style="margin-bottom: 16px;">
+                <div style="flex: 1;"><label>Embedding Model</label>
+                  <select id="addPdfEmbedBackend">
+                    <option value="google">Google Gemini (Standard)</option>
+                    <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
+                    <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
+                    <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="sbert">Sentence-BERT (Enkel)</option>
+                    <option value="ollama">Ollama (Lokal)</option>
+                  </select>
+                </div>
+                <div style="flex: 1;"><label>Chunk-storlek</label>
+                  <select id="addPdfChunkSize">
+                    <option value="256">256 tokens</option>
+                    <option value="512" selected>512 tokens</option>
+                    <option value="1024">1024 tokens</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="zone" id="addPdfDropzone">
+                <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
+                <p><strong>Släpp en eller flera PDFs här</strong></p>
+                <p class="text-muted">eller</p>
+                <label class="btn btn-outlined" for="addPdfFile"><span class="material-icons">folder_open</span> Välj PDF(er)</label>
+                <input class="hidden" id="addPdfFile" type="file" accept="application/pdf" multiple />
+              </div>
             </div>
-          </div>
 
-          <div class="zone" id="addPdfDropzone">
-            <span class="material-icons" style="font-size: 48px; color: var(--on-surface-disabled);">cloud_upload</span>
-            <p><strong>Släpp en eller flera PDFs här</strong></p>
-            <p class="text-muted">eller</p>
-            <label class="btn btn-outlined" for="addPdfFile"><span class="material-icons">folder_open</span> Välj PDF(er)</label>
-            <input class="hidden" id="addPdfFile" type="file" accept="application/pdf" multiple />
-          </div>
-        </div>
-
-        <div id="pdfProgress" style="display: none; margin-top: 16px;">
-          <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
-            <div id="pdfProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
-          </div>
-          <p id="pdfProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
-        </div>
-
-        <div id="pdfResult" style="display:none; margin-top:20px">
-          <div class="stats">
-            <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="pdfCollectionNameDisplay">-</div></div>
-            <div class="stat-card"><div class="stat-label">Totalt chunkar</div><div class="stat-value" id="pdfRecordCount">-</div></div>
-            <div class="stat-card"><div class="stat-label">Totalt vektorer</div><div class="stat-value" id="pdfVectorCount">-</div></div>
-          </div>
-          <div id="pdfListContainer" class="hidden">
-            <h3><span class="material-icons">description</span> Indexerade PDFs</h3>
-            <div id="pdfListDisplay" class="url-list"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- URL Fetch -->
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0;">Extrahera från URL</h2>
-          <button class="btn btn-outlined" id="clearUrlBtn" style="text-transform: none;">
-            <span class="material-icons">clear</span> Rensa
-          </button>
-        </div>
-        <p class="text-muted">Hämta och indexera innehåll från en eller flera webbsidor.</p>
-        
-        <!-- Mode Selector -->
-        <div class="mode-selector">
-          <div class="mode-btn active" id="urlModeNew">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add_circle</span>
-            Ny samling
-          </div>
-          <div class="mode-btn" id="urlModeAdd">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">library_add</span>
-            Lägg till i befintlig
-          </div>
-        </div>
-
-        <!-- New Collection Mode -->
-        <div id="urlNewMode">
-          <div style="margin-bottom: 16px;">
-            <label>Samlingens namn (valfritt)</label>
-            <input id="urlCollectionName" type="text" placeholder="Exempel: 'Semester 2026'" />
-            <p class="text-muted" style="margin-top: 4px;">Om du lämnar tomt skapas namnet automatiskt från första URL:en</p>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label>URLs (en per rad)</label>
-            <textarea id="urlInput" placeholder="https://exempel.se/sida1&#10;https://exempel.se/sida2&#10;https://exempel.se/sida3"></textarea>
-            <p class="text-muted" style="margin-top: 4px;">Ange en eller flera URLs, en per rad. Alla kommer att indexeras till samma samling.</p>
-          </div>
-
-          <div class="input-group">
-            <div style="flex: 1;"><label>Embedding Model</label>
-              <select id="urlEmbedBackend">
-                <option value="google">Google Gemini</option>
-                <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
-                <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
-                <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
-                <option value="openai">OpenAI</option>
-                <option value="sbert">SBERT</option>
-                <option value="ollama">Ollama</option>
-              </select>
+            <div id="pdfProgress" style="display: none; margin-top: 16px;">
+              <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+                <div id="pdfProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+              </div>
+              <p id="pdfProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
             </div>
-            <button class="btn btn-raised" id="urlFetchBtn"><span class="material-icons">download</span> Hämta</button>
-          </div>
-        </div>
 
-        <!-- Add to Existing Mode -->
-        <div id="urlAddMode" class="hidden">
-          <div style="margin-bottom: 16px;">
-            <label>Välj befintlig samling</label>
-            <select id="existingUrlCollectionSelect">
-              <option value="">-- Välj samling --</option>
-            </select>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label>URLs att lägga till (en per rad)</label>
-            <textarea id="addUrlInput" placeholder="https://exempel.se/ny-sida1&#10;https://exempel.se/ny-sida2"></textarea>
-            <p class="text-muted" style="margin-top: 4px;">Ange en eller flera URLs, en per rad</p>
-          </div>
-
-          <div class="input-group">
-            <div style="flex: 1;"><label>Embedding Model</label>
-              <select id="addUrlEmbedBackend">
-                <option value="google">Google Gemini</option>
-                <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
-                <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
-                <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
-                <option value="openai">OpenAI</option>
-                <option value="sbert">SBERT</option>
-                <option value="ollama">Ollama</option>
-              </select>
-            </div>
-            <button class="btn btn-raised" id="addUrlFetchBtn"><span class="material-icons">add</span> Lägg till</button>
-          </div>
-        </div>
-
-        <div id="urlProgress" style="display: none; margin-top: 16px;">
-          <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
-            <div id="urlProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
-          </div>
-          <p id="urlProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
-        </div>
-
-        <div id="urlResult" style="display:none; margin-top:20px">
-          <div class="stats">
-            <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="urlCollectionNameDisplay">-</div></div>
-            <div class="stat-card"><div class="stat-label">Totalt chunkar</div><div class="stat-value" id="urlRecordCount">-</div></div>
-            <div class="stat-card"><div class="stat-label">Totalt vektorer</div><div class="stat-value" id="urlVectorCount">-</div></div>
-          </div>
-          <div id="urlListContainer" class="hidden">
-            <h3><span class="material-icons">link</span> Indexerade URLs</h3>
-            <div id="urlListDisplay" class="url-list"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Search (This card is for the moment hidden)-->
-      <div class="card" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0;">Semantisk Sökning</h2>
-          <button class="btn btn-outlined" id="clearSearchBtn" style="text-transform: none;">
-            <span class="material-icons">clear</span> Rensa
-          </button>
-        </div>
-        <p class="text-muted">Sök i indexerat innehåll med naturligt språk. Här kan du prova för att se vilka träffar din fråga får i samlingens texter. 
-          Sökningen är semantisk, dvs sökningen försöker matcha betydelsen av frågan med de sparade texterna i samlingen.
-        </p>
-        <div class="input-group">
-          <div style="flex: 1;"><label>Välj Samling</label><select id="searchCollection"><option value="">-- Välj --</option></select></div>
-          <button class="btn btn-outlined" id="refreshCollections"><span class="material-icons">refresh</span> Uppdatera</button>
-        </div>
-        <div class="input-group" style="margin-top: 12px;">
-          <div style="flex: 1;"><label>Sökfråga</label><input id="searchQuery" type="text" placeholder="Vad letar du efter?" /></div>
-          <div style="width: 120px;"><label>Antal</label>
-            <select id="searchK"><option value="3">Top 3</option><option value="5" selected>Top 5</option><option value="10">Top 10</option></select>
-          </div>
-          <button class="btn btn-raised" id="searchBtn"><span class="material-icons">search</span> Sök</button>
-        </div>
-        <div id="searchResults" style="margin-top: 24px;"></div>
-      </div>
-
-      <!-- ASK AI -->
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0;">Fråga AI</h2>
-          <button class="btn btn-outlined" id="clearAskBtn" style="text-transform: none;">
-            <span class="material-icons">clear</span> Rensa
-          </button>
-        </div>
-        <p class="text-muted">Ställ frågor på naturligt språk. AI:n söker i dina dokument och formulerar ett svar.</p>
-        <div class="input-group">
-          <div style="flex: 1;"><label>Välj Samling</label><select id="askCollection"><option value="">-- Välj --</option></select></div>
-          <div style="width: 180px;"><label>LLM-modell</label>
-            <select id="llmBackend">
-              <option value="google">Google Gemini</option>
-              <option value="openai">OpenAI GPT</option>
-              <option value="ollama">Ollama (Lokal)</option>
-            </select>
-          </div>
-          <div style="width: 120px;"><label>Antal källor</label>
-            <select id="askK"><option value="3">Top 3</option><option value="5" selected>Top 5</option><option value="10">Top 10</option></select>
-          </div>
-        </div>
-        <div class="input-group" style="margin-top: 12px;">
-          <div style="flex: 1;"><label>Din fråga</label><input id="askQuery" type="text" placeholder="Ställ en fråga om dokumentet..." /></div>
-          <button class="btn btn-raised" id="askBtn"><span class="material-icons">send</span> Fråga</button>
-        </div>
-        <div id="askLoading" style="display: none; margin-top: 24px; text-align: center; padding: 32px;">
-          <div class="spinner" style="width: 32px; height: 32px; border-width: 3px;"></div>
-          <p style="margin-top: 16px; color: var(--on-surface-medium);">Söker i dokument och genererar svar...</p>
-        </div>
-        <div id="askAnswer" style="display: none; margin-top: 24px;">
-          <div class="ai-answer-box">
-            <div style="display: flex; gap: 12px;">
-              <span class="material-icons" style="color: var(--secondary); font-size: 28px;">smart_toy</span>
-              <div style="flex: 1;">
-                <h4 style="margin: 0 0 12px; color: var(--secondary);">Svar från AI</h4>
-                <div id="askAnswerText" class="ai-answer-text"></div>
+            <div id="pdfResult" style="display:none; margin-top:20px">
+              <div class="stats">
+                <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="pdfCollectionNameDisplay">-</div></div>
+                <div class="stat-card"><div class="stat-label">Totalt chunkar</div><div class="stat-value" id="pdfRecordCount">-</div></div>
+                <div class="stat-card"><div class="stat-label">Totalt vektorer</div><div class="stat-value" id="pdfVectorCount">-</div></div>
+              </div>
+              <div id="pdfListContainer" class="hidden">
+                <h3><span class="material-icons">description</span> Indexerade PDFs</h3>
+                <div id="pdfListDisplay" class="url-list"></div>
               </div>
             </div>
           </div>
-          <details style="margin-top: 16px;">
-            <summary style="cursor: pointer; font-weight: 500; color: var(--primary);"><span class="material-icons" style="vertical-align: middle;">source</span> Visa källor som användes</summary>
-            <div id="askSources" style="margin-top: 12px;"></div>
-          </details>
+
+          <!-- URL TAB -->
+          <div class="tab-panel" id="tab-url">
+            <div class="tab-header">
+              <h2><span class="material-icons">link</span> Extrahera från URL</h2>
+              <button class="btn btn-outlined" id="clearUrlBtn">
+                <span class="material-icons">clear</span> Rensa
+              </button>
+            </div>
+            <p class="text-muted">Hämta och indexera innehåll från en eller flera webbsidor.</p>
+            
+            <!-- Mode Selector -->
+            <div class="mode-selector">
+              <div class="mode-btn active" id="urlModeNew">
+                <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add_circle</span>
+                Ny samling
+              </div>
+              <div class="mode-btn" id="urlModeAdd">
+                <span class="material-icons" style="vertical-align: middle; font-size: 18px;">library_add</span>
+                Lägg till i befintlig
+              </div>
+            </div>
+
+            <!-- New Collection Mode -->
+            <div id="urlNewMode">
+              <div style="margin-bottom: 16px;">
+                <label>Samlingens namn (valfritt)</label>
+                <input id="urlCollectionName" type="text" placeholder="Exempel: 'Semester 2026'" />
+                <p class="text-muted" style="margin-top: 4px;">Om du lämnar tomt skapas namnet automatiskt från första URL:en</p>
+              </div>
+
+              <div style="margin-bottom: 16px;">
+                <label>URLs (en per rad)</label>
+                <textarea id="urlInput" placeholder="https://exempel.se/sida1&#10;https://exempel.se/sida2&#10;https://exempel.se/sida3"></textarea>
+                <p class="text-muted" style="margin-top: 4px;">Ange en eller flera URLs, en per rad. Alla kommer att indexeras till samma samling.</p>
+              </div>
+
+              <div class="input-group">
+                <div style="flex: 1;"><label>Embedding Model</label>
+                  <select id="urlEmbedBackend">
+                    <option value="google">Google Gemini</option>
+                    <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
+                    <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
+                    <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="sbert">SBERT</option>
+                    <option value="ollama">Ollama</option>
+                  </select>
+                </div>
+                <button class="btn btn-raised" id="urlFetchBtn"><span class="material-icons">download</span> Hämta</button>
+              </div>
+            </div>
+
+            <!-- Add to Existing Mode -->
+            <div id="urlAddMode" class="hidden">
+              <div style="margin-bottom: 16px;">
+                <label>Välj befintlig samling</label>
+                <select id="existingUrlCollectionSelect">
+                  <option value="">-- Välj samling --</option>
+                </select>
+              </div>
+
+              <div style="margin-bottom: 16px;">
+                <label>URLs att lägga till (en per rad)</label>
+                <textarea id="addUrlInput" placeholder="https://exempel.se/ny-sida1&#10;https://exempel.se/ny-sida2"></textarea>
+                <p class="text-muted" style="margin-top: 4px;">Ange en eller flera URLs, en per rad</p>
+              </div>
+
+              <div class="input-group">
+                <div style="flex: 1;"><label>Embedding Model</label>
+                  <select id="addUrlEmbedBackend">
+                    <option value="google">Google Gemini</option>
+                    <option value="cohere">Cohere v3 ⭐ Robust mot brus</option>
+                    <option value="bge">BGE-M3 ⭐ State-of-the-art OSS</option>
+                    <option value="e5">E5 ⭐ Multilingual, bra för svenska</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="sbert">SBERT</option>
+                    <option value="ollama">Ollama</option>
+                  </select>
+                </div>
+                <button class="btn btn-raised" id="addUrlFetchBtn"><span class="material-icons">add</span> Lägg till</button>
+              </div>
+            </div>
+
+            <div id="urlProgress" style="display: none; margin-top: 16px;">
+              <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+                <div id="urlProgressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+              </div>
+              <p id="urlProgressText" class="text-muted" style="margin-top: 8px; text-align: center;">0 / 0</p>
+            </div>
+
+            <div id="urlResult" style="display:none; margin-top:20px">
+              <div class="stats">
+                <div class="stat-card"><div class="stat-label">Samling</div><div class="stat-value" id="urlCollectionNameDisplay">-</div></div>
+                <div class="stat-card"><div class="stat-label">Totalt chunkar</div><div class="stat-value" id="urlRecordCount">-</div></div>
+                <div class="stat-card"><div class="stat-label">Totalt vektorer</div><div class="stat-value" id="urlVectorCount">-</div></div>
+              </div>
+              <div id="urlListContainer" class="hidden">
+                <h3><span class="material-icons">link</span> Indexerade URLs</h3>
+                <div id="urlListDisplay" class="url-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ASK AI TAB -->
+          <div class="tab-panel" id="tab-ask">
+            <div class="tab-header">
+              <h2><span class="material-icons">smart_toy</span> Fråga AI</h2>
+              <button class="btn btn-outlined" id="clearAskBtn">
+                <span class="material-icons">clear</span> Rensa
+              </button>
+            </div>
+            <p class="text-muted">Ställ frågor på naturligt språk. AI:n söker i dina dokument och formulerar ett svar.</p>
+            <div class="input-group">
+              <div style="flex: 1;"><label>Välj Samling</label><select id="askCollection"><option value="">-- Välj --</option></select></div>
+              <div style="width: 180px;"><label>LLM-modell</label>
+                <select id="llmBackend">
+                  <option value="google">Google Gemini</option>
+                  <option value="openai">OpenAI GPT</option>
+                  <option value="ollama">Ollama (Lokal)</option>
+                </select>
+              </div>
+              <div style="width: 120px;"><label>Antal källor</label>
+                <select id="askK"><option value="3">Top 3</option><option value="5" selected>Top 5</option><option value="10">Top 10</option></select>
+              </div>
+            </div>
+            <div class="input-group" style="margin-top: 12px;">
+              <div style="flex: 1;"><label>Din fråga</label><input id="askQuery" type="text" placeholder="Ställ en fråga om dokumentet..." /></div>
+              <button class="btn btn-raised" id="askBtn"><span class="material-icons">send</span> Fråga</button>
+            </div>
+            <div id="askLoading" style="display: none; margin-top: 24px; text-align: center; padding: 32px;">
+              <div class="spinner" style="width: 32px; height: 32px; border-width: 3px;"></div>
+              <p style="margin-top: 16px; color: var(--on-surface-medium);">Söker i dokument och genererar svar...</p>
+            </div>
+            <div id="askAnswer" style="display: none; margin-top: 24px;">
+              <div class="ai-answer-box">
+                <div style="display: flex; gap: 12px;">
+                  <span class="material-icons" style="color: var(--secondary); font-size: 28px;">smart_toy</span>
+                  <div style="flex: 1;">
+                    <h4 style="margin: 0 0 12px; color: var(--secondary);">Svar från AI</h4>
+                    <div id="askAnswerText" class="ai-answer-text"></div>
+                  </div>
+                </div>
+              </div>
+              <details style="margin-top: 16px;">
+                <summary style="cursor: pointer; font-weight: 500; color: var(--primary);"><span class="material-icons" style="vertical-align: middle;">source</span> Visa källor som användes</summary>
+                <div id="askSources" style="margin-top: 12px;"></div>
+              </details>
+            </div>
+          </div>
+
+          <!-- SEARCH TAB -->
+          <div class="tab-panel" id="tab-search">
+            <div class="tab-header">
+              <h2><span class="material-icons">search</span> Semantisk Sökning</h2>
+              <button class="btn btn-outlined" id="clearSearchBtn">
+                <span class="material-icons">clear</span> Rensa
+              </button>
+            </div>
+            <p class="text-muted">Sök i indexerat innehåll med naturligt språk.</p>
+            <div class="input-group">
+              <div style="flex: 1;"><label>Välj Samling</label><select id="searchCollection"><option value="">-- Välj --</option></select></div>
+              <button class="btn btn-outlined" id="refreshCollections"><span class="material-icons">refresh</span> Uppdatera</button>
+            </div>
+            <div class="input-group" style="margin-top: 12px;">
+              <div style="flex: 1;"><label>Sökfråga</label><input id="searchQuery" type="text" placeholder="Vad letar du efter?" /></div>
+              <div style="width: 120px;"><label>Antal</label>
+                <select id="searchK"><option value="3">Top 3</option><option value="5" selected>Top 5</option><option value="10">Top 10</option></select>
+              </div>
+              <button class="btn btn-raised" id="searchBtn"><span class="material-icons">search</span> Sök</button>
+            </div>
+            <div id="searchResults" style="margin-top: 24px;"></div>
+          </div>
+
         </div>
       </div>
     </div>
