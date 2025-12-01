@@ -1,0 +1,279 @@
+/**
+ * RAG Search System - Components Stylesheet
+ * Reusable UI components (cards, buttons, zones, etc.)
+ */
+
+/* ============================================
+   Cards
+   ============================================ */
+.card { 
+  background: var(--surface); 
+  border-radius: 4px; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+  padding: 24px; 
+  margin-bottom: 24px; 
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn { 
+  display: inline-flex; 
+  align-items: center; 
+  gap: 8px; 
+  padding: 8px 16px; 
+  border-radius: 4px; 
+  border: none; 
+  cursor: pointer; 
+  font-family: 'Roboto', sans-serif; 
+  font-size: 14px; 
+  font-weight: 500; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+  transition: all 0.2s; 
+  background: transparent; 
+  color: var(--primary); 
+}
+
+.btn:hover { 
+  background: rgba(25, 118, 210, 0.08); 
+}
+
+.btn-raised { 
+  background: var(--primary); 
+  color: var(--on-primary); 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+}
+
+.btn-raised:hover { 
+  background: var(--primary-dark); 
+}
+
+.btn-outlined { 
+  border: 1px solid var(--primary); 
+}
+
+.btn:disabled { 
+  background: var(--on-surface-disabled); 
+  color: rgba(0,0,0,0.26); 
+  cursor: not-allowed; 
+}
+
+/* ============================================
+   Drop Zones
+   ============================================ */
+.zone { 
+  border: 2px dashed var(--divider); 
+  border-radius: 4px; 
+  padding: 48px 32px; 
+  text-align: center; 
+  transition: all 0.2s; 
+  background: #fafafa; 
+  margin-top: 16px; 
+}
+
+.zone.dragover { 
+  border-color: var(--primary); 
+  background: #e3f2fd; 
+}
+
+/* ============================================
+   Mode Selector
+   ============================================ */
+.mode-selector { 
+  display: flex; 
+  gap: 8px; 
+  margin-bottom: 16px; 
+}
+
+.mode-btn { 
+  flex: 1; 
+  padding: 12px; 
+  border: 2px solid var(--divider); 
+  border-radius: 4px; 
+  background: white; 
+  cursor: pointer; 
+  text-align: center; 
+  font-weight: 500; 
+  transition: all 0.2s; 
+}
+
+.mode-btn:hover { 
+  background: #f5f5f5; 
+}
+
+.mode-btn.active { 
+  border-color: var(--primary); 
+  background: #e3f2fd; 
+  color: var(--primary); 
+}
+
+/* ============================================
+   Results & Stats
+   ============================================ */
+.result { 
+  margin-top: 16px; 
+  padding: 16px; 
+  background: #e8f5e9; 
+  border-left: 4px solid var(--secondary); 
+  border-radius: 4px; 
+}
+
+.stats { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+  gap: 16px; 
+  margin: 20px 0; 
+}
+
+.stat-card { 
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); 
+  padding: 20px; 
+  border-radius: 4px; 
+}
+
+.stat-label { 
+  font-size: 12px; 
+  color: var(--on-surface-medium); 
+  text-transform: uppercase; 
+  font-weight: 500; 
+}
+
+.stat-value { 
+  font-size: 32px; 
+  font-weight: 300; 
+  color: var(--primary); 
+  margin-top: 8px; 
+}
+
+/* ============================================
+   Search Results
+   ============================================ */
+.search-result { 
+  background: var(--surface); 
+  border-radius: 4px; 
+  padding: 16px; 
+  margin-bottom: 16px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12); 
+}
+
+.search-result:hover { 
+  box-shadow: 0 4px 8px rgba(0,0,0,0.16); 
+}
+
+.search-result-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: flex-start; 
+  margin-bottom: 12px; 
+}
+
+.search-result-title { 
+  font-weight: 500; 
+  font-size: 16px; 
+  margin: 0 0 4px 0; 
+}
+
+.search-result-score { 
+  background: #e3f2fd; 
+  color: var(--primary); 
+  padding: 4px 12px; 
+  border-radius: 12px; 
+  font-size: 12px; 
+  font-weight: 500; 
+}
+
+.search-result-text { 
+  color: var(--on-surface-medium); 
+  font-size: 14px; 
+  line-height: 1.6; 
+}
+
+/* ============================================
+   AI Answer Box
+   ============================================ */
+.ai-answer-box { 
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); 
+  border-radius: 8px; 
+  padding: 20px; 
+}
+
+.ai-answer-text { 
+  white-space: pre-wrap; 
+  line-height: 1.7; 
+}
+
+/* ============================================
+   Info Box
+   ============================================ */
+.info-box { 
+  margin-top: 16px; 
+  padding: 16px; 
+  background: #e3f2fd; 
+  border-left: 4px solid var(--primary); 
+  border-radius: 4px; 
+  display: flex; 
+  gap: 12px; 
+}
+
+/* ============================================
+   URL/File Lists
+   ============================================ */
+.url-list { 
+  background: #f5f5f5; 
+  border-radius: 4px; 
+  padding: 12px; 
+  margin-top: 12px; 
+  max-height: 200px; 
+  overflow-y: auto; 
+}
+
+.url-item { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  padding: 8px; 
+  background: white; 
+  border-radius: 4px; 
+  margin-bottom: 8px; 
+  font-size: 13px; 
+}
+
+.url-item:last-child { 
+  margin-bottom: 0; 
+}
+
+.url-item-text { 
+  flex: 1; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+}
+
+.url-item-remove { 
+  color: var(--error); 
+  cursor: pointer; 
+  padding: 4px; 
+}
+
+.url-item-remove:hover { 
+  background: rgba(211, 47, 47, 0.1); 
+  border-radius: 50%; 
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 768px) {
+  .mode-selector {
+    flex-direction: column;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+  }
+}
