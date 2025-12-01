@@ -6,6 +6,7 @@
     <title>RAG Search System</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <style>
       :root { 
         font-family: 'Roboto', sans-serif;
@@ -85,14 +86,14 @@
   <body>
     <div class="app-bar">
       <h1>RAG Search System</h1>
-      <p>Ladda upp PDF-filer, extrahera text från webbsidor, och sök semantiskt med AI</p>
+      <p>Ladda upp PDF-filer eller extrahera text från webbsidor, och sök sedan semantiskt med AI i dina samlingar.</p>
     </div>
 
     <div class="wrap">
       <!-- PDF Upload -->
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0;">PDF med Semantisk Sökning</h2>
+          <h2 style="margin: 0;">Extrahera från PDF</h2>
           <button class="btn btn-outlined" id="clearPdfBtn" style="text-transform: none;">
             <span class="material-icons">clear</span> Rensa
           </button>
@@ -115,7 +116,7 @@
         <div id="pdfNewMode">
           <div style="margin-bottom: 16px;">
             <label>Samlingens namn (valfritt)</label>
-            <input id="pdfCollectionName" type="text" placeholder="T.ex. 'Årsredovisning 2024' eller lämna tomt för automatiskt namn" />
+            <input id="pdfCollectionName" type="text" placeholder="Exempel: 'Årsredovisning 2024'" />
             <p class="text-muted" style="margin-top: 4px;">Om du lämnar tomt skapas namnet automatiskt från första filen</p>
           </div>
           
@@ -234,7 +235,7 @@
         <div id="urlNewMode">
           <div style="margin-bottom: 16px;">
             <label>Samlingens namn (valfritt)</label>
-            <input id="urlCollectionName" type="text" placeholder="T.ex. 'Wikipedia AI' eller lämna tomt för automatiskt namn" />
+            <input id="urlCollectionName" type="text" placeholder="Exempel: 'Semester 2026'" />
             <p class="text-muted" style="margin-top: 4px;">Om du lämnar tomt skapas namnet automatiskt från första URL:en</p>
           </div>
 
@@ -314,27 +315,29 @@ Kan också ange bara en URL för en enda sida"></textarea>
       </div>
 
       <!-- Search -->
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0;">Semantisk Sökning</h2>
-          <button class="btn btn-outlined" id="clearSearchBtn" style="text-transform: none;">
-            <span class="material-icons">clear</span> Rensa
-          </button>
-        </div>
-        <p class="text-muted">Sök i indexerat innehåll med naturligt språk.</p>
-        <div class="input-group">
-          <div style="flex: 1;"><label>Välj Samling</label><select id="searchCollection"><option value="">-- Välj --</option></select></div>
-          <button class="btn btn-outlined" id="refreshCollections"><span class="material-icons">refresh</span> Uppdatera</button>
-        </div>
-        <div class="input-group" style="margin-top: 12px;">
-          <div style="flex: 1;"><label>Sökfråga</label><input id="searchQuery" type="text" placeholder="Vad letar du efter?" /></div>
-          <div style="width: 120px;"><label>Antal</label>
-            <select id="searchK"><option value="3">Top 3</option><option value="5" selected>Top 5</option><option value="10">Top 10</option></select>
+        <!-- Göm i nuläget
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0;">Semantisk Sökning</h2>
+            <button class="btn btn-outlined" id="clearSearchBtn" style="text-transform: none;">
+              <span class="material-icons">clear</span> Rensa
+            </button>
           </div>
-          <button class="btn btn-raised" id="searchBtn"><span class="material-icons">search</span> Sök</button>
+          <p class="text-muted">Sök i indexerat innehåll med naturligt språk.</p>
+          <div class="input-group">
+            <div style="flex: 1;"><label>Välj Samling</label><select id="searchCollection"><option value="">-- Välj --</option></select></div>
+            <button class="btn btn-outlined" id="refreshCollections"><span class="material-icons">refresh</span> Uppdatera</button>
+          </div>
+          <div class="input-group" style="margin-top: 12px;">
+            <div style="flex: 1;"><label>Sökfråga</label><input id="searchQuery" type="text" placeholder="Vad letar du efter?" /></div>
+            <div style="width: 120px;"><label>Antal</label>
+              <select id="searchK"><option value="3">Top 3</option><option value="5" selected>Top 5</option><option value="10">Top 10</option></select>
+            </div>
+            <button class="btn btn-raised" id="searchBtn"><span class="material-icons">search</span> Sök</button>
+          </div>
+          <div id="searchResults" style="margin-top: 24px;"></div>
         </div>
-        <div id="searchResults" style="margin-top: 24px;"></div>
-      </div>
+      -->
 
       <!-- ASK AI -->
       <div class="card">

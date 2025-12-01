@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <style>
+      .outer { stroke: #2A7A7F; }
+      .inner { stroke: #E6912C; }
+      .dot { fill: #E6912C; }
+    </style>
+  </defs>
+
+  <!-- Yttre cirkel -->
+  <circle cx="32" cy="32" r="26" fill="none" class="outer" stroke-width="2"/>
+
+  <!-- Inre cirkel -->
+  <circle cx="32" cy="32" r="14" fill="none" class="inner" stroke-width="2"/>
+
+  <!-- Riktningsstreck (nu i blågrön ton) -->
+  <g stroke-linecap="round" class="outer" stroke-width="2">
+    <line x1="32" y1="6"  x2="32" y2="13"/>
+    <line x1="32" y1="51" x2="32" y2="58"/>
+    <line x1="6"  y1="32" x2="13" y2="32"/>
+    <line x1="51" y1="32" x2="58" y2="32"/>
+  </g>
+
+  <!-- Centerpunkt -->
+  <circle cx="32" cy="32" r="3" class="dot"/>
+</svg>
