@@ -1,0 +1,41 @@
+# **VIKTIGT** Denna dokumentation är automatgenererad och _**inte**_ verifierad
+
+
+# RAG Search System - Python Dependencies
+# Installera med: pip install -r requirements.txt
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# HTTP & Web Scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+markdownify>=0.11.6
+
+# Configuration & Environment
+python-dotenv>=1.0.0
+
+# PDF Processing
+PyMuPDF>=1.23.0
+
+# Data Processing
+numpy>=1.24.0
+
+# Vector Search
+faiss-cpu>=1.7.4
+
+# AI/ML - Core (OBLIGATORISKT)
+google-genai>=1.0.0
+
+# AI/ML - Optional (installera efter behov)
+# openai>=1.0.0              # För OpenAI embeddings och GPT
+# cohere>=4.0.0              # För Cohere embeddings
+# sentence-transformers>=2.2.0  # För lokala SBERT embeddings
+# torch>=2.0.0               # Krävs för sentence-transformers
+
+# Development (valfritt)
+# black>=23.0.0              # Code formatting
+# flake8>=6.0.0              # Linting
+# pytest>=7.0.0              # Testing

@@ -5,11 +5,6 @@
 #   Helper classes for RAG as well as a pipeline for a RAG Process
 #   Now with FAISS vector store integration
 #
-#   FAS 1 FÖRBÄTTRINGAR:
-#   - Nya moderna embedding backends (Cohere, BGE-M3, E5)
-#   - Overlapping chunks för bättre kontextbevarande
-#   - Aggressiv HTML-rensning för mindre brus
-#
 ###################################################
 
 
