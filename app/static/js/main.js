@@ -8,6 +8,7 @@ import * as PDF from './pdf.js';
 import * as URL from './url.js';
 import * as Collections from './collections.js';
 import * as Search from './search.js';
+import * as CollectionsManagement from './collections-management.js';
 
 /**
  * Initialize the application
@@ -21,6 +22,7 @@ function init() {
   URL.init();
   Collections.init();
   Search.init();
+  CollectionsManagement.init();
   
   console.log('RAG Search System - Ready!');
 }

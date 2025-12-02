@@ -277,3 +277,30 @@
     font-size: 24px;
   }
 }
+
+/* ============================================
+   Collection Cards
+   ============================================ */
+.collection-card {
+  background: var(--surface);
+  border: 2px solid var(--divider);
+  border-radius: 4px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.collection-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.collection-card-active {
+  border-color: var(--primary);
+  background: #e3f2fd;
+}
+
+.collection-card h4 {
+  font-size: 16px;
+  font-weight: 500;
+}

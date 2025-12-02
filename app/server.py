@@ -301,7 +301,7 @@ async def upload_pdf(
         if collection_name and collection_name.strip():
             collection_name = sanitize_basename(collection_name.strip())
         else:
-            collection_name = f"Samling_{int(time.time())}"
+            collection_name = f"Namnlos_{int(time.time())}"
             is_new_collection = True
 
         # Ladda eller skapa vector store
@@ -466,7 +466,7 @@ async def api_fetch_url(payload: dict = Body(...)):
         if collection_name and collection_name.strip():
             collection_name = sanitize_basename(collection_name.strip())
         else:
-            collection_name = f"Samling_{int(time.time())}"
+            collection_name = f"Namnlos_{int(time.time())}"
             is_new_collection = True
 
         collection_name = sanitize_basename(collection_name)
@@ -877,6 +877,90 @@ def list_collections():
     except Exception as e:
         return JSONResponse(
             status_code=500, content=create_error_response(e, "collection-listning")
+        )
+
+
+@app.get("/api/collection/{collection_name}/metadata")
+def get_collection_metadata(collection_name: str):
+    """Get detailed metadata for a specific collection"""
+    try:
+        collection_name = sanitize_basename(collection_name)
+        
+        # Check if collection exists
+        vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
+        if not vector_store_path.with_suffix(".faiss").exists():
+            return JSONResponse(
+                status_code=404,
+                content=create_error_response(
+                    Exception(f"Samlingen '{collection_name}' finns inte"),
+                    "metadata-hämtning"
+                )
+            )
+        
+        # Load metadata
+        metadata = load_collection_metadata(collection_name)
+        
+        # Get stats if loaded, otherwise load temporarily
+        if collection_name in vector_stores:
+            store = vector_stores[collection_name]
+        else:
+            try:
+                store = FAISSVectorStore()
+                store.load(str(vector_store_path))
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500,
+                    content=create_error_response(e, "vector store laddning")
+                )
+        
+        stats = store.get_stats()
+        
+        # Get file timestamps
+        faiss_file = vector_store_path.with_suffix(".faiss")
+        pkl_file = vector_store_path.with_suffix(".pkl")
+        meta_file = Path(OUTPUT_DIR) / f"{collection_name}.meta.json"
+        
+        import datetime
+        created_time = None
+        modified_time = None
+        
+        if faiss_file.exists():
+            created_time = datetime.datetime.fromtimestamp(
+                faiss_file.stat().st_ctime
+            ).isoformat()
+            modified_time = datetime.datetime.fromtimestamp(
+                faiss_file.stat().st_mtime
+            ).isoformat()
+        
+        # Build detailed metadata
+        detailed_metadata = {
+            "name": collection_name,
+            "stats": stats,
+            "indexed_pdfs": metadata.get("indexed_pdfs", []),
+            "indexed_urls": metadata.get("indexed_urls", []),
+            "pdf_count": len(metadata.get("indexed_pdfs", [])),
+            "url_count": len(metadata.get("indexed_urls", [])),
+            "total_records": metadata.get("total_records", stats.get("total_records", 0)),
+            "created": created_time,
+            "modified": modified_time,
+            "files": {
+                "faiss": faiss_file.exists(),
+                "pkl": pkl_file.exists(),
+                "meta": meta_file.exists(),
+            }
+        }
+        
+        return JSONResponse(
+            content={
+                "success": True,
+                "metadata": detailed_metadata
+            }
+        )
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content=create_error_response(e, "metadata-hämtning (oväntat fel)")
         )
 
 
