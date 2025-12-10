@@ -17,19 +17,19 @@ from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
-from markdownify import markdownify as md
+from markdownify import markdownify as md  # pyright: ignore[reportMissingImports]
 from google import genai
-from google.genai import types
+from google.genai import types  # pyright: ignore[reportMissingImports]
 
-from helpers import extract_text_from_pdf, normalize_text, getApiKey
+from helpers import extract_text_from_pdf, normalize_text, getApiKey, hlog
 
 try:
-    import faiss
+    import faiss  # pyright: ignore[reportMissingImports]
 
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
-    print("WARNING: faiss not installed. Run: pip install faiss-cpu")
+    hlog("WARNING: faiss not installed. Run: pip install faiss-cpu", 2)
 
 
 client = genai.Client(api_key=getApiKey("GOOGLE_API_KEY"))
@@ -78,7 +78,7 @@ class OpenAIBackend(EmbeddingBackend):
         Args:
             model (str): OpenAI modellnamn (default: "text-embedding-3-large")
         """
-        from openai import OpenAI
+        from openai import OpenAI  # pyright: ignore[reportMissingImports]
 
         self.client = OpenAI(api_key=getApiKey("OPENAI_API_KEY"))
         self.model = model
@@ -120,7 +120,9 @@ class SBERTBackend(EmbeddingBackend):
         Args:
             model (str): Sentence-transformers modellnamn
         """
-        from sentence_transformers import SentenceTransformer
+        from sentence_transformers import (  # pyright: ignore[reportMissingImports]
+            SentenceTransformer,
+        )
 
         self.model = SentenceTransformer(model)
         self._dimension = self.model.get_sentence_embedding_dimension()
@@ -202,15 +204,15 @@ class GoogleBackend(EmbeddingBackend):
     Använder Google Gemini API för embeddings.
     """
 
-    def __init__(self, model: str = "text-embedding-004"):
+    def __init__(self, model: str = "gemini-embedding-001"):
         """
         Initiera Google backend.
 
         Args:
-            model (str): Google modellnamn (default: "text-embedding-004")
+            model (str): Google modellnamn (default: "gemini-embedding-001")
         """
         self.model = model
-        self._dimension = 768
+        self._dimension = 3072
 
     def embed(self, texts: List[str]) -> List[List[float]]:
         """
@@ -227,7 +229,7 @@ class GoogleBackend(EmbeddingBackend):
             resp = client.models.embed_content(
                 model=self.model,
                 contents=text,
-                config=types.EmbedContentConfig(task_type="SEMANTIC_SIMILARITY"),
+                config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
             )
             results.append(resp.embeddings[0].values)
         return results
@@ -236,7 +238,7 @@ class GoogleBackend(EmbeddingBackend):
         """
         Hämta embedding dimension.
 
-        Returns:
+        Returns eg:
             int: Dimension (768)
         """
         return self._dimension
@@ -261,7 +263,7 @@ class CohereBackend(EmbeddingBackend):
                 Alternativ: "embed-english-v3.0", "embed-multilingual-light-v3.0"
         """
         try:
-            import cohere
+            import cohere  # pyright: ignore[reportMissingImports]
         except ImportError:
             raise ImportError("Cohere package not installed. Run: pip install cohere")
 
@@ -314,13 +316,15 @@ class BGEBackend(EmbeddingBackend):
                 Alternativ: "BAAI/bge-large-en-v1.5", "BAAI/bge-base-en-v1.5"
         """
         try:
-            from sentence_transformers import SentenceTransformer
+            from sentence_transformers import (  # pyright: ignore[reportMissingImports]
+                SentenceTransformer,
+            )
         except ImportError:
             raise ImportError(
                 "sentence-transformers not installed. Run: pip install sentence-transformers"
             )
 
-        print(f"Loading BGE model {model}... (this may take a moment first time)")
+        hlog(f"Loading BGE model {model}... (this may take a moment first time)", 3)
         self.model = SentenceTransformer(model)
         self._dimension = self.model.get_sentence_embedding_dimension()
 
@@ -364,7 +368,9 @@ class E5Backend(EmbeddingBackend):
                 Alternativ: "intfloat/e5-large-v2", "intfloat/multilingual-e5-base"
         """
         try:
-            from sentence_transformers import SentenceTransformer
+            from sentence_transformers import (  # pyright: ignore[reportMissingImports]
+                SentenceTransformer,
+            )
         except ImportError:
             raise ImportError(
                 "sentence-transformers not installed. Run: pip install sentence-transformers"
@@ -445,12 +451,12 @@ class FAISSVectorStore:
     Lagrar embeddings och associerade records för snabb similarity search.
     """
 
-    def __init__(self, dimension: int = 768, index_type: str = "flat"):
+    def __init__(self, dimension: int = 3072, index_type: str = "flat"):
         """
         Initiera FAISS vector store.
 
         Args:
-            dimension (int): Embedding-vektorns dimension (default: 768)
+            dimension (int): Embedding-vektorns dimension (default: 3072)
             index_type (str): Index-typ - 'flat' för exakt sökning,
                             'ivf' för approximativ (snabbare med många vektorer)
         """
@@ -591,7 +597,7 @@ class FAISSVectorStore:
         with open(str(base_path) + ".pkl", "wb") as f:
             pickle.dump(metadata, f)
 
-        print(f"✓ Saved vector store to {base_path}.faiss + .pkl")
+        hlog(f"✓ Saved vector store to {base_path}.faiss + .pkl", 3)
 
     def load(self, base_path: str):
         """
@@ -618,7 +624,7 @@ class FAISSVectorStore:
         self.index_type = metadata["index_type"]
         self.is_trained = metadata["is_trained"]
 
-        print(f"✓ Loaded vector store from {base_path} ({self.index.ntotal} vectors)")
+        hlog(f"✓ Loaded vector store from {base_path} ({self.index.ntotal} vectors)")
 
     def get_stats(self) -> Dict:
         """
@@ -746,7 +752,8 @@ def extract_main_content(raw_html: str) -> str:
     ):
         try:
             tag.decompose()
-        except Exception:
+        except Exception as e:
+            hlog(f"Ignored Exception in extract_main_content() --> {str(e)}", 1)
             continue
 
     # 2. Ta bort HTML-kommentarer
@@ -793,7 +800,8 @@ def extract_main_content(raw_html: str) -> str:
         try:
             for tag in main_content.find_all(["nav", "footer", "header", "aside"]):
                 tag.decompose()
-        except Exception:
+        except Exception as e:
+            hlog(f"Passed Exception in extract_main_content() --> {str(e)}", 2)
             pass
 
     # 4. AGGRESSIV brusfiltrering - ta bort element med brus-relaterade klasser/IDs
@@ -1383,7 +1391,9 @@ def process_url_for_rag(
     result = {"source_url": scraped.url, "title": title, "records": records}
 
     # Create vector store if requested
+    hlog("About to create vector store if requested")
     if create_vector_store and FAISS_AVAILABLE:
+        hlog("About to create vector store AS requested")
         dimension = backend.get_dimension()
         vector_store = FAISSVectorStore(dimension=dimension)
         vector_store.add_records(records)
@@ -1487,15 +1497,15 @@ def cosine_similarity(vec1, vec2):
 
 
 def create_embeddings(
-    text, model="text-embedding-004", task_type="SEMANTIC_SIMILARITY"
+    text, model="gemini-embedding-001", task_type="RETRIEVAL_DOCUMENT"
 ):
     """
     Skapa embeddings med Google API (legacy funktion).
 
     Args:
         text (str): Text att embedda
-        model (str): Modellnamn (default: "text-embedding-004")
-        task_type (str): Task type (default: "SEMANTIC_SIMILARITY")
+        model (str): Modellnamn (default: "gemini-embedding-001")
+        task_type (str): Task type (default: "RETRIEVAL_DOCUMENT")
 
     Returns:
         Response-objekt från Google API

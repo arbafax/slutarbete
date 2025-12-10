@@ -52,24 +52,30 @@ def utc_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def hlog(logtxt: str):
+def hlog(logtxt: str, loglevel: int = 3):
     """
     Hjälpfunktion för loggning till konsol.
 
     Args:
         logtxt (str): Texten som ska loggas
+        loglevel (int): Nivå på loggning
 
     Returns:
         None
     """
-    print(logtxt)
+    requiredlevel = 0  # 0 = off, 1 = critical, 2 = warning, 3 = info, 4 = debug
+
+    if loglevel < 1:
+        loglevel = 1
+    if loglevel <= requiredlevel:
+        print(logtxt)
 
 
 # -----------------------------
 # API-keys management
 # -----------------------------
 def getApiKey(apiKey: str) -> str:
-    return os.getenv("apiKey")
+    return os.getenv(apiKey)
 
 
 # -----------------------------

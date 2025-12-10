@@ -11,20 +11,22 @@
 #
 ###################################################
 
-from fastapi import (
+from fastapi import (  # pyright: ignore[reportMissingImports]
     FastAPI,
     UploadFile,
     File,
     Body,
     HTTPException,
 )
-from fastapi.responses import (
+from fastapi.responses import (  # pyright: ignore[reportMissingImports]
     JSONResponse,
     FileResponse,
     HTMLResponse,
 )
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import (  # pyright: ignore[reportMissingImports]
+    CORSMiddleware,
+)
+from fastapi.staticfiles import StaticFiles  # pyright: ignore[reportMissingImports]
 
 import os
 import time
@@ -32,6 +34,7 @@ import json
 import re
 import requests
 import traceback
+import logging
 
 from typing import Dict, Optional, List
 from pathlib import Path
@@ -54,7 +57,7 @@ from helpers import (
 )
 
 from google import genai
-from google.genai import types
+from google.genai import types  # pyright: ignore[reportMissingImports]
 
 genai_client = genai.Client(api_key=getApiKey("GOOGLE_API_KEY"))
 
@@ -145,7 +148,7 @@ class GoogleLLMBackend(LLMBackend):
 class OpenAILLMBackend(LLMBackend):
     def __init__(self, model: str = "gpt-4o-mini"):
         try:
-            from openai import OpenAI
+            from openai import OpenAI  # pyright: ignore[reportMissingImports]
 
             self.client = OpenAI()
             self.model = model
@@ -292,6 +295,7 @@ async def upload_pdf(
                 embed_backend=embed_backend,
             )
         except Exception as e:
+            hlog(f"❌ Critical error when processing PDF: {str(e)}", 1)
             return JSONResponse(
                 status_code=500, content=create_error_response(e, "PDF-processering")
             )
@@ -338,6 +342,7 @@ async def upload_pdf(
                     f"✓ Created new vector store '{collection_name}' with {len(pkg['records'])} vectors"
                 )
         except Exception as e:
+            hlog(f"❌ Error when creating vector-store for pdf {str(e)}", 1)
             return JSONResponse(
                 status_code=500,
                 content=create_error_response(e, "vector store-skapande"),
@@ -420,7 +425,7 @@ async def upload_pdf(
 
     except Exception as e:
         # Catch-all för oväntade fel
-        hlog(f"❌ Unexpected error in upload_pdf: {str(e)}")
+        hlog(f"❌ Unexpected error in upload_pdf: {str(e)}", 1)
         return JSONResponse(
             status_code=500,
             content=create_error_response(e, "PDF-uppladdning (oväntat fel)"),
@@ -456,6 +461,7 @@ async def api_fetch_url(payload: dict = Body(...)):
                 create_vector_store=False,
             )
         except Exception as e:
+            hlog(f"❌ Unexpected error while fetching URL {str(e)}", 1)
             return JSONResponse(
                 status_code=502,
                 content=create_error_response(e, f"URL-hämtning ({url})"),
@@ -503,6 +509,7 @@ async def api_fetch_url(payload: dict = Body(...)):
                     f"✓ Created new vector store '{collection_name}' with {len(pkg['records'])} vectors"
                 )
         except Exception as e:
+            hlog(f"❌ Unexpected error when creating vector store for url {str(e)}", 1)
             return JSONResponse(
                 status_code=500,
                 content=create_error_response(e, "vector store-skapande"),
@@ -560,7 +567,7 @@ async def api_fetch_url(payload: dict = Body(...)):
         )
 
     except Exception as e:
-        hlog(f"❌ Unexpected error in fetch_url: {str(e)}")
+        hlog(f"❌ Unexpected error in fetch_url: {str(e)}", 1)
         return JSONResponse(
             status_code=500,
             content=create_error_response(e, "URL-hämtning (oväntat fel)"),
@@ -609,6 +616,7 @@ def get_collection_info(collection_name: str):
             }
         )
     except Exception as e:
+        hlog(f"❌ Unexpected error in get_collection_info() {str(e)}", 1)
         return JSONResponse(
             status_code=500,
             content=create_error_response(e, "collection info-hämtning"),
@@ -648,7 +656,7 @@ async def api_search(payload: dict = Body(...)):
                 store = FAISSVectorStore()
                 store.load(str(vector_store_path))
                 vector_stores[collection] = store
-                hlog(f"✓ Loaded vector store '{collection}' from disk")
+                hlog(f"✓ Loaded vector store '{collection}' from disk", 3)
             except Exception as e:
                 return JSONResponse(
                     status_code=500,
@@ -885,7 +893,7 @@ def get_collection_metadata(collection_name: str):
     """Get detailed metadata for a specific collection"""
     try:
         collection_name = sanitize_basename(collection_name)
-        
+
         # Check if collection exists
         vector_store_path = Path(VECTOR_STORE_DIR) / collection_name
         if not vector_store_path.with_suffix(".faiss").exists():
@@ -893,13 +901,13 @@ def get_collection_metadata(collection_name: str):
                 status_code=404,
                 content=create_error_response(
                     Exception(f"Samlingen '{collection_name}' finns inte"),
-                    "metadata-hämtning"
-                )
+                    "metadata-hämtning",
+                ),
             )
-        
+
         # Load metadata
         metadata = load_collection_metadata(collection_name)
-        
+
         # Get stats if loaded, otherwise load temporarily
         if collection_name in vector_stores:
             store = vector_stores[collection_name]
@@ -910,20 +918,21 @@ def get_collection_metadata(collection_name: str):
             except Exception as e:
                 return JSONResponse(
                     status_code=500,
-                    content=create_error_response(e, "vector store laddning")
+                    content=create_error_response(e, "vector store laddning"),
                 )
-        
+
         stats = store.get_stats()
-        
+
         # Get file timestamps
         faiss_file = vector_store_path.with_suffix(".faiss")
         pkl_file = vector_store_path.with_suffix(".pkl")
         meta_file = Path(OUTPUT_DIR) / f"{collection_name}.meta.json"
-        
+
         import datetime
+
         created_time = None
         modified_time = None
-        
+
         if faiss_file.exists():
             created_time = datetime.datetime.fromtimestamp(
                 faiss_file.stat().st_ctime
@@ -931,7 +940,7 @@ def get_collection_metadata(collection_name: str):
             modified_time = datetime.datetime.fromtimestamp(
                 faiss_file.stat().st_mtime
             ).isoformat()
-        
+
         # Build detailed metadata
         detailed_metadata = {
             "name": collection_name,
@@ -940,27 +949,24 @@ def get_collection_metadata(collection_name: str):
             "indexed_urls": metadata.get("indexed_urls", []),
             "pdf_count": len(metadata.get("indexed_pdfs", [])),
             "url_count": len(metadata.get("indexed_urls", [])),
-            "total_records": metadata.get("total_records", stats.get("total_records", 0)),
+            "total_records": metadata.get(
+                "total_records", stats.get("total_records", 0)
+            ),
             "created": created_time,
             "modified": modified_time,
             "files": {
                 "faiss": faiss_file.exists(),
                 "pkl": pkl_file.exists(),
                 "meta": meta_file.exists(),
-            }
+            },
         }
-        
-        return JSONResponse(
-            content={
-                "success": True,
-                "metadata": detailed_metadata
-            }
-        )
-        
+
+        return JSONResponse(content={"success": True, "metadata": detailed_metadata})
+
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content=create_error_response(e, "metadata-hämtning (oväntat fel)")
+            content=create_error_response(e, "metadata-hämtning (oväntat fel)"),
         )
 
 

@@ -140,7 +140,9 @@ async function processFiles(files, collectionName) {
       continue;
     }
     
-    try {
+    console.info('r143');
+
+      try {
       UI.updateProgress(
         progressBar, 
         progressText, 
